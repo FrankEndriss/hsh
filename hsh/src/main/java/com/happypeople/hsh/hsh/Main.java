@@ -1,15 +1,17 @@
 package com.happypeople.hsh.hsh;
 
-import java.io.BufferedReader;
-import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
+import jline.console.ConsoleReader;
 
 /** Happy Shell main.
  * The program reads lines from stdin and executes them.
@@ -17,20 +19,30 @@ import java.util.Map;
 public class Main {
 	private final static Map<String, String> predefs=init_predefines();
 	private static PrintWriter log;
+	private static Collection<File> path=new ArrayList<File>();
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		
 		//			log=new PrintWriter(new FileWriter("hsh.log"));
 		log=new PrintWriter(System.err);
 
+		parsePath();
+
 		// ignore args
 		
-		final BufferedReader br=new BufferedReader(new InputStreamReader(System.in));
+		final ConsoleReader br = new ConsoleReader();
+		br.setPrompt("> ");
+		PrintWriter out=new PrintWriter(br.getOutput());
+
+//		final BufferedReader br=new BufferedReader(new InputStreamReader(System.in));
 		
 		String line;
 		try {
 			while((line=br.readLine())!=null) {
+				if(line.equals("quit"))
+					System.exit(0);
 				execute(line);
+				//out.println("------------>"+line);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -38,14 +50,33 @@ public class Main {
 		}
 	}
 	
+	/** This method parses the environment var PATH and
+	 * places that list of directories in the class var path.
+	 */
+	private static void parsePath() {
+		String lpath=System.getenv().get("PATH");
+		if(lpath==null)
+			lpath=System.getProperty("PATH");
+		System.out.println("PATH: "+lpath);
+		
+		Collection<String> lpaths=Arrays.asList(lpath.split(File.pathSeparator));
+		for(String p : lpaths) {
+			final File f=new File(p);
+			if(f.isDirectory()) {
+				path.add(f);
+				System.out.println("adding path: "+f);
+			}
+		}
+	}
+
 	private static void execute(final String line) throws Exception {
 		final String[] token=hsh_parse_and_substitution(line);
 		
 		if(token.length<1)
 			return;	// empty line
 		
-		log.println("cmd-line:>"+line+"<");
-		log.flush();
+		//log.println("cmd-line:>"+line+"<");
+		//log.flush();
 
 		final String buildin=predefs.get(token[0]);
 		if(buildin!=null)
@@ -85,6 +116,7 @@ public class Main {
 		// TODO handle piped commands and stdstream redirection
 		try {
 			ProcessBuilder builder=new ProcessBuilder();
+			args[0]=resolveCmd(args[0]);
 			builder.command(Arrays.asList(args));
 			builder.redirectError(Redirect.INHERIT);
 			builder.redirectOutput(Redirect.INHERIT);
@@ -97,6 +129,29 @@ public class Main {
 			e.printStackTrace(System.err);
 			return -1;
 		}
+	}
+
+	/** Resolves a String to an executable file, using path
+	 * @param string a command name
+	 * @return File to the executable
+	 */
+	private static String resolveCmd(String cmd) {
+		final File f=new File(cmd);
+		if(f.isAbsolute())
+			return cmd;
+		
+		for(File p : path) {
+			final File r=new File(p, cmd);
+			if(r.exists() && r.isFile())
+				return r.getAbsolutePath();
+
+			// honor windows
+			final File w=new File(p, cmd+".exe");
+			if(w.exists() && w.isFile())
+				return w.getAbsolutePath();
+		}
+			
+		return cmd;
 	}
 
 	/** Executes the main of buildinClass
