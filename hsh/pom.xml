@@ -1,9 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.happypeople.hsh</groupId>
   <artifactId>hsh</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
   <name>Happy Shell implementation</name>
+
+  <parent>
+	  <groupId>com.happypeople.hsh</groupId>
+	  <artifactId>hsh-parent</artifactId>
+	  <version>0.0.1-SNAPSHOT</version>
+  </parent>
   
   <dependencies>
   	<dependency>
@@ -11,8 +17,27 @@
 		<artifactId>jline</artifactId>
 		<version>2.12</version>
   	</dependency>
+		<dependency>
+		<groupId>com.happypeople.hsh</groupId>
+		<artifactId>ls</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.happypeople.hsh</groupId>
+		<artifactId>find</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.happypeople.hsh</groupId>
+		<artifactId>tail</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
+
   </dependencies>
-  
+	
+
   <build>
 <plugins>
 <plugin>
@@ -31,7 +56,7 @@
         </descriptorRefs>
             <archive>
       <manifest>
-        <mainClass>com.happypeople.hsh.hsh.Main</mainClass>
+        <mainClass>com.happypeople.hsh.hsh.Hsh</mainClass>
       </manifest>
     </archive>
       </configuration>
