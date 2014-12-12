@@ -17,7 +17,14 @@
 		<artifactId>jline</artifactId>
 		<version>2.12</version>
   	</dependency>
-		<dependency>
+
+	<dependency>
+		<groupId>com.happypeople.hsh</groupId>
+		<artifactId>hshif</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
+
+	<dependency>
 		<groupId>com.happypeople.hsh</groupId>
 		<artifactId>ls</artifactId>
 		<version>0.0.1-SNAPSHOT</version>

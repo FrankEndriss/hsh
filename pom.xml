@@ -10,6 +10,7 @@
   <url>http://github.com/FrankEndriss/hsh</url>
 
 	<modules>
+		<module>hshif</module>
 		<module>ls</module>
 		<module>find</module>
 		<module>tail</module>

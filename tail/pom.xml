@@ -1,7 +1,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.happypeople.hsh</groupId>
-  <version>0.0.1-SNAPSHOT</version>
+  <artifactId>tail</artifactId>
+
+  <name>hsh tail implementation</name>
+
+  <parent>
+	  <groupId>com.happypeople.hsh</groupId>
+	  <artifactId>hsh-parent</artifactId>
+	  <version>0.0.1-SNAPSHOT</version>
+  </parent>
 
   <dependencies>
   	<dependency>
@@ -13,34 +20,8 @@
   		<groupId>junit</groupId>
   		<artifactId>junit</artifactId>
   		<version>4.8.2</version>
+		<scope>test</scope>
   	</dependency>
   </dependencies>
   
-  <build>
-  <plugins>
-  <plugin>
-  <artifactId>maven-assembly-plugin</artifactId>
-  <configuration>
-    <archive>
-      <manifest>
-        <mainClass>net.neobp.jtail</mainClass>
-      </manifest>
-    </archive>
-    <descriptorRefs>
-      <descriptorRef>jar-with-dependencies</descriptorRef>
-    </descriptorRefs>
-  </configuration>
-  <executions>
-    <execution>
-      <id>make-assembly</id> <!-- this is used for inheritance merges -->
-      <phase>package</phase> <!-- bind to the packaging phase -->
-      <goals>
-        <goal>single</goal>
-      </goals>
-    </execution>
-  </executions>
-</plugin>
-</plugins>
-</build>
-  <artifactId>tail</artifactId>
 </project>

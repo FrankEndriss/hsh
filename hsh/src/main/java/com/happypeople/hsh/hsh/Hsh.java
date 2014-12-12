@@ -13,13 +13,16 @@ import java.util.Map;
 
 import jline.console.ConsoleReader;
 
+import com.happypeople.hsh.HshCmd;
+import com.happypeople.hsh.HshContext;
+
 /** Happy Shell main.
  * The program reads lines from stdin and executes them.
  * Until stdin is closed or an exit-command is given.
  * "quit" does an "exit 0"
  * "exit <number>" exits with status <number>
  */
-public class Hsh {
+public class Hsh implements HshContext {
 	private final static Map<String, String> predefs=init_predefines();
 	private static PrintWriter log;
 	private static Collection<File> path=new ArrayList<File>();
@@ -28,7 +31,7 @@ public class Hsh {
 	private int status=0;
 
 	/** Flag indicating that this instance has finished working. ie "exit" was called. */
-	private final boolean finished=false;
+	private boolean finished=false;
 
 	public static void main(final String[] args) throws IOException {
 
@@ -47,8 +50,8 @@ public class Hsh {
 		try {
 			while(instance.acceptsFeed() && (line=br.readLine())!=null) {
 				instance.feedLine(line);
-				log.println("cmd-line:>"+line+"<");
-				log.flush();
+				//log.println("cmd-line:>"+line+"<");
+				//log.flush();
 			}
 		} catch (final Exception e) {
 			System.err.println("fatal failure in Hsh.main(), will System.exit(1)");
@@ -74,6 +77,13 @@ public class Hsh {
 
 	private boolean acceptsFeed() {
 		return !finished;
+	}
+
+	/** A call to this method causes the Hsh to exit after the current command did finish.
+	 *
+	 */
+	public void finish() {
+		finished=true;
 	}
 
 	private int getStatus() {
@@ -161,12 +171,15 @@ public class Hsh {
 	 */
 	private int exec_buildin_Main(final String buildinClass, final String[] args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 		try {
-			// TODO remove first arg
-			Class.forName(buildinClass).getMethod("main", new Class[]{ args.getClass()}).invoke(
+			final Class<?> cls=Class.forName(buildinClass);
+			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
+				final HshCmd hshCmd=(HshCmd) cls.newInstance(); // TODO cache instance
+				return hshCmd.execute(this, args);
+			} else {
+				Class.forName(buildinClass).getMethod("main", new Class[]{ args.getClass()}).invoke(
 					null, new Object[] { args });
-			System.out.flush();
-			System.err.flush();
-			return 0;
+				return 0;
+			}
 		}catch(final Exception e) {
 			e.printStackTrace();
 			return 1;
@@ -175,9 +188,11 @@ public class Hsh {
 
 	private static Map<String, String> init_predefines() {
 		final Map<String, String> predefs=new HashMap<String, String>();
-		predefs.put("find", "com.happypeople.hsh.find.Main");
-		predefs.put("ls", "com.happypeople.hsh.ls.Main");
-		predefs.put("tail", "com.happypeople.hsh.tail.Main");
+		predefs.put("find",	"com.happypeople.hsh.find.Main");
+		predefs.put("ls", 	"com.happypeople.hsh.ls.Main");
+		predefs.put("tail",	"com.happypeople.hsh.tail.Main");
+		predefs.put("exit",	"com.happypeople.hsh.exit.Main");
+		predefs.put("quit",	"com.happypeople.hsh.exit.Main");
 		return predefs;
 	};
 
@@ -223,6 +238,4 @@ public class Hsh {
 
 		return cmd;
 	}
-
-
 }
