@@ -2,6 +2,8 @@ package com.happypeople.hsh.hsh;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.reflect.InvocationTargetException;
@@ -26,6 +28,7 @@ public class Hsh implements HshContext {
 	private final static Map<String, String> predefs=init_predefines();
 	private static PrintWriter log;
 	private static Collection<File> path=new ArrayList<File>();
+	private final ConsoleReader console;
 
 	/** exit status of last command */
 	private int status=0;
@@ -40,15 +43,14 @@ public class Hsh implements HshContext {
 
 		parsePath();
 
-		final ConsoleReader br = new ConsoleReader();
-		br.setPrompt("> ");
-		final PrintWriter out=new PrintWriter(br.getOutput());
+		final ConsoleReader console = new ConsoleReader();
+		console.setPrompt("> ");
 
-		final Hsh instance=new Hsh();
+		final Hsh instance=new Hsh(console);
 
 		String line;
 		try {
-			while(instance.acceptsFeed() && (line=br.readLine())!=null) {
+			while(instance.acceptsFeed() && (line=console.readLine())!=null) {
 				instance.feedLine(line);
 				//log.println("cmd-line:>"+line+"<");
 				//log.flush();
@@ -59,6 +61,10 @@ public class Hsh implements HshContext {
 			System.exit(1);
 		}
 		System.exit(instance.getStatus());
+	}
+
+	private Hsh(final ConsoleReader console) {
+		this.console=console;
 	}
 
 	private void feedLine(final String line) {
@@ -174,7 +180,7 @@ public class Hsh implements HshContext {
 			final Class<?> cls=Class.forName(buildinClass);
 			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
 				final HshCmd hshCmd=(HshCmd) cls.newInstance(); // TODO cache instance
-				return hshCmd.execute(this, args);
+				return hshCmd.execute(this, new ArrayList<String>(Arrays.asList(args)));
 			} else {
 				Class.forName(buildinClass).getMethod("main", new Class[]{ args.getClass()}).invoke(
 					null, new Object[] { args });
@@ -189,7 +195,7 @@ public class Hsh implements HshContext {
 	private static Map<String, String> init_predefines() {
 		final Map<String, String> predefs=new HashMap<String, String>();
 		predefs.put("find",	"com.happypeople.hsh.find.Main");
-		predefs.put("ls", 	"com.happypeople.hsh.ls.Main");
+		predefs.put("ls", 	"com.happypeople.hsh.ls.Ls");
 		predefs.put("tail",	"com.happypeople.hsh.tail.Main");
 		predefs.put("exit",	"com.happypeople.hsh.exit.Main");
 		predefs.put("quit",	"com.happypeople.hsh.exit.Main");
@@ -237,5 +243,25 @@ public class Hsh implements HshContext {
 		}
 
 		return cmd;
+	}
+
+	public PrintStream getStdOut() {
+		return System.out;
+	}
+
+	public InputStream getStdIn() {
+		return System.in;
+	}
+
+	public PrintStream getStdErr() {
+		return System.err;
+	}
+
+	public int getCols() {
+		return console.getTerminal().getWidth();
+	}
+
+	public int getRows() {
+		return console.getTerminal().getHeight();
 	}
 }
