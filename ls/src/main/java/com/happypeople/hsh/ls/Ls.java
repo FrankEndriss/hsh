@@ -22,6 +22,8 @@ import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.ls.FileEntry.AttAccessor;
 
+/** More or less Posix implementation of ls
+ */
 public class Ls implements HshCmd {
 	final static boolean DEBUG=false;
 
@@ -166,7 +168,7 @@ public class Ls implements HshCmd {
 	private static String getOutputString(final FileEntry fe, final List<AttAccessor<?>> attAccessors) {
 		final StringBuilder sb=new StringBuilder();
 		final boolean first=true;
-		for(final AttAccessor atac : attAccessors) {
+		for(final AttAccessor<?> atac : attAccessors) {
 			if(!first)
 				sb.append(" ");
 			sb.append(atac.get(fe));

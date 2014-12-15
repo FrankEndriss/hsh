@@ -63,14 +63,14 @@ public class FileEntry implements Comparable<FileEntry> {
 	}
 
 	/** File attribute accessors */
-	public static interface AttAccessor<C extends Comparable> {
+	public static interface AttAccessor<C extends Comparable<C>> {
 		public final static String UNKNOWN="<unknown>";
 		public C get(FileEntry file);
 	}
 
-	public static class AttComparator implements Comparator<FileEntry> {
-		private final AttAccessor<?> atac;
-		AttComparator(final AttAccessor<?> atac) {
+	public static class AttComparator<C extends Comparable<C>> implements Comparator<FileEntry> {
+		private final AttAccessor<C> atac;
+		AttComparator(final AttAccessor<C> atac) {
 			this.atac=atac;
 		}
 
@@ -84,7 +84,7 @@ public class FileEntry implements Comparable<FileEntry> {
 			return file.getFile().getName();
 		}
 	};
-	public final static Comparator<FileEntry> NAME_SORT=new AttComparator(NAME_ATAC);
+	public final static Comparator<FileEntry> NAME_SORT=new AttComparator<String>(NAME_ATAC);
 
 	public final static DateFormat DEFAULT_DATE_FORMAT=new SimpleDateFormat("d M HH:mm");
 	public final static AttAccessor<FileTime> MODIFIED_TIME_ATAC=new AttAccessor<FileTime>() {
@@ -92,14 +92,14 @@ public class FileEntry implements Comparable<FileEntry> {
 			return file.getAttrs().lastModifiedTime();
 		}
 	};
-	public final static Comparator<FileEntry> MODIFIED_TIME_SORT=new AttComparator(MODIFIED_TIME_ATAC);
+	public final static Comparator<FileEntry> MODIFIED_TIME_SORT=new AttComparator<FileTime>(MODIFIED_TIME_ATAC);
 
 	public final static AttAccessor<Long> SIZE_ATAC=new AttAccessor<Long>() {
 		public Long get(final FileEntry file) {
 			return file.getAttrs().size();
 		}
 	};
-	public final static Comparator<FileEntry> SIZE_SORT=new AttComparator(SIZE_ATAC);
+	public final static Comparator<FileEntry> SIZE_SORT=new AttComparator<Long>(SIZE_ATAC);
 
 	public final static AttAccessor<String> GROUP_ATAC=new AttAccessor<String>() {
 		public String get(final FileEntry file) {
@@ -109,7 +109,7 @@ public class FileEntry implements Comparable<FileEntry> {
 			return UNKNOWN;
 		}
 	};
-	public final static Comparator<FileEntry> GROUP_SORT=new AttComparator(GROUP_ATAC);
+	public final static Comparator<FileEntry> GROUP_SORT=new AttComparator<String>(GROUP_ATAC);
 
 	public final static AttAccessor<String> OWNER_ATAC=new AttAccessor<String>() {
 		public String get(final FileEntry file) {
@@ -119,9 +119,9 @@ public class FileEntry implements Comparable<FileEntry> {
 			return UNKNOWN;
 		}
 	};
-	public final static Comparator<FileEntry> OWNER_SORT=new AttComparator(OWNER_ATAC);
+	public final static Comparator<FileEntry> OWNER_SORT=new AttComparator<String>(OWNER_ATAC);
 
-	public final static AttAccessor<String> PERM_ATAC=new AttAccessor() {
+	public final static AttAccessor<String> PERM_ATAC=new AttAccessor<String>() {
 		public String get(final FileEntry file) {
 			final StringBuilder perms=new StringBuilder(file.getFile().isDirectory()?"d":"-");
 			final BasicFileAttributes attrs=file.getAttrs();
@@ -146,9 +146,13 @@ public class FileEntry implements Comparable<FileEntry> {
 			return perms.toString();
 		}
 	};
-	public final static Comparator<FileEntry> PERM_SORT=new AttComparator(PERM_ATAC);
+	public final static Comparator<FileEntry> PERM_SORT=new AttComparator<String>(PERM_ATAC);
 
 	public int compareTo(final FileEntry fileEntry) {
 		return getFile().compareTo(fileEntry.getFile());
+	}
+	
+	public String toString() {
+		return file.toString();
 	}
 }
