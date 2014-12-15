@@ -5,6 +5,7 @@ import java.io.FileFilter;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.FileOwnerAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /** Encapsulates a File and its Attributes
  */
@@ -86,13 +88,13 @@ public class FileEntry implements Comparable<FileEntry> {
 	};
 	public final static Comparator<FileEntry> NAME_SORT=new AttComparator<String>(NAME_ATAC);
 
-	public final static DateFormat DEFAULT_DATE_FORMAT=new SimpleDateFormat("d M HH:mm");
-	public final static AttAccessor<FileTime> MODIFIED_TIME_ATAC=new AttAccessor<FileTime>() {
-		public FileTime get(final FileEntry file) {
-			return file.getAttrs().lastModifiedTime();
+
+	public final static AttAccessor<FileTimeWrapper> MODIFIED_TIME_ATAC=new AttAccessor<FileTimeWrapper>() {
+		public FileTimeWrapper get(final FileEntry file) {
+			return new FileTimeWrapper(file.getAttrs().lastModifiedTime());
 		}
 	};
-	public final static Comparator<FileEntry> MODIFIED_TIME_SORT=new AttComparator<FileTime>(MODIFIED_TIME_ATAC);
+	public final static Comparator<FileEntry> MODIFIED_TIME_SORT=new AttComparator<FileTimeWrapper>(MODIFIED_TIME_ATAC);
 
 	public final static AttAccessor<Long> SIZE_ATAC=new AttAccessor<Long>() {
 		public Long get(final FileEntry file) {
@@ -113,10 +115,13 @@ public class FileEntry implements Comparable<FileEntry> {
 
 	public final static AttAccessor<String> OWNER_ATAC=new AttAccessor<String>() {
 		public String get(final FileEntry file) {
-			final BasicFileAttributes attrs=file.getAttrs();
-			if(attrs instanceof PosixFileAttributes)
-				return ((PosixFileAttributes)attrs).owner().getName();
-			return UNKNOWN;
+			try {
+				FileOwnerAttributeView ownerAttributeView = 
+	        		Files.getFileAttributeView(file.getFile().toPath(), FileOwnerAttributeView.class);
+				return ownerAttributeView.getOwner().getName();
+			}catch(Exception e) {
+				return UNKNOWN;
+			}
 		}
 	};
 	public final static Comparator<FileEntry> OWNER_SORT=new AttComparator<String>(OWNER_ATAC);

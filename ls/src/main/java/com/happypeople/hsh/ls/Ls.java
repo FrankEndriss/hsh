@@ -88,7 +88,16 @@ public class Ls implements HshCmd {
 		// all other args are filenames
 		final List<String> fargs=new ArrayList<String>(Arrays.asList(cmd.getArgs()));
 		final List<AttAccessor<?>> accList=new ArrayList<AttAccessor<?>>();
-		// TODO set accList according to options
+
+		// TODO implement other options
+		if(cmd.hasOption("l")) {
+			accList.add(FileEntry.PERM_ATAC);
+			accList.add(FileEntry.OWNER_ATAC);
+			accList.add(FileEntry.GROUP_ATAC);
+			accList.add(FileEntry.SIZE_ATAC);
+			accList.add(FileEntry.MODIFIED_TIME_ATAC);
+		}
+
 		accList.add(FileEntry.NAME_ATAC);
 
 		final List<Comparator<? super FileEntry>> sortList=new ArrayList<Comparator<? super FileEntry>>();
@@ -178,13 +187,34 @@ public class Ls implements HshCmd {
 
 	/** Print one entry after the other, separated by a separator, ie newline */
 	private static OutputStyle FLOAT=new OutputStyle() {
+		private List<AttAccessor<?>> attAccessorList;
+		private List<FileEntry> fileEntryList=new ArrayList<FileEntry>();
+		private List<Integer> fieldWidths=new ArrayList<Integer>();
 
 		public void printFile(final FileEntry fe, final PrintStream pw, final List<AttAccessor<?>> attAccessors) {
-			pw.println(getOutputString(fe, attAccessors));
+			while(fieldWidths.size()<attAccessors.size())
+				fieldWidths.add(0);
+			for(int i=0; i<attAccessors.size(); i++) {
+				int fieldLen=(""+attAccessors.get(i).get(fe)).length();
+				if(fieldWidths.get(i)<fieldLen)
+					fieldWidths.set(i, fieldLen);
+			}
+			attAccessorList=attAccessors;
+			fileEntryList.add(fe);
 		}
 
 		public void doOutput(final PrintStream pw, final int screenWidth) {
-			// noop
+			for(FileEntry fe : fileEntryList) {
+				for(int i=0; i<attAccessorList.size(); i++) {
+					if(i>0)
+						pw.print(' ');	// separator
+					printWidth(pw, fieldWidths.get(i), ""+attAccessorList.get(i).get(fe));
+				}
+				pw.println();
+			}
+			attAccessorList=null;
+			fileEntryList.clear();
+			fieldWidths.clear();
 		}
 	};
 
@@ -268,13 +298,6 @@ public class Ls implements HshCmd {
 			}
 		}
 
-		private void printWidth(final PrintStream pw, final int width, final String str) {
-			final StringBuilder sb=new StringBuilder(str);
-			while(sb.length()<width)
-				sb.append(' ');
-			pw.print(sb.toString());
-		}
-
 		/** Computes the index into the data list for the entry at row row and col col, given that
 		 * rows rows are used.
 		 * @param rows
@@ -343,6 +366,13 @@ public class Ls implements HshCmd {
 		}
 	};
 
+
+	private static void printWidth(final PrintStream pw, final int width, final String str) {
+		final StringBuilder sb=new StringBuilder(str);
+		while(sb.length()<width)
+			sb.append(' ');
+		pw.print(sb.toString());
+	}
 
 
 }
