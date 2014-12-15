@@ -165,21 +165,22 @@ public class Hsh implements HshContext {
 		}
 	}
 
-	/** Executes the main of buildinClass
-	 * @param buildinClass
-	 * @param args
-	 * @throws ClassNotFoundException
-	 * @throws SecurityException
-	 * @throws NoSuchMethodException
-	 * @throws InvocationTargetException
-	 * @throws IllegalArgumentException
-	 * @throws IllegalAccessException
+	/** Executes a buildin class/cmd.
+	 * If the class implements HshCmd that interface is used, else main(String[] args) is called.
+	 * @param buildinClass full qualified name of class implementing the command args[0]
+	 * @param args command arg vector unix style, ie args[0] is the called command
+	 * @throws ClassNotFoundException if the class cannot be loaded or called
+	 * @throws SecurityException if the class cannot be loaded or called
+	 * @throws NoSuchMethodException if the class cannot be loaded or called
+	 * @throws InvocationTargetException if the class cannot be loaded or called
+	 * @throws IllegalArgumentException if the class cannot be loaded or called
+	 * @throws IllegalAccessException if the class cannot be loaded or called
 	 */
 	private int exec_buildin_Main(final String buildinClass, final String[] args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 		try {
 			final Class<?> cls=Class.forName(buildinClass);
 			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
-				final HshCmd hshCmd=(HshCmd) cls.newInstance(); // TODO cache instance
+				final HshCmd hshCmd=(HshCmd) cls.newInstance(); // TODO cache instance or not
 				return hshCmd.execute(this, new ArrayList<String>(Arrays.asList(args)));
 			} else {
 				Class.forName(buildinClass).getMethod("main", new Class[]{ args.getClass()}).invoke(
@@ -194,11 +195,11 @@ public class Hsh implements HshContext {
 
 	private static Map<String, String> init_predefines() {
 		final Map<String, String> predefs=new HashMap<String, String>();
+		predefs.put("exit",	"com.happypeople.hsh.exit.Exit");
 		predefs.put("find",	"com.happypeople.hsh.find.Main");
 		predefs.put("ls", 	"com.happypeople.hsh.ls.Ls");
+		predefs.put("quit",	"com.happypeople.hsh.exit.Exit");
 		predefs.put("tail",	"com.happypeople.hsh.tail.Main");
-		predefs.put("exit",	"com.happypeople.hsh.exit.Main");
-		predefs.put("quit",	"com.happypeople.hsh.exit.Main");
 		return predefs;
 	};
 
@@ -212,14 +213,17 @@ public class Hsh implements HshContext {
 			lpath=System.getProperty("PATH");
 		System.out.println("PATH: "+lpath);
 
-		final Collection<String> lpaths=Arrays.asList(lpath.split(File.pathSeparator));
-		for(final String p : lpaths) {
-			final File f=new File(p);
-			if(f.isDirectory()) {
-				path.add(f);
-				System.out.println("adding path: "+f);
+		if(lpath!=null) {
+			final Collection<String> lpaths=Arrays.asList(lpath.split(File.pathSeparator));
+			for(final String p : lpaths) {
+				final File f=new File(p);
+				if(f.isDirectory()) {
+					path.add(f);
+					System.out.println("adding path: "+f);
+				}
 			}
-		}
+		} else
+			System.out.println("no path.");
 	}
 
 	/** Resolves a String to an executable file, using path

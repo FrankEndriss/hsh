@@ -11,8 +11,9 @@
 
 	<modules>
 		<module>hshif</module>
-		<module>ls</module>
+		<module>exit</module>
 		<module>find</module>
+		<module>ls</module>
 		<module>tail</module>
 		<module>hsh</module>
 	</modules>
