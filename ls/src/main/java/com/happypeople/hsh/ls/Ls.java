@@ -188,14 +188,14 @@ public class Ls implements HshCmd {
 	/** Print one entry after the other, separated by a separator, ie newline */
 	private static OutputStyle FLOAT=new OutputStyle() {
 		private List<AttAccessor<?>> attAccessorList;
-		private List<FileEntry> fileEntryList=new ArrayList<FileEntry>();
-		private List<Integer> fieldWidths=new ArrayList<Integer>();
+		private final List<FileEntry> fileEntryList=new ArrayList<FileEntry>();
+		private final List<Integer> fieldWidths=new ArrayList<Integer>();
 
 		public void printFile(final FileEntry fe, final PrintStream pw, final List<AttAccessor<?>> attAccessors) {
 			while(fieldWidths.size()<attAccessors.size())
 				fieldWidths.add(0);
 			for(int i=0; i<attAccessors.size(); i++) {
-				int fieldLen=(""+attAccessors.get(i).get(fe)).length();
+				final int fieldLen=(""+attAccessors.get(i).get(fe)).length();
 				if(fieldWidths.get(i)<fieldLen)
 					fieldWidths.set(i, fieldLen);
 			}
@@ -204,7 +204,7 @@ public class Ls implements HshCmd {
 		}
 
 		public void doOutput(final PrintStream pw, final int screenWidth) {
-			for(FileEntry fe : fileEntryList) {
+			for(final FileEntry fe : fileEntryList) {
 				for(int i=0; i<attAccessorList.size(); i++) {
 					if(i>0)
 						pw.print(' ');	// separator

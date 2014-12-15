@@ -6,20 +6,16 @@ import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileOwnerAttributeView;
-import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /** Encapsulates a File and its Attributes
  */
-public class FileEntry implements Comparable<FileEntry> {
+class FileEntry implements Comparable<FileEntry> {
 	private final static List<Class<? extends BasicFileAttributes>> clsList=
 			new ArrayList<Class<? extends BasicFileAttributes>>();
 	static {
@@ -27,6 +23,11 @@ public class FileEntry implements Comparable<FileEntry> {
 		clsList.add(DosFileAttributes.class);
 		clsList.add(BasicFileAttributes.class);
 	};
+
+	enum Adjustment {
+		LEFT,
+		RIGHT
+	}
 
 	private final File file;
 	private BasicFileAttributes attrs;
@@ -64,6 +65,17 @@ public class FileEntry implements Comparable<FileEntry> {
 		return list;
 	}
 
+	public String getFormatted(final AttAccessor<?> atac, final Adjustment adjust, final int minWidth) {
+		final StringBuilder sb=new StringBuilder(""+atac.get(this));
+		while(sb.length()<minWidth)
+			if(Adjustment.RIGHT==adjust)
+				sb.insert(0, ' ');
+			else
+				sb.append(' ');
+
+		return sb.toString();
+	}
+
 	/** File attribute accessors */
 	public static interface AttAccessor<C extends Comparable<C>> {
 		public final static String UNKNOWN="<unknown>";
@@ -94,6 +106,7 @@ public class FileEntry implements Comparable<FileEntry> {
 			return new FileTimeWrapper(file.getAttrs().lastModifiedTime());
 		}
 	};
+
 	public final static Comparator<FileEntry> MODIFIED_TIME_SORT=new AttComparator<FileTimeWrapper>(MODIFIED_TIME_ATAC);
 
 	public final static AttAccessor<Long> SIZE_ATAC=new AttAccessor<Long>() {
@@ -116,10 +129,10 @@ public class FileEntry implements Comparable<FileEntry> {
 	public final static AttAccessor<String> OWNER_ATAC=new AttAccessor<String>() {
 		public String get(final FileEntry file) {
 			try {
-				FileOwnerAttributeView ownerAttributeView = 
+				final FileOwnerAttributeView ownerAttributeView =
 	        		Files.getFileAttributeView(file.getFile().toPath(), FileOwnerAttributeView.class);
 				return ownerAttributeView.getOwner().getName();
-			}catch(Exception e) {
+			}catch(final Exception e) {
 				return UNKNOWN;
 			}
 		}
@@ -156,7 +169,8 @@ public class FileEntry implements Comparable<FileEntry> {
 	public int compareTo(final FileEntry fileEntry) {
 		return getFile().compareTo(fileEntry.getFile());
 	}
-	
+
+	@Override
 	public String toString() {
 		return file.toString();
 	}
