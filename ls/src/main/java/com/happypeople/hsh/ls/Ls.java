@@ -20,7 +20,6 @@ import org.apache.commons.cli.PosixParser;
 
 import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.ls.FileEntry.AttAccessor;
 
 /** More or less Posix implementation of ls
  */
@@ -114,7 +113,7 @@ public class Ls implements HshCmd {
 			fileEntryList.add(new FileEntry(new File(arg)));
 
 		Comparator<FileEntry> comp=null;
-		if(sortList.size()>0)
+		if(sortList.size()>0) {
 			comp=new Comparator<FileEntry>() {
 				public int compare(final FileEntry o1, final FileEntry o2) {
 					for(final Comparator<? super FileEntry> c : sortList) {
@@ -125,15 +124,60 @@ public class Ls implements HshCmd {
 					return 0;
 				}
 			};
-		Collections.sort(fileEntryList, comp);
+			Collections.sort(fileEntryList, comp);
+		}
 
 		final boolean recursive=cmd.hasOption("R");
 		final boolean withNamePrefix=fargs.size()>1 || recursive;
+
+		/*
+		final int recurseDepth=
+			recursive ? Integer.MAX_VALUE:
+			cmd.hasOption("d") ? 0:
+			1;
+		*/
+
+		//final Stack<OutputStyle> styleStack=new Stack<OutputStyle>();
+		//styleStack.push(outputStyle);
 
 		boolean first=true;
 		for(final FileEntry fileEntry : fileEntryList) {
 			if(!first)
 				hsh.getStdOut().println();
+			first=false;
+
+			/*
+			Files.walkFileTree(fileEntry.getFile().toPath(), EnumSet.noneOf(FileVisitOption.class), recurseDepth, new FileVisitor<Path>() {
+
+				public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+					if(withNamePrefix)
+						hsh.getStdOut().println(""+dir+":");
+					styleStack.peek().printFile(new FileEntry(dir.toFile()), hsh.getStdOut());
+					styleStack.push(styleStack.peek().createInstance());
+					return FileVisitResult.CONTINUE;
+				}
+
+				public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+					styleStack.peek().printFile(new FileEntry(file.toFile()), hsh.getStdOut());
+					return FileVisitResult.CONTINUE;
+				}
+
+				public FileVisitResult visitFileFailed(final Path file, final IOException exc) throws IOException {
+					// TODO Auto-generated method stub
+					return FileVisitResult.CONTINUE;
+				}
+
+				public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
+					try {
+						styleStack.pop().doOutput(hsh.getStdOut(), hsh.getCols());
+					} catch (final Exception e) {
+						e.printStackTrace();
+					}
+					return FileVisitResult.CONTINUE;
+				}
+			});
+			*/
+
 			if(fileEntry.getFile().exists()) {
 				if(fileEntry.getFile().isDirectory()) {
 					listDir(fileEntry, hsh, withNamePrefix, outputStyle.createInstance(), fileFilter, formatterList, comp);
@@ -143,7 +187,6 @@ public class Ls implements HshCmd {
 			} else
 				hsh.getStdOut().println("does not exists: "+fileEntry);
 			outputStyle.doOutput(hsh.getStdOut(), hsh.getCols());
-			first=false;
 		}
 
 		return 0;
@@ -166,7 +209,7 @@ public class Ls implements HshCmd {
 	/** There are three output styles */
 	interface OutputStyle {
 
-		/** Creates a new instance of this OutputStyle, the same constructor is called like was called to 
+		/** Creates a new instance of this OutputStyle, the same constructor is called like was called to
 		 * create this object.
 		 * @return a new OutputStyle-object of the same class as this object and same configuration (constructor call)
 		 */
@@ -186,14 +229,14 @@ public class Ls implements HshCmd {
 		 */
 		public void doOutput(PrintStream pw, int screenWidth) throws Exception;
 	}
-	
+
 	/** Print one entry after the other, separated by a separator, ie newline */
 	private static class FloatOutputStyle implements OutputStyle {
 		private final List<FileEntry> fileEntryList=new ArrayList<FileEntry>();
 		private final List<Integer> fieldWidths=new ArrayList<Integer>();
 		private final List<AtAcFormatter> formatterList;
-		
-		public FloatOutputStyle(List<AtAcFormatter> formatterList) {
+
+		public FloatOutputStyle(final List<AtAcFormatter> formatterList) {
 			this.formatterList=formatterList;
 		}
 
@@ -239,12 +282,12 @@ public class Ls implements HshCmd {
 		/** length of separator between file names */
 		final int SEPARATOR_LEN=SEPARATOR.length();
 
-		private AtAcFormatter formatter;
-		
-		public VerticalOutputStyle(AtAcFormatter nameFormatter) {
+		private final AtAcFormatter formatter;
+
+		public VerticalOutputStyle(final AtAcFormatter nameFormatter) {
 			this.formatter=nameFormatter;
 		}
-		
+
 		public OutputStyle createInstance() {
 			return new VerticalOutputStyle(formatter);
 		}
@@ -275,7 +318,7 @@ public class Ls implements HshCmd {
 					boolean fitsFlag=true;
 					colsFormat=new ColsFormat(cols, SEPARATOR);
 					for(int row=0; row<rows; row++) {
-						for(int col=0; col<cols-1; col++) { 
+						for(int col=0; col<cols-1; col++) {
 							final int dataidx=computeDataIdx(rows, row, col, numColsLastRow);
 							if(dataidx<files.size()) { // check dataidx caused by last row
 								colsFormat.updateColWidth(col, formatter.get(files.get(dataidx), 0).length());

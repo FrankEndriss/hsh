@@ -196,7 +196,7 @@ public class Hsh implements HshContext {
 	private static Map<String, String> init_predefines() {
 		final Map<String, String> predefs=new HashMap<String, String>();
 		predefs.put("exit",	"com.happypeople.hsh.exit.Exit");
-		predefs.put("find",	"com.happypeople.hsh.find.Main");
+		predefs.put("find",	"com.happypeople.hsh.find.Find");
 		predefs.put("ls", 	"com.happypeople.hsh.ls.Ls");
 		predefs.put("quit",	"com.happypeople.hsh.exit.Exit");
 		predefs.put("tail",	"com.happypeople.hsh.tail.Main");

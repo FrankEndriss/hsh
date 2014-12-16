@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /** find implementation */
-public class Main {
+public class Find {
 	public static void main(final String[] args) {
 
 		final List<String> pathList=new ArrayList<String>();
@@ -87,7 +87,7 @@ public class Main {
 
 
 	public static void usage() {
-		System.err.println("usage: "+Main.class.getName()+" <pathlist> [expression]");
+		System.err.println("usage: "+Find.class.getName()+" <pathlist> [expression]");
 		System.err.println("implemented expressions: -name <pattern>");
 	}
 
