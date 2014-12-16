@@ -24,11 +24,6 @@ class FileEntry implements Comparable<FileEntry> {
 		clsList.add(BasicFileAttributes.class);
 	};
 
-	enum Adjustment {
-		LEFT,
-		RIGHT
-	}
-
 	private final File file;
 	private BasicFileAttributes attrs;
 
@@ -65,16 +60,6 @@ class FileEntry implements Comparable<FileEntry> {
 		return list;
 	}
 
-	public String getFormatted(final AttAccessor<?> atac, final Adjustment adjust, final int minWidth) {
-		final StringBuilder sb=new StringBuilder(""+atac.get(this));
-		while(sb.length()<minWidth)
-			if(Adjustment.RIGHT==adjust)
-				sb.insert(0, ' ');
-			else
-				sb.append(' ');
-
-		return sb.toString();
-	}
 
 	/** File attribute accessors */
 	public static interface AttAccessor<C extends Comparable<C>> {

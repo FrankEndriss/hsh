@@ -59,10 +59,24 @@ public class Ls implements HshCmd {
 			return 1;
 		}
 
+		// Which fields to display per File
+		// TODO implement other options
+		final List<AtAcFormatter> formatterList=new ArrayList<AtAcFormatter>();
+		if(cmd.hasOption("l")) {
+			formatterList.add(new AtAcFormatter(FileEntry.PERM_ATAC, Adjustment.LEFT));
+			formatterList.add(new AtAcFormatter(FileEntry.OWNER_ATAC, Adjustment.RIGHT));
+			formatterList.add(new AtAcFormatter(FileEntry.GROUP_ATAC, Adjustment.RIGHT));
+			formatterList.add(new AtAcFormatter(FileEntry.SIZE_ATAC, Adjustment.RIGHT));
+			formatterList.add(new AtAcFormatter(FileEntry.MODIFIED_TIME_ATAC, Adjustment.LEFT));
+		}
+		formatterList.add(new AtAcFormatter(FileEntry.NAME_ATAC, Adjustment.NONE));
+
 		// Output style
-		OutputStyle outputStyle=COLS_VERTICAL;
+		OutputStyle outputStyle=null;
 		if(cmd.hasOption("l") || cmd.hasOption("1"))
-			outputStyle=FLOAT;
+			outputStyle=new FloatOutputStyle(formatterList);
+		else
+			outputStyle=new VerticalOutputStyle(new AtAcFormatter(FileEntry.NAME_ATAC, Adjustment.LEFT));
 
 		// what to list in dir arguments
 		FileFilter fileFilter=null;
@@ -87,18 +101,7 @@ public class Ls implements HshCmd {
 
 		// all other args are filenames
 		final List<String> fargs=new ArrayList<String>(Arrays.asList(cmd.getArgs()));
-		final List<AttAccessor<?>> accList=new ArrayList<AttAccessor<?>>();
 
-		// TODO implement other options
-		if(cmd.hasOption("l")) {
-			accList.add(FileEntry.PERM_ATAC);
-			accList.add(FileEntry.OWNER_ATAC);
-			accList.add(FileEntry.GROUP_ATAC);
-			accList.add(FileEntry.SIZE_ATAC);
-			accList.add(FileEntry.MODIFIED_TIME_ATAC);
-		}
-
-		accList.add(FileEntry.NAME_ATAC);
 
 		final List<Comparator<? super FileEntry>> sortList=new ArrayList<Comparator<? super FileEntry>>();
 		sortList.add(FileEntry.NAME_SORT);
@@ -110,19 +113,22 @@ public class Ls implements HshCmd {
 		for(final String arg : fargs)
 			fileEntryList.add(new FileEntry(new File(arg)));
 
-		final Comparator<FileEntry> comp=new Comparator<FileEntry>() {
-			public int compare(final FileEntry o1, final FileEntry o2) {
-				for(final Comparator<? super FileEntry> c : sortList) {
-					final int res=c.compare(o1, o2);
-					if(res!=0)
-						return res;
-				}
+		Comparator<FileEntry> comp=null;
+		if(sortList.size()>0)
+			comp=new Comparator<FileEntry>() {
+				public int compare(final FileEntry o1, final FileEntry o2) {
+						for(final Comparator<? super FileEntry> c : sortList) {
+							final int res=c.compare(o1, o2);
+							if(res!=0)
+								return res;
+						}
 				return 0;
-			}
-		};
+					}
+			};
 		Collections.sort(fileEntryList, comp);
 
-		final boolean withNamePrefix=fargs.size()>1 || cmd.hasOption("R");
+		final boolean recursive=cmd.hasOption("R");
+		final boolean withNamePrefix=fargs.size()>1 || recursive;
 
 		boolean first=true;
 		for(final FileEntry fileEntry : fileEntryList) {
@@ -130,12 +136,12 @@ public class Ls implements HshCmd {
 				hsh.getStdOut().println();
 			if(fileEntry.getFile().exists()) {
 				if(fileEntry.getFile().isDirectory()) {
-					listDir(fileEntry, hsh, withNamePrefix, outputStyle, fileFilter, accList, comp);
+					listDir(fileEntry, hsh, withNamePrefix, outputStyle.createInstance(), fileFilter, formatterList, comp);
 				} else {
-					outputStyle.printFile(fileEntry, hsh.getStdOut(), accList);
+					outputStyle.printFile(fileEntry, hsh.getStdOut());
 				}
 			} else
-				System.out.println("does not exists: "+fileEntry);
+				hsh.getStdOut().println("does not exists: "+fileEntry);
 			outputStyle.doOutput(hsh.getStdOut(), hsh.getCols());
 			first=false;
 		}
@@ -144,26 +150,33 @@ public class Ls implements HshCmd {
 	}
 
 	private void listDir(final FileEntry dir, final HshContext hsh, final boolean withNamePrefix, final OutputStyle style,
-			final FileFilter fileFilter, final List<AttAccessor<?>> accessors, final Comparator<FileEntry> comp)
+			final FileFilter fileFilter, final List<AtAcFormatter> formatters, final Comparator<FileEntry> comp)
 	throws Exception {
 		if(withNamePrefix)
 			hsh.getStdOut().println(FileEntry.NAME_ATAC.get(dir)+":");
+		// TODO replace by streaming interface File.walkFileTree(...depth=1)
 		final List<FileEntry> dirents=dir.listFiles(fileFilter);
-		Collections.sort(dirents, comp);
+		if(comp!=null)
+			Collections.sort(dirents, comp);
 		for(final FileEntry fe : dirents)
-			style.printFile(fe, hsh.getStdOut(), accessors);
+			style.printFile(fe, hsh.getStdOut());
 		style.doOutput(hsh.getStdOut(), hsh.getCols());
 	}
 
 	/** There are three output styles */
 	private static interface OutputStyle {
+
+		/** Creates a new instance of this OutputStyle, the same constructor is called like was called to 
+		 * create this object.
+		 * @return a new OutputStyle-object of the same class as this object and same configuration (constructor call)
+		 */
+		public OutputStyle createInstance();
+
 		/** Prints the output or puts it into a buffer
 		 * @param f the file to print
 		 * @param pw target PrintStream
-		 * @param attAccessors fields to print
-		 * @param sort indexes into attAccessors of sorting
 		 */
-		public void printFile(FileEntry f, PrintStream pw, List<AttAccessor<?>> attAccessors);
+		public void printFile(FileEntry f, PrintStream pw);
 
 		/** The COLS_*-Styles require to process a list of filenames. The names
 		 * are collected while the calls to printFile. And finally printed to
@@ -173,93 +186,94 @@ public class Ls implements HshCmd {
 		 */
 		public void doOutput(PrintStream pw, int screenWidth) throws Exception;
 	}
-
-	private static String getOutputString(final FileEntry fe, final List<AttAccessor<?>> attAccessors) {
-		final StringBuilder sb=new StringBuilder();
-		final boolean first=true;
-		for(final AttAccessor<?> atac : attAccessors) {
-			if(!first)
-				sb.append(" ");
-			sb.append(atac.get(fe));
-		}
-		return sb.toString();
-	}
-
+	
 	/** Print one entry after the other, separated by a separator, ie newline */
-	private static OutputStyle FLOAT=new OutputStyle() {
-		private List<AttAccessor<?>> attAccessorList;
+	private static class FloatOutputStyle implements OutputStyle {
 		private final List<FileEntry> fileEntryList=new ArrayList<FileEntry>();
 		private final List<Integer> fieldWidths=new ArrayList<Integer>();
+		private final List<AtAcFormatter> formatterList;
+		
+		public FloatOutputStyle(List<AtAcFormatter> formatterList) {
+			this.formatterList=formatterList;
+		}
 
-		public void printFile(final FileEntry fe, final PrintStream pw, final List<AttAccessor<?>> attAccessors) {
-			while(fieldWidths.size()<attAccessors.size())
+		public OutputStyle createInstance() {
+			return new FloatOutputStyle(formatterList);
+		}
+
+		public void printFile(final FileEntry fe, final PrintStream pw) {
+			while(fieldWidths.size()<formatterList.size())
 				fieldWidths.add(0);
-			for(int i=0; i<attAccessors.size(); i++) {
-				final int fieldLen=(""+attAccessors.get(i).get(fe)).length();
+			for(int i=0; i<formatterList.size(); i++) {
+				final int fieldLen=formatterList.get(i).get(fe, 0).length();
 				if(fieldWidths.get(i)<fieldLen)
 					fieldWidths.set(i, fieldLen);
 			}
-			attAccessorList=attAccessors;
 			fileEntryList.add(fe);
 		}
 
 		public void doOutput(final PrintStream pw, final int screenWidth) {
 			for(final FileEntry fe : fileEntryList) {
-				for(int i=0; i<attAccessorList.size(); i++) {
+				for(int i=0; i<formatterList.size(); i++) {
 					if(i>0)
 						pw.print(' ');	// separator
-					printWidth(pw, fieldWidths.get(i), ""+attAccessorList.get(i).get(fe));
+					pw.print(formatterList.get(i).get(fe, fieldWidths.get(i)));
 				}
 				pw.println();
 			}
-			attAccessorList=null;
-			fileEntryList.clear();
-			fieldWidths.clear();
 		}
 	};
 
-	/** Print in columns sorted vertically. Default.*/
-	private static OutputStyle COLS_VERTICAL=new OutputStyle() {
-		final List<String> names=new ArrayList<String>();
+	/** Print in columns sorted vertically. Default. Limited to one formatter, see constructor. */
+	private static class VerticalOutputStyle implements OutputStyle {
+		final List<FileEntry> files=new ArrayList<FileEntry>();
 
-		/** separator between file names */
+		/** separator between file names, two blanks */
 		final static String SEPARATOR="  ";
 		/** length of separator between file names */
 		final int SEPARATOR_LEN=SEPARATOR.length();
 
-		public void printFile(final FileEntry fe, final PrintStream pw, final List<AttAccessor<?>> attAccessors) {
-			// ignore attAccessors
-			final String s=fe.getFile().getName();
-			names.add(s);
+		private AtAcFormatter formatter;
+		
+		public VerticalOutputStyle(AtAcFormatter nameFormatter) {
+			this.formatter=nameFormatter;
+		}
+		
+		public OutputStyle createInstance() {
+			return new VerticalOutputStyle(formatter);
+		}
+
+		public void printFile(final FileEntry fe, final PrintStream pw) {
+			files.add(fe);
 		}
 
 		public void doOutput(final PrintStream pw, final int screenWidth) throws Exception {
-			if(names.size()==0)
+			if(files.size()==0)
 				return;
 
 			try {
 				// find the number of cols by brute force.
 				// start at a trivial maximum.
-				int cols=Math.min(screenWidth/(SEPARATOR_LEN+1), names.size());
+				int cols=Math.min(screenWidth/(SEPARATOR_LEN+1), files.size());
 
 				ColsFormat colsFormat=null;
 				for(; cols>0; cols--) {
 					if(DEBUG)
 						System.err.println("check cols: "+cols);
 					// compute the number of rows according to cols
-					int numColsLastRow=names.size()%cols;
+					int numColsLastRow=files.size()%cols;
 					if(numColsLastRow==0)
 						numColsLastRow=cols;
-					final int rows=(names.size()/cols)+(numColsLastRow==cols?0:1);
+					final int rows=(files.size()/cols)+(numColsLastRow==cols?0:1);
 
 					boolean fitsFlag=true;
 					colsFormat=new ColsFormat(cols, SEPARATOR);
 					for(int row=0; row<rows; row++) {
-						for(int col=0; col<cols; col++) {
+						for(int col=0; col<cols-1; col++) { 
 							final int dataidx=computeDataIdx(rows, row, col, numColsLastRow);
-							if(dataidx<names.size()) { // check dataidx caused by last row
-								colsFormat.updateColWidth(col, names.get(dataidx).length());
-								if(colsFormat.getRowWidth()>screenWidth) {
+							if(dataidx<files.size()) { // check dataidx caused by last row
+								colsFormat.updateColWidth(col, formatter.get(files.get(dataidx), 0).length());
+								if(colsFormat.getRowWidth()>screenWidth-2) { // left blank 2 spaces on right side
 									fitsFlag=false;
 									break;
 								}
@@ -274,19 +288,24 @@ public class Ls implements HshCmd {
 				}
 				// cols is now the number of cols to use for output
 
-				int numColsLastRow=names.size()%cols;
+				int numColsLastRow=files.size()%cols;
 				if(numColsLastRow==0)
 					numColsLastRow=cols;
-				final int rows=(names.size()/cols)+(numColsLastRow==cols?0:1);
+				final int rows=(files.size()/cols)+(numColsLastRow==cols?0:1);
 
 				// finally do the output
 				for(int row=0; row<rows; row++) {
 					for(int col=0; col<cols; col++) {
 						final int dataidx=computeDataIdx(rows, row, col, numColsLastRow);
-						if(dataidx<names.size()) {
+						if(dataidx<files.size()) {
 							if(col>0)
 								pw.print(SEPARATOR);
-							printWidth(pw, colsFormat.getColWidth(col), names.get(dataidx));
+							int minColWidth=colsFormat.getColWidth(col);
+							// on last column do not fill up with blanks if LEFT or NONE
+							if(col==cols-1 && formatter.getAdjustment()!=Adjustment.RIGHT)
+								minColWidth=0;
+							pw.print(formatter.get(files.get(dataidx), col<cols-1?colsFormat.getColWidth(col):0));
+							//printWidth(pw, colsFormat.getColWidth(col), names.get(dataidx));
 						}
 					}
 					pw.println();
@@ -294,7 +313,7 @@ public class Ls implements HshCmd {
 			}catch(final Exception e) {
 				throw e;
 			}finally {
-				names.clear();
+				files.clear();
 			}
 		}
 
@@ -314,7 +333,7 @@ public class Ls implements HshCmd {
 			final int ret=row+ fullCols*rows + (col>fullCols? (col-fullCols)*(rows-1) : 0);
 			//final int ret=(rows-1)*col + Math.min(numColsLastRow, col) + row;
 			if(DEBUG)
-				System.err.println("rows:"+rows+" row:"+row+" col:"+col+" numOnMore:"+numColsLastRow+" datalen:"+names.size()+" ret="+ret);
+				System.err.println("rows:"+rows+" row:"+row+" col:"+col+" numOnMore:"+numColsLastRow+" datalen:"+files.size()+" ret="+ret);
 			return ret;
 		}
 
@@ -355,9 +374,12 @@ public class Ls implements HshCmd {
 	};
 
 	/** Print in columns sorted horizontally. */
-	private static OutputStyle COLS_HORIZONTAL=new OutputStyle() {
+	private static class HorizontalOutputStyle implements OutputStyle {
 
-		public void printFile(final FileEntry fe, final PrintStream pw, final List<AttAccessor<?>> attAccessors) {
+		public OutputStyle createInstance() {
+			return new HorizontalOutputStyle();
+		}
+		public void printFile(final FileEntry fe, final PrintStream pw) {
 			throw new RuntimeException("COLS_HORIZONTAL not implemented");
 		}
 
@@ -365,14 +387,4 @@ public class Ls implements HshCmd {
 			throw new RuntimeException("COLS_HORIZONTAL not implemented");
 		}
 	};
-
-
-	private static void printWidth(final PrintStream pw, final int width, final String str) {
-		final StringBuilder sb=new StringBuilder(str);
-		while(sb.length()<width)
-			sb.append(' ');
-		pw.print(sb.toString());
-	}
-
-
 }

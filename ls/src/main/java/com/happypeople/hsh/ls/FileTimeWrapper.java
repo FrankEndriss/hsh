@@ -11,6 +11,8 @@ public class FileTimeWrapper implements Comparable<FileTimeWrapper> {
 	private final FileTime delegate;
 
 	public FileTimeWrapper(final FileTime fileTime) {
+		if(fileTime==null)
+			throw new IllegalArgumentException("must not be null");
 		this.delegate=fileTime;
 	}
 
@@ -18,8 +20,8 @@ public class FileTimeWrapper implements Comparable<FileTimeWrapper> {
 		return delegate;
 	}
 
-	public final static DateFormat DEFAULT_DATE_FORMAT=new SimpleDateFormat("dd. LLL HH:mm");
-	public final static DateFormat SIX_MONTH_DATE_FORMAT=new SimpleDateFormat("dd. LLL yyyy");
+	public final static DateFormat DEFAULT_DATE_FORMAT=new SimpleDateFormat("dd. MMM HH:mm");
+	public final static DateFormat SIX_MONTH_DATE_FORMAT=new SimpleDateFormat("dd. MMM yyyy");
 
 	@Override
 	public String toString() {
