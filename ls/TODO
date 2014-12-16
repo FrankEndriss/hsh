@@ -1,0 +1,2 @@
+***
+Sortierung nach name sollte equalsIgnoreCase sein, ist alphabetisch

@@ -117,13 +117,13 @@ public class Ls implements HshCmd {
 		if(sortList.size()>0)
 			comp=new Comparator<FileEntry>() {
 				public int compare(final FileEntry o1, final FileEntry o2) {
-						for(final Comparator<? super FileEntry> c : sortList) {
-							final int res=c.compare(o1, o2);
-							if(res!=0)
-								return res;
-						}
-				return 0;
+					for(final Comparator<? super FileEntry> c : sortList) {
+						final int res=c.compare(o1, o2);
+						if(res!=0)
+							return res;
 					}
+					return 0;
+				}
 			};
 		Collections.sort(fileEntryList, comp);
 
@@ -164,7 +164,7 @@ public class Ls implements HshCmd {
 	}
 
 	/** There are three output styles */
-	private static interface OutputStyle {
+	interface OutputStyle {
 
 		/** Creates a new instance of this OutputStyle, the same constructor is called like was called to 
 		 * create this object.
@@ -202,30 +202,36 @@ public class Ls implements HshCmd {
 		}
 
 		public void printFile(final FileEntry fe, final PrintStream pw) {
-			while(fieldWidths.size()<formatterList.size())
-				fieldWidths.add(0);
-			for(int i=0; i<formatterList.size(); i++) {
-				final int fieldLen=formatterList.get(i).get(fe, 0).length();
-				if(fieldWidths.get(i)<fieldLen)
-					fieldWidths.set(i, fieldLen);
-			}
-			fileEntryList.add(fe);
+			if(formatterList.size()>1) {
+				while(fieldWidths.size()<formatterList.size())
+					fieldWidths.add(0);
+				for(int i=0; i<formatterList.size(); i++) {
+					final int fieldLen=formatterList.get(i).get(fe, 0).length();
+					if(fieldWidths.get(i)<fieldLen)
+						fieldWidths.set(i, fieldLen);
+				}
+				fileEntryList.add(fe);
+			} else
+				pw.println(formatterList.get(0).get(fe, 0));
 		}
 
 		public void doOutput(final PrintStream pw, final int screenWidth) {
-			for(final FileEntry fe : fileEntryList) {
-				for(int i=0; i<formatterList.size(); i++) {
-					if(i>0)
-						pw.print(' ');	// separator
-					pw.print(formatterList.get(i).get(fe, fieldWidths.get(i)));
+			if(formatterList.size()>1) {
+				for(final FileEntry fe : fileEntryList) {
+					for(int i=0; i<formatterList.size(); i++) {
+						if(i>0)
+							pw.print(' ');	// separator
+						pw.print(formatterList.get(i).get(fe, fieldWidths.get(i)));
+					}
+					pw.println();
 				}
+			} else
 				pw.println();
-			}
 		}
 	};
 
 	/** Print in columns sorted vertically. Default. Limited to one formatter, see constructor. */
-	private static class VerticalOutputStyle implements OutputStyle {
+	public final static class VerticalOutputStyle implements OutputStyle {
 		final List<FileEntry> files=new ArrayList<FileEntry>();
 
 		/** separator between file names, two blanks */
@@ -305,7 +311,6 @@ public class Ls implements HshCmd {
 							if(col==cols-1 && formatter.getAdjustment()!=Adjustment.RIGHT)
 								minColWidth=0;
 							pw.print(formatter.get(files.get(dataidx), col<cols-1?colsFormat.getColWidth(col):0));
-							//printWidth(pw, colsFormat.getColWidth(col), names.get(dataidx));
 						}
 					}
 					pw.println();

@@ -2,12 +2,14 @@ package com.happypeople.hsh.find;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -49,36 +51,31 @@ public class Main {
 			*/
 
 		//System.out.println("call walkFileTree, file="+file+" path: "+file.toPath());
-		Files.walkFileTree(fpath, new FileVisitor<Path>() {
+		Files.walkFileTree(fpath, EnumSet.noneOf(FileVisitOption.class),  Integer.MAX_VALUE, new FileVisitor<Path>() {
 
-			public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+			public FileVisitResult preVisitDirectory(final Path path, final BasicFileAttributes attrs) throws IOException {
+				if(checkExpressions(path.toFile(), exprList))
+					System.out.println(""+path);
 				return FileVisitResult.CONTINUE;
 			}
 
 			public FileVisitResult visitFile(final Path path, final BasicFileAttributes attrs) throws IOException {
-				final File file=path.toFile();
-				if(checkExpressions(file, exprList))
-					System.out.println(fpath.resolve(path));
+				if(checkExpressions(path.toFile(), exprList))
+					System.out.println(""+path);
 				return FileVisitResult.CONTINUE;
 			}
 
-			public FileVisitResult visitFileFailed(final Path file, final IOException exc)
+			public FileVisitResult visitFileFailed(final Path path, final IOException exc)
 					throws IOException {
 				return FileVisitResult.CONTINUE;
 			}
 
-			public FileVisitResult postVisitDirectory(final Path dir, final IOException exc)
+			public FileVisitResult postVisitDirectory(final Path path, final IOException exc)
 					throws IOException {
 				return FileVisitResult.CONTINUE;
 			}
 
 		});
-
-
-		if(file.isDirectory()) {
-			for(final File f : file.listFiles())
-				runRecursive(f, exprList);
-		}
 	}
 
 	private static boolean checkExpressions(final File file, final List<Expr> exprList) {
