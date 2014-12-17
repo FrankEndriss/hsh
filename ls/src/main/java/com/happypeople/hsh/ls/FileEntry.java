@@ -1,8 +1,10 @@
 package com.happypeople.hsh.ls;
 
-import java.io.File;
 import java.io.FileFilter;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileOwnerAttributeView;
@@ -10,8 +12,11 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /** Encapsulates a File and its Attributes
  */
@@ -24,24 +29,24 @@ class FileEntry implements Comparable<FileEntry> {
 		clsList.add(BasicFileAttributes.class);
 	};
 
-	private final File file;
+	private final Path path;
 	private BasicFileAttributes attrs;
 
-	FileEntry(final File file) {
-		if(file==null)
+	FileEntry(final Path path) {
+		if(path==null)
 			throw new IllegalArgumentException("must not be null");
-		this.file=file;
+		this.path=path;
 	}
 
-	public File getFile() {
-		return file;
+	public Path getPath() {
+		return path;
 	}
 
 	public BasicFileAttributes getAttrs() {
 		if(attrs==null) {
 			for(final Class<? extends BasicFileAttributes> cls : clsList) {
 				try {
-					attrs=Files.readAttributes(file.toPath(), cls);
+					attrs=Files.readAttributes(path, cls);
 					break;
 				}catch(final Exception e) {
 					// ignore
@@ -53,11 +58,35 @@ class FileEntry implements Comparable<FileEntry> {
 		return attrs;
 	}
 
-	public List<FileEntry> listFiles(final FileFilter ff) {
-		final List<FileEntry> list=new ArrayList<FileEntry>();
-		for(final File file : getFile().listFiles(ff))
-			list.add(new FileEntry(file));
-		return list;
+	public void listFiles(final FileFilter ff, BlockingQueue<FileEntry> resultQ) throws InterruptedException {
+		final BlockingQueue<Path> lQ=new LinkedBlockingQueue<Path>();
+		final Path finiMarker=Paths.get("blah");
+
+		// async execution is needed to wrap the Path-objects into FileEntry-objects.
+		// This could be better made with a wrapper-Class for BlockingQueue.
+		// Or a queue-implementation with different Types for put() and take(), and
+		// an job, which is ran on every transferred object. (see Streams, filters)
+		// See ExecutorQueue / WrappingQueue
+		new Thread() {
+			public void run() {
+				try {
+					DirLister.list(path, EnumSet.noneOf(FileVisitOption.class), 1, lQ);
+				} catch(Exception e) {
+					e.printStackTrace();
+				} finally {
+					try {
+						lQ.put(finiMarker);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}.start();
+		
+		Path lPath=null;
+		while((lPath=lQ.take())!=finiMarker)
+			if(ff==null || ff.accept(lPath.toFile()))
+				resultQ.put(new FileEntry(lPath));
 	}
 
 
@@ -80,7 +109,7 @@ class FileEntry implements Comparable<FileEntry> {
 
 	public final static AttAccessor<String> NAME_ATAC=new AttAccessor<String>() {
 		public String get(final FileEntry file) {
-			return file.getFile().getName();
+			return file.getPath().toFile().getName();
 		}
 	};
 	public final static Comparator<FileEntry> NAME_SORT=new AttComparator<String>(NAME_ATAC);
@@ -115,7 +144,7 @@ class FileEntry implements Comparable<FileEntry> {
 		public String get(final FileEntry file) {
 			try {
 				final FileOwnerAttributeView ownerAttributeView =
-	        		Files.getFileAttributeView(file.getFile().toPath(), FileOwnerAttributeView.class);
+	        		Files.getFileAttributeView(file.getPath(), FileOwnerAttributeView.class);
 				return ownerAttributeView.getOwner().getName();
 			}catch(final Exception e) {
 				return UNKNOWN;
@@ -126,7 +155,7 @@ class FileEntry implements Comparable<FileEntry> {
 
 	public final static AttAccessor<String> PERM_ATAC=new AttAccessor<String>() {
 		public String get(final FileEntry file) {
-			final StringBuilder perms=new StringBuilder(file.getFile().isDirectory()?"d":"-");
+			final StringBuilder perms=new StringBuilder(Files.isDirectory(file.getPath())?"d":"-");
 			final BasicFileAttributes attrs=file.getAttrs();
 			if(attrs instanceof PosixFileAttributes) {
 				final PosixFileAttributes pattrs=(PosixFileAttributes)attrs;
@@ -142,9 +171,9 @@ class FileEntry implements Comparable<FileEntry> {
 					.append(permSet.contains(PosixFilePermission.OTHERS_EXECUTE)?"x":"-");
 				return perms.toString();
 			} else {
-				perms.append(file.getFile().canRead()?"r":"-")
-					.append(file.getFile().canWrite()?"w":"-")
-					.append(file.getFile().canExecute()?"x":"-");
+				perms.append(Files.isReadable(file.getPath())?"r":"-")
+					.append(Files.isWritable(file.getPath())?"w":"-")
+					.append(Files.isExecutable(file.getPath())?"x":"-");
 			}
 			return perms.toString();
 		}
@@ -152,11 +181,11 @@ class FileEntry implements Comparable<FileEntry> {
 	public final static Comparator<FileEntry> PERM_SORT=new AttComparator<String>(PERM_ATAC);
 
 	public int compareTo(final FileEntry fileEntry) {
-		return getFile().compareTo(fileEntry.getFile());
+		return getPath().compareTo(fileEntry.getPath());
 	}
 
 	@Override
 	public String toString() {
-		return file.toString();
+		return getPath().toString();
 	}
 }
