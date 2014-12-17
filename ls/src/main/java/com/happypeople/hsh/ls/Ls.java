@@ -1,10 +1,12 @@
 package com.happypeople.hsh.ls;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,23 +80,29 @@ public class Ls implements HshCmd {
 			outputStyle=new VerticalOutputStyle(new AtAcFormatter(FileEntry.NAME_ATAC, Adjustment.LEFT));
 
 		// what to list in dir arguments
-		FileFilter fileFilter=null;
+		DirectoryStream.Filter<Path> fileFilter=null;
 		if(cmd.hasOption("a"))
-			fileFilter=new FileFilter() {
-				public boolean accept(final File pathname) {
+			fileFilter=new DirectoryStream.Filter<Path>() {
+				public boolean accept(final Path entry) throws IOException {
 					return true;
 				}
 			};
 		else if(cmd.hasOption("A"))
-			fileFilter=new FileFilter() {
-				public boolean accept(final File pathname) {
-					return ! (".".equals(pathname.getName()) || "..".equals(pathname.getName()));
+			fileFilter=new DirectoryStream.Filter<Path>() {
+				public boolean accept(final Path path) {
+					final String lName=path.getFileName().toString();
+					return ! (".".equals(lName) || "..".equals(lName));
 				}
 			};
 		else
-			fileFilter=new FileFilter() {
-				public boolean accept(final File pathname) {
-					return !pathname.getName().startsWith(".");
+			fileFilter=new DirectoryStream.Filter<Path>() {
+				public boolean accept(final Path path) {
+					try {
+						return !Files.isHidden(path);
+					}catch(final Exception e) {
+						e.printStackTrace(hsh.getStdErr());
+					}
+					return false;
 				}
 			};
 
@@ -110,7 +118,7 @@ public class Ls implements HshCmd {
 
 		final List<FileEntry> fileEntryList=new ArrayList<FileEntry>();
 		for(final String arg : fargs)
-			fileEntryList.add(new FileEntry(new File(arg)));
+			fileEntryList.add(new FileEntry(Paths.get(arg)));
 
 		Comparator<FileEntry> comp=null;
 		if(sortList.size()>0) {
@@ -130,56 +138,14 @@ public class Ls implements HshCmd {
 		final boolean recursive=cmd.hasOption("R");
 		final boolean withNamePrefix=fargs.size()>1 || recursive;
 
-		/*
-		final int recurseDepth=
-			recursive ? Integer.MAX_VALUE:
-			cmd.hasOption("d") ? 0:
-			1;
-		*/
-
-		//final Stack<OutputStyle> styleStack=new Stack<OutputStyle>();
-		//styleStack.push(outputStyle);
-
 		boolean first=true;
 		for(final FileEntry fileEntry : fileEntryList) {
 			if(!first)
 				hsh.getStdOut().println();
 			first=false;
 
-			/*
-			Files.walkFileTree(fileEntry.getFile().toPath(), EnumSet.noneOf(FileVisitOption.class), recurseDepth, new FileVisitor<Path>() {
-
-				public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-					if(withNamePrefix)
-						hsh.getStdOut().println(""+dir+":");
-					styleStack.peek().printFile(new FileEntry(dir.toFile()), hsh.getStdOut());
-					styleStack.push(styleStack.peek().createInstance());
-					return FileVisitResult.CONTINUE;
-				}
-
-				public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-					styleStack.peek().printFile(new FileEntry(file.toFile()), hsh.getStdOut());
-					return FileVisitResult.CONTINUE;
-				}
-
-				public FileVisitResult visitFileFailed(final Path file, final IOException exc) throws IOException {
-					// TODO Auto-generated method stub
-					return FileVisitResult.CONTINUE;
-				}
-
-				public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
-					try {
-						styleStack.pop().doOutput(hsh.getStdOut(), hsh.getCols());
-					} catch (final Exception e) {
-						e.printStackTrace();
-					}
-					return FileVisitResult.CONTINUE;
-				}
-			});
-			*/
-
-			if(fileEntry.getFile().exists()) {
-				if(fileEntry.getFile().isDirectory()) {
+			if(Files.exists(fileEntry.getPath())) {
+				if(Files.isDirectory(fileEntry.getPath())) {
 					listDir(fileEntry, hsh, withNamePrefix, outputStyle.createInstance(), fileFilter, formatterList, comp);
 				} else {
 					outputStyle.printFile(fileEntry, hsh.getStdOut());
@@ -193,16 +159,22 @@ public class Ls implements HshCmd {
 	}
 
 	private void listDir(final FileEntry dir, final HshContext hsh, final boolean withNamePrefix, final OutputStyle style,
-			final FileFilter fileFilter, final List<AtAcFormatter> formatters, final Comparator<FileEntry> comp)
+			final DirectoryStream.Filter<Path> fileFilter, final List<AtAcFormatter> formatters, final Comparator<FileEntry> comp)
 	throws Exception {
 		if(withNamePrefix)
 			hsh.getStdOut().println(FileEntry.NAME_ATAC.get(dir)+":");
-		// TODO replace by streaming interface File.walkFileTree(...depth=1)
-		final List<FileEntry> dirents=dir.listFiles(fileFilter);
-		if(comp!=null)
+
+		final List<FileEntry> dirents=new ArrayList<FileEntry>();
+		if(comp==null) {
+			for(final FileEntry fe: dir.listFiles(fileFilter))
+				style.printFile(fe, hsh.getStdOut());
+		} else {
+			for(final FileEntry fe: dir.listFiles(fileFilter))
+				dirents.add(fe);
 			Collections.sort(dirents, comp);
-		for(final FileEntry fe : dirents)
-			style.printFile(fe, hsh.getStdOut());
+			for(final FileEntry fe: dirents)
+				style.printFile(fe, hsh.getStdOut());
+		}
 		style.doOutput(hsh.getStdOut(), hsh.getCols());
 	}
 

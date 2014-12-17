@@ -1,10 +1,9 @@
 package com.happypeople.hsh.ls;
 
-import java.io.FileFilter;
-import java.nio.file.FileVisitOption;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileOwnerAttributeView;
@@ -12,11 +11,9 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /** Encapsulates a File and its Attributes
  */
@@ -58,35 +55,54 @@ class FileEntry implements Comparable<FileEntry> {
 		return attrs;
 	}
 
-	public void listFiles(final FileFilter ff, BlockingQueue<FileEntry> resultQ) throws InterruptedException {
-		final BlockingQueue<Path> lQ=new LinkedBlockingQueue<Path>();
-		final Path finiMarker=Paths.get("blah");
+	/** Class implementing DirectoryStream<FileEntry> as a wrapper arround an object returned by
+	 * Files.newDirectoryStream(...)
+	 */
+	private static class FileEntryStream extends IterableFilter<Path, FileEntry> implements DirectoryStream<FileEntry> {
+		public FileEntryStream(final Iterable<Path> delegate, final OneToOneConverter<Path, FileEntry> filter,
+				final Iterator<Path> preIterator) {
+			super(delegate, filter, preIterator);
+		}
+	}
 
-		// async execution is needed to wrap the Path-objects into FileEntry-objects.
-		// This could be better made with a wrapper-Class for BlockingQueue.
-		// Or a queue-implementation with different Types for put() and take(), and
-		// an job, which is ran on every transferred object. (see Streams, filters)
-		// See ExecutorQueue / WrappingQueue
-		new Thread() {
-			public void run() {
-				try {
-					DirLister.list(path, EnumSet.noneOf(FileVisitOption.class), 1, lQ);
-				} catch(Exception e) {
-					e.printStackTrace();
-				} finally {
-					try {
-						lQ.put(finiMarker);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
+	private static class SpecialPathEntries implements Iterator<Path> {
+		private final Path dir;
+		SpecialPathEntries(final Path dir) {
+			this.dir=Files.isDirectory(dir)?dir:null;
+		}
+
+		private int state=0;
+
+		@Override
+		public boolean hasNext() {
+			return dir!=null && state<2;
+		}
+
+		@Override
+		public Path next() {
+			switch(state++) {
+			case 0: return dir.resolve(".");
+			case 1: return dir.resolve("..");
+			default:
+				throw new IllegalStateException("called more than two times");
 			}
-		}.start();
-		
-		Path lPath=null;
-		while((lPath=lQ.take())!=finiMarker)
-			if(ff==null || ff.accept(lPath.toFile()))
-				resultQ.put(new FileEntry(lPath));
+		}
+	}
+
+	/** See Files.newDirectoryStream(Path, DirectoryStream.Filter<Path>)
+	 * @param ff the Filter<Path> to use
+	 * @return a new DirectoryStream streaming FileEntries
+	 * @throws IOException
+	 */
+	public DirectoryStream<FileEntry> listFiles(final DirectoryStream.Filter<Path> ff) throws IOException {
+		try(DirectoryStream<Path> ds= ff==null?Files.newDirectoryStream(getPath()):Files.newDirectoryStream(getPath(), ff)) {
+			return new FileEntryStream(ds, new OneToOneConverter<Path, FileEntry>() {
+				@Override
+				public FileEntry convert(final Path input) {
+					return new FileEntry(input);
+				}
+			}, new SpecialPathEntries(getPath()));
+		}
 	}
 
 
@@ -102,12 +118,14 @@ class FileEntry implements Comparable<FileEntry> {
 			this.atac=atac;
 		}
 
+		@Override
 		public int compare(final FileEntry o1, final FileEntry o2) {
 			return atac.get(o1).compareTo(atac.get(o2));
 		}
 	}
 
 	public final static AttAccessor<String> NAME_ATAC=new AttAccessor<String>() {
+		@Override
 		public String get(final FileEntry file) {
 			return file.getPath().toFile().getName();
 		}
@@ -116,6 +134,7 @@ class FileEntry implements Comparable<FileEntry> {
 
 
 	public final static AttAccessor<FileTimeWrapper> MODIFIED_TIME_ATAC=new AttAccessor<FileTimeWrapper>() {
+		@Override
 		public FileTimeWrapper get(final FileEntry file) {
 			return new FileTimeWrapper(file.getAttrs().lastModifiedTime());
 		}
@@ -124,6 +143,7 @@ class FileEntry implements Comparable<FileEntry> {
 	public final static Comparator<FileEntry> MODIFIED_TIME_SORT=new AttComparator<FileTimeWrapper>(MODIFIED_TIME_ATAC);
 
 	public final static AttAccessor<Long> SIZE_ATAC=new AttAccessor<Long>() {
+		@Override
 		public Long get(final FileEntry file) {
 			return file.getAttrs().size();
 		}
@@ -131,6 +151,7 @@ class FileEntry implements Comparable<FileEntry> {
 	public final static Comparator<FileEntry> SIZE_SORT=new AttComparator<Long>(SIZE_ATAC);
 
 	public final static AttAccessor<String> GROUP_ATAC=new AttAccessor<String>() {
+		@Override
 		public String get(final FileEntry file) {
 			final BasicFileAttributes attrs=file.getAttrs();
 			if(attrs instanceof PosixFileAttributes)
@@ -141,6 +162,7 @@ class FileEntry implements Comparable<FileEntry> {
 	public final static Comparator<FileEntry> GROUP_SORT=new AttComparator<String>(GROUP_ATAC);
 
 	public final static AttAccessor<String> OWNER_ATAC=new AttAccessor<String>() {
+		@Override
 		public String get(final FileEntry file) {
 			try {
 				final FileOwnerAttributeView ownerAttributeView =
@@ -154,6 +176,7 @@ class FileEntry implements Comparable<FileEntry> {
 	public final static Comparator<FileEntry> OWNER_SORT=new AttComparator<String>(OWNER_ATAC);
 
 	public final static AttAccessor<String> PERM_ATAC=new AttAccessor<String>() {
+		@Override
 		public String get(final FileEntry file) {
 			final StringBuilder perms=new StringBuilder(Files.isDirectory(file.getPath())?"d":"-");
 			final BasicFileAttributes attrs=file.getAttrs();
@@ -180,6 +203,7 @@ class FileEntry implements Comparable<FileEntry> {
 	};
 	public final static Comparator<FileEntry> PERM_SORT=new AttComparator<String>(PERM_ATAC);
 
+	@Override
 	public int compareTo(final FileEntry fileEntry) {
 		return getPath().compareTo(fileEntry.getPath());
 	}
