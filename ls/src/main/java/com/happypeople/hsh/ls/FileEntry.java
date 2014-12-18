@@ -58,34 +58,42 @@ class FileEntry implements Comparable<FileEntry> {
 	/** Class implementing DirectoryStream<FileEntry> as a wrapper arround an object returned by
 	 * Files.newDirectoryStream(...)
 	 */
-	private static class FileEntryStream extends IterableFilter<Path, FileEntry> implements DirectoryStream<FileEntry> {
-		public FileEntryStream(final Iterable<Path> delegate, final OneToOneConverter<Path, FileEntry> filter,
-				final Iterator<Path> preIterator) {
-			super(delegate, filter, preIterator);
+	private class FileEntryStream extends ConvertedIterable<Path, FileEntry> implements DirectoryStream<FileEntry> {
+		public FileEntryStream(final Iterable<Path> delegate, final OneToOneConverter<Path, FileEntry> converter) {
+			super(new ConcatIterable<Path>(new SpecialPathEntries(getPath()), delegate), converter);
 		}
 	}
 
-	private static class SpecialPathEntries implements Iterator<Path> {
+	private static class SpecialPathEntries implements Iterable<Path> {
 		private final Path dir;
 		SpecialPathEntries(final Path dir) {
 			this.dir=Files.isDirectory(dir)?dir:null;
 		}
 
-		private int state=0;
 
-		@Override
-		public boolean hasNext() {
-			return dir!=null && state<2;
-		}
+		public Iterator<Path> iterator() {
+			return new Iterator<Path>() {
+				private int state=0;
 
-		@Override
-		public Path next() {
-			switch(state++) {
-			case 0: return dir.resolve(".");
-			case 1: return dir.resolve("..");
-			default:
-				throw new IllegalStateException("called more than two times");
-			}
+				public boolean hasNext() {
+					return dir!=null && state<2;
+				}
+
+				public Path next() {
+					state++;
+					switch(state) {
+					case 1: return dir.resolve(".");
+					case 2: return dir.resolve("..");
+					default:
+						throw new IllegalStateException("called more than two times");
+					}
+				}
+
+				public void remove() {
+					// TODO throw the right exception
+					throw new RuntimeException("cannot remove something");
+				}
+			};
 		}
 	}
 
@@ -95,14 +103,13 @@ class FileEntry implements Comparable<FileEntry> {
 	 * @throws IOException
 	 */
 	public DirectoryStream<FileEntry> listFiles(final DirectoryStream.Filter<Path> ff) throws IOException {
-		try(DirectoryStream<Path> ds= ff==null?Files.newDirectoryStream(getPath()):Files.newDirectoryStream(getPath(), ff)) {
-			return new FileEntryStream(ds, new OneToOneConverter<Path, FileEntry>() {
-				@Override
-				public FileEntry convert(final Path input) {
-					return new FileEntry(input);
-				}
-			}, new SpecialPathEntries(getPath()));
-		}
+		DirectoryStream<Path> ds= ff==null?Files.newDirectoryStream(getPath()):Files.newDirectoryStream(getPath(), ff);
+		return new FileEntryStream(ds, new OneToOneConverter<Path, FileEntry>() {
+			@Override
+			public FileEntry convert(final Path input) {
+				return new FileEntry(input);
+			}
+		});
 	}
 
 
