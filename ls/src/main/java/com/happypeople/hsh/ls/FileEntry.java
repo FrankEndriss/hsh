@@ -13,7 +13,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.Stack;
 
 /** Encapsulates a File and its Attributes
  */
@@ -59,36 +61,56 @@ class FileEntry implements Comparable<FileEntry> {
 	 * Files.newDirectoryStream(...)
 	 */
 	private class FileEntryStream extends ConvertedIterable<Path, FileEntry> implements DirectoryStream<FileEntry> {
-		public FileEntryStream(final Iterable<Path> delegate, final OneToOneConverter<Path, FileEntry> converter) {
-			super(new ConcatIterable<Path>(new SpecialPathEntries(getPath()), delegate), converter);
+		public FileEntryStream(final Iterable<Path> delegate,
+				final DirectoryStream.Filter<Path> ff,
+				final OneToOneConverter<Path, FileEntry> converter)
+		{
+			super(new ConcatIterable<Path>(new SpecialPathEntries(getPath(), ff), delegate), converter);
 		}
 	}
 
 	private static class SpecialPathEntries implements Iterable<Path> {
 		private final Path dir;
-		SpecialPathEntries(final Path dir) {
+		private final DirectoryStream.Filter<Path> ff;
+		/** Returns an Iterable<Path> which produces the two paths "." and ".." until these are
+		 * filtered by the Filter ff.
+		 * @param dir the produces Paths resolve agains dir
+		 * @param ff a FileFilter to reduce the produced Paths
+		 */
+		SpecialPathEntries(final Path dir, final DirectoryStream.Filter<Path> ff) {
 			this.dir=Files.isDirectory(dir)?dir:null;
+			this.ff=ff;
 		}
 
 
+		@Override
 		public Iterator<Path> iterator() {
+			final Stack<Path> spezials=new Stack<Path>();
+			try {
+				final Path path1=dir.resolve(".");
+				if(ff.accept(path1))
+					spezials.push(path1);
+				final Path path2=dir.resolve("..");
+				if(ff.accept(path2))
+					spezials.push(path1);
+			} catch (final IOException e) {
+				// ignore
+			}
+
 			return new Iterator<Path>() {
-				private int state=0;
-
+				@Override
 				public boolean hasNext() {
-					return dir!=null && state<2;
+					return spezials.size()>0;
 				}
 
+				@Override
 				public Path next() {
-					state++;
-					switch(state) {
-					case 1: return dir.resolve(".");
-					case 2: return dir.resolve("..");
-					default:
-						throw new IllegalStateException("called more than two times");
-					}
+					if(spezials.size()>0)
+						return spezials.pop();
+					throw new NoSuchElementException("called more than two times");
 				}
 
+				@Override
 				public void remove() {
 					// TODO throw the right exception
 					throw new RuntimeException("cannot remove something");
@@ -103,8 +125,10 @@ class FileEntry implements Comparable<FileEntry> {
 	 * @throws IOException
 	 */
 	public DirectoryStream<FileEntry> listFiles(final DirectoryStream.Filter<Path> ff) throws IOException {
-		DirectoryStream<Path> ds= ff==null?Files.newDirectoryStream(getPath()):Files.newDirectoryStream(getPath(), ff);
-		return new FileEntryStream(ds, new OneToOneConverter<Path, FileEntry>() {
+		final DirectoryStream<Path> ds= ff==null?
+				Files.newDirectoryStream(getPath()):
+				Files.newDirectoryStream(getPath(), ff);
+		return new FileEntryStream(ds, ff, new OneToOneConverter<Path, FileEntry>() {
 			@Override
 			public FileEntry convert(final Path input) {
 				return new FileEntry(input);

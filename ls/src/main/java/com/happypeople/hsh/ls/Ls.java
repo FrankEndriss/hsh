@@ -9,9 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -39,6 +39,7 @@ public class Ls implements HshCmd {
 		}
 	}
 
+	@Override
 	public int execute(final HshContext hsh, final ArrayList<String> args) throws Exception {
 		final String lcmd=args.remove(0);
 
@@ -83,12 +84,14 @@ public class Ls implements HshCmd {
 		DirectoryStream.Filter<Path> fileFilter=null;
 		if(cmd.hasOption("a"))
 			fileFilter=new DirectoryStream.Filter<Path>() {
+				@Override
 				public boolean accept(final Path entry) throws IOException {
 					return true;
 				}
 			};
 		else if(cmd.hasOption("A"))
 			fileFilter=new DirectoryStream.Filter<Path>() {
+				@Override
 				public boolean accept(final Path path) {
 					final String lName=path.getFileName().toString();
 					return ! (".".equals(lName) || "..".equals(lName));
@@ -96,33 +99,48 @@ public class Ls implements HshCmd {
 			};
 		else
 			fileFilter=new DirectoryStream.Filter<Path>() {
-				public boolean accept(final Path path) {
-					try {
-						return !Files.isHidden(path);
-					}catch(final Exception e) {
-						e.printStackTrace(hsh.getStdErr());
-					}
-					return false;
+				@Override
+				public boolean accept(final Path path) throws IOException {
+					return !Files.isHidden(path);
 				}
 			};
-
-		// all other args are filenames
-		final List<String> fargs=new ArrayList<String>(Arrays.asList(cmd.getArgs()));
 
 
 		final List<Comparator<? super FileEntry>> sortList=new ArrayList<Comparator<? super FileEntry>>();
 		sortList.add(FileEntry.NAME_SORT);
 
-		if(fargs.size()==0)
-			fargs.add(".");
+		// Sorts by isDirectory() and nameOfFile
+		final Comparator<String> argsComparator=new Comparator<String>() {
+			@Override
+			public int compare(final String o1, final String o2) {
+				final Path p1=Paths.get(o1);
+				final Path p2=Paths.get(o2);
+				if(!Files.isDirectory(p1) && Files.isDirectory(p2))
+					return -1;
+				else if(Files.isDirectory(p1) && !Files.isDirectory(p2))
+					return 1;
+
+				return p1.compareTo(p2);
+			}
+		};
+
+		// all other args are filenames
+		//final List<String> fargs=new ArrayList<String>(Arrays.asList(cmd.getArgs()));
+		final String[] fargs=cmd.getArgs();
+		Arrays.sort(fargs, argsComparator);
 
 		final List<FileEntry> fileEntryList=new ArrayList<FileEntry>();
 		for(final String arg : fargs)
 			fileEntryList.add(new FileEntry(Paths.get(arg)));
 
+		// default argument
+		if(fileEntryList.size()==0)
+			fileEntryList.add(new FileEntry(Paths.get(".")));
+
 		Comparator<FileEntry> comp=null;
 		if(sortList.size()>0) {
 			comp=new Comparator<FileEntry>() {
+				@Override
 				public int compare(final FileEntry o1, final FileEntry o2) {
 					for(final Comparator<? super FileEntry> c : sortList) {
 						final int res=c.compare(o1, o2);
@@ -132,11 +150,10 @@ public class Ls implements HshCmd {
 					return 0;
 				}
 			};
-			Collections.sort(fileEntryList, comp);
 		}
 
 		final boolean recursive=cmd.hasOption("R");
-		final boolean withNamePrefix=fargs.size()>1 || recursive;
+		final boolean withNamePrefix=fileEntryList.size()>1 || recursive;
 
 		boolean first=true;
 		for(final FileEntry fileEntry : fileEntryList) {
@@ -164,16 +181,15 @@ public class Ls implements HshCmd {
 		if(withNamePrefix)
 			hsh.getStdOut().println(FileEntry.NAME_ATAC.get(dir)+":");
 
-		final List<FileEntry> dirents=new ArrayList<FileEntry>();
-		if(comp==null) {
+		if(comp==null) { // no Comparator, direct output
 			for(final FileEntry fe: dir.listFiles(fileFilter))
 				style.printFile(fe, hsh.getStdOut());
-		} else {
+		} else { // store to sorted list, then output
+			final PriorityQueue<FileEntry> dirents=new PriorityQueue<FileEntry>();
 			for(final FileEntry fe: dir.listFiles(fileFilter))
 				dirents.add(fe);
-			Collections.sort(dirents, comp);
-			for(final FileEntry fe: dirents)
-				style.printFile(fe, hsh.getStdOut());
+			while(!dirents.isEmpty())
+				style.printFile(dirents.poll(), hsh.getStdOut());
 		}
 		style.doOutput(hsh.getStdOut(), hsh.getCols());
 	}
@@ -212,10 +228,12 @@ public class Ls implements HshCmd {
 			this.formatterList=formatterList;
 		}
 
+		@Override
 		public OutputStyle createInstance() {
 			return new FloatOutputStyle(formatterList);
 		}
 
+		@Override
 		public void printFile(final FileEntry fe, final PrintStream pw) {
 			if(formatterList.size()>1) {
 				while(fieldWidths.size()<formatterList.size())
@@ -230,6 +248,7 @@ public class Ls implements HshCmd {
 				pw.println(formatterList.get(0).get(fe, 0));
 		}
 
+		@Override
 		public void doOutput(final PrintStream pw, final int screenWidth) {
 			if(formatterList.size()>1) {
 				for(final FileEntry fe : fileEntryList) {
@@ -260,14 +279,17 @@ public class Ls implements HshCmd {
 			this.formatter=nameFormatter;
 		}
 
+		@Override
 		public OutputStyle createInstance() {
 			return new VerticalOutputStyle(formatter);
 		}
 
+		@Override
 		public void printFile(final FileEntry fe, final PrintStream pw) {
 			files.add(fe);
 		}
 
+		@Override
 		public void doOutput(final PrintStream pw, final int screenWidth) throws Exception {
 			if(files.size()==0)
 				return;
@@ -396,13 +418,16 @@ public class Ls implements HshCmd {
 	/** Print in columns sorted horizontally. */
 	private static class HorizontalOutputStyle implements OutputStyle {
 
+		@Override
 		public OutputStyle createInstance() {
 			return new HorizontalOutputStyle();
 		}
+		@Override
 		public void printFile(final FileEntry fe, final PrintStream pw) {
 			throw new RuntimeException("COLS_HORIZONTAL not implemented");
 		}
 
+		@Override
 		public void doOutput(final PrintStream pw, final int screenWidth) {
 			throw new RuntimeException("COLS_HORIZONTAL not implemented");
 		}
