@@ -224,6 +224,12 @@ public class Ls implements HshCmd {
 		private final List<Integer> fieldWidths=new ArrayList<Integer>();
 		private final List<AtAcFormatter> formatterList;
 
+		/** Creates an floating output style.
+		 * @param formatterList List of formatted fields to display per FileEntry.
+		 * If formatterList.size()>1 the minWith of the fields is adjusted to
+		 * display all Columns at the same position.
+		 * Else the output is done while printFile() without caching the data.
+		 */
 		public FloatOutputStyle(final List<AtAcFormatter> formatterList) {
 			this.formatterList=formatterList;
 		}
@@ -244,7 +250,7 @@ public class Ls implements HshCmd {
 						fieldWidths.set(i, fieldLen);
 				}
 				fileEntryList.add(fe);
-			} else
+			} else // simply print the field
 				pw.println(formatterList.get(0).get(fe, 0));
 		}
 
