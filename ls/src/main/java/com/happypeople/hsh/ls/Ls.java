@@ -5,13 +5,15 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
-import java.util.PriorityQueue;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -61,7 +63,224 @@ public class Ls implements HshCmd {
 			return 1;
 		}
 
-		// Which fields to display per File
+		final List<AtAcFormatter> formatterList = createFormatter(cmd);
+		final OutputStyle outputStyle = createOutputStyle(cmd, formatterList);
+		final DirectoryStream.Filter<Path> fileFilter = createFileFilter(cmd);
+		final List<Comparator<? super FileEntry>> sorting = creatingSorting(cmd);
+		Comparator<FileEntry> comp=null;
+		if(sorting.size()>0) {
+			comp=new CombinedComparator<FileEntry>(sorting);
+		}
+
+		final List<FileEntry> fileEntryList=new ArrayList<FileEntry>();
+		// all other args are filenames
+		for(final String arg : cmd.getArgs())
+			fileEntryList.add(new FileEntry(Paths.get(arg)));
+
+		// default argument
+		if(fileEntryList.size()==0)
+			fileEntryList.add(new FileEntry(Paths.get(".")));
+
+		// arguments which are directly printed, ie files
+		final List<FileEntry> printedArgs=new ArrayList<FileEntry>();
+		// arguments which are listed, ie directories.
+		final List<FileEntry> listedArgs=new ArrayList<FileEntry>();
+		if(cmd.hasOption("d"))
+			printedArgs.addAll(fileEntryList);
+		else
+			for(final FileEntry fe : fileEntryList)
+				(Files.isDirectory(fe.getPath())?listedArgs:printedArgs).add(fe);
+
+		final boolean recursive=cmd.hasOption("R");
+		final boolean withNamePrefix=fileEntryList.size()>1 || recursive;
+
+		boolean firstBlock=true;
+		if(printedArgs.size()>0) {
+			firstBlock=false;
+			for(final FileEntry fileEntry : printedArgs)
+				if(Files.exists(fileEntry.getPath()))
+					outputStyle.printFile(fileEntry, hsh.getStdOut());
+				else
+					hsh.getStdOut().println("does not exists: "+fileEntry);
+			outputStyle.doOutput(hsh.getStdOut(), hsh.getCols());
+		}
+
+		if(listedArgs.size()>0) {
+			final Iterator<FileEntryWithIterator> dirsToList=
+					getDirListing(listedArgs.iterator(), fileFilter, recursive?Integer.MAX_VALUE:0, comp);
+
+			while(dirsToList.hasNext()) {
+				final FileEntryWithIterator fileEntry=dirsToList.next();
+				if(!firstBlock)
+					hsh.getStdOut().println();
+				firstBlock=false;
+
+				if(Files.exists(fileEntry.getPath())) {
+					listDir(fileEntry, hsh, withNamePrefix, outputStyle.createInstance());
+				} else
+					hsh.getStdOut().println("does not exists: "+fileEntry);
+			}
+		}
+
+		return 0;
+	}
+
+	/** Lists all dirs given in the argument and all sub-dirs of that dirs, in depth-first order.
+	 * This is implemented as running in an newly created Thread.
+	 * @param dirs the dirs to walk the file trees
+	 * @return an Iterator<FileEntry> over the result of the search.
+	 */
+	private Iterator<FileEntryWithIterator> getDirListing(
+			final Iterator<FileEntry> dirs,
+			final DirectoryStream.Filter<Path> ff,
+			final int recursionDepth,
+			final Comparator<FileEntry> comp) {
+		final AsyncIterator<FileEntryWithIterator> ret=new AsyncIterator<FileEntryWithIterator>();
+		new Thread() {
+			private FileEntryWithIterator currentDir;
+			@Override
+			public void run() {
+				try {
+					while(dirs.hasNext()) {
+						final FileEntry fe=dirs.next();
+						try {
+							walkFileTree(fe, ff, recursionDepth, comp, new LsFileVisitor() {
+
+								@Override
+								public void preVisitDirectory(final FileEntry dir) {
+									ret.offer(currentDir=new FileEntryWithIterator(dir.getPath(), new AsyncIterator<FileEntry>()));
+								}
+
+								@Override
+								public void visitFile(final FileEntry file) {
+									currentDir.getFilesIterator().offer(file);
+								}
+
+								@Override
+								public void postVisitDirectory(final FileEntry dir) {
+									currentDir.getFilesIterator().close();
+									currentDir=null;
+								}
+							});
+						} catch (final IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}finally{
+					ret.close();
+				}
+			}
+
+			/** Does a breath-first (listing-first) traversal of the file tree rooted at path.
+			 * This is, for all directories in the tree, first preVisitDirecotry is called, then for all
+			 * entries in that director visitFile(), end then postVisitDirectory().
+			 * If root is not a directory, nothing happens.
+			 * @param path root of the tree to visit
+			 * @param ff the Filter to use, see Files.newDirectoryStream(...)
+			 * @param recursionDepth if>0 this method will call itself with an decremented recursionDepth
+			 * for all subdirs
+			 * @param comp if !=null files are listed (and dirs are recursed) in order of the comparator
+			 * @param fileVisitor the callback
+			 */
+			private void walkFileTree(final FileEntry root,
+					final DirectoryStream.Filter<Path> ff,
+					final int recursionDepth,
+					final Comparator<FileEntry> comp,
+					final LsFileVisitor fileVisitor)
+							throws IOException {
+				if(!Files.isDirectory(root.getPath()))
+					throw new NotDirectoryException("not directory: "+root.getPath());
+
+				fileVisitor.preVisitDirectory(root);
+				// list the entries of the directory collecting subdirs, then recurse in all subdirs
+				final List<FileEntry> subdirs=new ArrayList<FileEntry>();
+				final boolean recurse=recursionDepth>0;
+				try(DirectoryStream<FileEntry> stream=root.listFiles(ff)) {
+					List<FileEntry> sortedStream=null;
+					if(comp!=null) {
+						sortedStream=new ArrayList<FileEntry>();
+						for(final FileEntry fe : stream)
+							sortedStream.add(fe);
+						Collections.sort(sortedStream, comp);
+					}
+					for(final FileEntry fe : sortedStream!=null?sortedStream:stream) {
+						fileVisitor.visitFile(fe);
+						if(recurse && Files.isDirectory(fe.getPath()))
+							subdirs.add(fe);
+					}
+				}
+				fileVisitor.postVisitDirectory(root);
+
+				if(recurse)
+					for(final FileEntry fe : subdirs)
+						walkFileTree(fe, ff, recursionDepth-1, comp, fileVisitor);
+			}
+		}.start();
+		return ret;
+	}
+
+	private interface LsFileVisitor {
+		public void preVisitDirectory(final FileEntry dir);
+		public void visitFile(final FileEntry file);
+		public void postVisitDirectory(final FileEntry dir);
+	}
+
+	private List<Comparator<? super FileEntry>> creatingSorting(final CommandLine options) {
+		final List<Comparator<? super FileEntry>> sorting=new ArrayList<Comparator<? super FileEntry>>();
+		// TODO implement
+		sorting.add(FileEntry.NAME_SORT);
+		return sorting;
+	}
+
+	/** Creates the overall filter to controll what to list in directory listings
+	 * @param cmd the command options
+	 * @return a usable DirectoryStream.Filter<Path>
+	 */
+	private DirectoryStream.Filter<Path> createFileFilter(final CommandLine cmd) {
+		if(cmd.hasOption("a"))
+			return new DirectoryStream.Filter<Path>() {
+				@Override
+				public boolean accept(final Path entry) throws IOException {
+					return true;
+				}
+			};
+		else if(cmd.hasOption("A"))
+			return new DirectoryStream.Filter<Path>() {
+				@Override
+				public boolean accept(final Path path) {
+					final String lName=path.getFileName().toString();
+					return ! (".".equals(lName) || "..".equals(lName));
+				}
+			};
+		else
+			return new DirectoryStream.Filter<Path>() {
+				@Override
+				public boolean accept(final Path path) throws IOException {
+					return !Files.isHidden(path);
+				}
+			};
+	}
+
+	/** Creates the OutputStyle.
+	 * @param cmd the command options
+	 * @param formatterList the formatter to do the output per file
+	 * @return a new OutputStyle according to the options
+	 */
+	private OutputStyle createOutputStyle(final CommandLine cmd, final List<AtAcFormatter> formatterList) {
+		OutputStyle outputStyle=null;
+		if(cmd.hasOption("l") || cmd.hasOption("1"))
+			outputStyle=new FloatOutputStyle(formatterList);
+		else
+			outputStyle=new VerticalOutputStyle(new AtAcFormatter(FileEntry.NAME_ATAC, Adjustment.LEFT));
+		return outputStyle;
+	}
+
+	/** Creates the list of AtAcFormatters. This list is used to display the attributes
+	 * of a File.
+	 * @param cmd the commandline options
+	 * @return a new List<AtAcFormatter> useable to format the output per File
+	 */
+	private List<AtAcFormatter> createFormatter(final CommandLine cmd) {
 		// TODO implement other options
 		final List<AtAcFormatter> formatterList=new ArrayList<AtAcFormatter>();
 		if(cmd.hasOption("l")) {
@@ -72,125 +291,21 @@ public class Ls implements HshCmd {
 			formatterList.add(new AtAcFormatter(FileEntry.MODIFIED_TIME_ATAC, Adjustment.LEFT));
 		}
 		formatterList.add(new AtAcFormatter(FileEntry.NAME_ATAC, Adjustment.NONE));
-
-		// Output style
-		OutputStyle outputStyle=null;
-		if(cmd.hasOption("l") || cmd.hasOption("1"))
-			outputStyle=new FloatOutputStyle(formatterList);
-		else
-			outputStyle=new VerticalOutputStyle(new AtAcFormatter(FileEntry.NAME_ATAC, Adjustment.LEFT));
-
-		// what to list in dir arguments
-		DirectoryStream.Filter<Path> fileFilter=null;
-		if(cmd.hasOption("a"))
-			fileFilter=new DirectoryStream.Filter<Path>() {
-				@Override
-				public boolean accept(final Path entry) throws IOException {
-					return true;
-				}
-			};
-		else if(cmd.hasOption("A"))
-			fileFilter=new DirectoryStream.Filter<Path>() {
-				@Override
-				public boolean accept(final Path path) {
-					final String lName=path.getFileName().toString();
-					return ! (".".equals(lName) || "..".equals(lName));
-				}
-			};
-		else
-			fileFilter=new DirectoryStream.Filter<Path>() {
-				@Override
-				public boolean accept(final Path path) throws IOException {
-					return !Files.isHidden(path);
-				}
-			};
-
-
-		final List<Comparator<? super FileEntry>> sortList=new ArrayList<Comparator<? super FileEntry>>();
-		sortList.add(FileEntry.NAME_SORT);
-
-		// Sorts by isDirectory() and nameOfFile
-		final Comparator<String> argsComparator=new Comparator<String>() {
-			@Override
-			public int compare(final String o1, final String o2) {
-				final Path p1=Paths.get(o1);
-				final Path p2=Paths.get(o2);
-				if(!Files.isDirectory(p1) && Files.isDirectory(p2))
-					return -1;
-				else if(Files.isDirectory(p1) && !Files.isDirectory(p2))
-					return 1;
-
-				return p1.compareTo(p2);
-			}
-		};
-
-		// all other args are filenames
-		//final List<String> fargs=new ArrayList<String>(Arrays.asList(cmd.getArgs()));
-		final String[] fargs=cmd.getArgs();
-		Arrays.sort(fargs, argsComparator);
-
-		final List<FileEntry> fileEntryList=new ArrayList<FileEntry>();
-		for(final String arg : fargs)
-			fileEntryList.add(new FileEntry(Paths.get(arg)));
-
-		// default argument
-		if(fileEntryList.size()==0)
-			fileEntryList.add(new FileEntry(Paths.get(".")));
-
-		Comparator<FileEntry> comp=null;
-		if(sortList.size()>0) {
-			comp=new Comparator<FileEntry>() {
-				@Override
-				public int compare(final FileEntry o1, final FileEntry o2) {
-					for(final Comparator<? super FileEntry> c : sortList) {
-						final int res=c.compare(o1, o2);
-						if(res!=0)
-							return res;
-					}
-					return 0;
-				}
-			};
-		}
-
-		final boolean recursive=cmd.hasOption("R");
-		final boolean withNamePrefix=fileEntryList.size()>1 || recursive;
-
-		boolean first=true;
-		for(final FileEntry fileEntry : fileEntryList) {
-			if(!first)
-				hsh.getStdOut().println();
-			first=false;
-
-			if(Files.exists(fileEntry.getPath())) {
-				if(Files.isDirectory(fileEntry.getPath())) {
-					listDir(fileEntry, hsh, withNamePrefix, outputStyle.createInstance(), fileFilter, formatterList, comp);
-				} else {
-					outputStyle.printFile(fileEntry, hsh.getStdOut());
-				}
-			} else
-				hsh.getStdOut().println("does not exists: "+fileEntry);
-			outputStyle.doOutput(hsh.getStdOut(), hsh.getCols());
-		}
-
-		return 0;
+		return formatterList;
 	}
 
-	private void listDir(final FileEntry dir, final HshContext hsh, final boolean withNamePrefix, final OutputStyle style,
-			final DirectoryStream.Filter<Path> fileFilter, final List<AtAcFormatter> formatters, final Comparator<FileEntry> comp)
+	private void listDir(final FileEntryWithIterator dir,
+			final HshContext hsh,
+			final boolean withNamePrefix,
+			final OutputStyle style)
 	throws Exception {
 		if(withNamePrefix)
-			hsh.getStdOut().println(FileEntry.NAME_ATAC.get(dir)+":");
+			hsh.getStdOut().println(""+dir.getPath()+":");
 
-		if(comp==null) { // no Comparator, direct output
-			for(final FileEntry fe: dir.listFiles(fileFilter))
-				style.printFile(fe, hsh.getStdOut());
-		} else { // store to sorted list, then output
-			final PriorityQueue<FileEntry> dirents=new PriorityQueue<FileEntry>();
-			for(final FileEntry fe: dir.listFiles(fileFilter))
-				dirents.add(fe);
-			while(!dirents.isEmpty())
-				style.printFile(dirents.poll(), hsh.getStdOut());
-		}
+		final Iterator<FileEntry> it=dir.getFilesIterator();
+		while(it.hasNext())
+			style.printFile(it.next(), hsh.getStdOut());
+
 		style.doOutput(hsh.getStdOut(), hsh.getCols());
 	}
 
