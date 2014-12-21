@@ -2,6 +2,8 @@ package com.happypeople.hsh.ls;
 
 import java.nio.file.Path;
 
+import com.happypeople.hshutil.util.AsyncIterator;
+
 /** This class extends a FileEntry with an AsyncIterator<FileEntry>
  * This makes sense thoug the way Files.walkFileTree(...) works. With this we can walk the File tree
  * asynchronously.

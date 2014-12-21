@@ -24,6 +24,7 @@ import org.apache.commons.cli.PosixParser;
 
 import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hshutil.util.AsyncIterator;
 
 /** More or less Posix implementation of ls
  */

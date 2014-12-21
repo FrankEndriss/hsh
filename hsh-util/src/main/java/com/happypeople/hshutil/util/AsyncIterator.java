@@ -1,4 +1,4 @@
-package com.happypeople.hsh.ls;
+package com.happypeople.hshutil.util;
 
 import java.util.Iterator;
 import java.util.LinkedList;

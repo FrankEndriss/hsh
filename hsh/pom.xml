@@ -20,6 +20,12 @@
 
 	<dependency>
 		<groupId>com.happypeople.hsh</groupId>
+		<artifactId>hsh-util</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.happypeople.hsh</groupId>
 		<artifactId>hshif</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</dependency>
