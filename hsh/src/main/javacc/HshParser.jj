@@ -1,10 +1,13 @@
 options
 {
 	USER_TOKEN_MANAGER=true;
-    LOOKAHEAD=2;
+    // LOOKAHEAD=2;
+    FORCE_LA_CHECK=true;
 }
 PARSER_BEGIN(HshParser)
 package com.happypeople.hsh.hsh;
+import com.happypeople.hsh.hsh.parser.*;
+
 public class HshParser
 {
 }
@@ -17,41 +20,239 @@ SKIP :
 */
 TOKEN:
 {
-	< DUMMY >
-|	< DUMMY2 >
+	< TODO 		: "TODO" >
+|	< UPPERSANT	: "&" >
+|	< SEMICOLON : ";" >
+|	< AND_IF	: "&&" >
+|	< OR_IF		: "||" >
+|	< BANG		: "!" >
+|	< PIPE 		: "|" >
 }
 
-JJNode separator():
-{
-	JJNode node=new JJNode();
-}
-{
-	<DUMMY>
-	{ return node; }
-}
-	
-JJNode list():
-{
-	JJNode node=new JJNode();
-}
-{
-	<DUMMY>
-	{ return node; }
-}
-
-/*
-complete_command : list separator
-                 | list
+/**
+io_redirect      :           io_file
+                 | IO_NUMBER io_file
+                 |           io_here
+                 | IO_NUMBER io_here
                  ;
 */
-JJNode complete_command():
-{
-	JJNode node=new JJNode();
-	JJNode lList;
-	JJNode lSeparator;
+void io_redirect():
+{}{
+	< TODO >}
+
+/**
+cmd_word         : WORD                   // Apply rule 7b
+                 ;
+*/
+void cmd_word():
+{}{
+	< WORD_7b >}
+
+/**
+cmd_name         : WORD                   // Apply rule 7a
+                 ;
+*/
+void cmd_name():
+{}{
+	< WORD_7a >}
+
+/**
+cmd_suffix       :            io_redirect
+                 | cmd_suffix io_redirect
+                 |            WORD
+                 | cmd_suffix WORD
+                 ;
+*/
+void cmd_suffix():
+{}{
+	< TODO >}
+
+/**
+cmd_prefix       :            io_redirect
+                 | cmd_prefix io_redirect
+                 |            ASSIGNMENT_WORD
+                 | cmd_prefix ASSIGNMENT_WORD
+                 ;
+*/
+void cmd_prefix():
+{}{
+	< TODO >}
+
+/**
+function_definition : fname '(' ')' linebreak function_body
+                 ;
+*/
+void function_definition():
+{}{
+	< TODO >}
+
+/**
+redirect_list    :               io_redirect
+                 | redirect_list io_redirect
+                 ;
+*/
+void redirect_list():
+{}{
+	< TODO >}
+/**
+compound_command : brace_group
+                 | subshell
+                 | for_clause
+                 | case_clause
+                 | if_clause
+                 | while_clause
+                 | until_clause
+                 ;
+*/
+void compound_command():
+{}{
+	< TODO >}
+/**
+simple_command   : cmd_prefix cmd_word cmd_suffix
+                 | cmd_prefix cmd_word
+                 | cmd_prefix
+                 | cmd_name cmd_suffix
+                 | cmd_name
+                 ;
+*/
+void simple_command():
+{
 }
 {
-    lList=list() lSeparator=separator()	{ node.addChild(lList); node.addChild(lSeparator); }
-    |  lList=list() 					{ node.addChild(lList); }
-    { return node; }
+	cmd_prefix() ( cmd_word() ( cmd_suffix())? )?
+|	cmd_name() ( cmd_suffix() )?}
+
+/** separator_op     : '&' | ';'
+*/
+Separator_opNode separator_op():
+{	Separator_opNode ret=new Separator_opNode();
+	Token t;
+}
+{	t=< UPPERSANT > { ret.setToken(t); }
+|	t=< SEMICOLON > { ret.setToken(t); }
+	{ return ret; }}
+/**
+pipeline         :      pipe_sequence
+                 | Bang pipe_sequence
+                 ;
+*/
+void pipeline():
+{}
+{
+	pipe_sequence()
+|	< BANG > pipe_sequence()}
+/**
+pipe_sequence    :                             command
+                 | pipe_sequence '|' linebreak command
+                 ;
+*/
+void pipe_sequence():
+{
+}
+{	command() ( < PIPE > linebreak() command() )*
+}
+/**
+command          : simple_command
+                 | compound_command
+                 | compound_command redirect_list
+                 | function_definition
+                 ;
+*/
+void command():
+{
+}
+{
+	simple_command()
+|	compound_command() ( redirect_list() )?
+|	function_definition()
+
+}
+Newline_listNode newline_list():
+{
+	Newline_listNode ret=null;
+}
+{
+	< TODO >
+	{
+		 return ret;
+	}
+}
+LinebreakNode linebreak():
+{
+	LinebreakNode ret=null;
+}
+{
+	< TODO >
+	{
+		 return ret;
+	}
+}
+/**
+and_or           :                         pipeline
+                 | and_or AND_IF linebreak pipeline
+                 | and_or OR_IF  linebreak pipeline
+                 ;
+*/
+And_orNode and_or():
+{
+	And_orNode ret=null;
+}
+{
+	pipeline() ( ( < AND_IF > | < OR_IF > ) linebreak() pipeline() )*
+	{
+		 return ret;
+	}
+}
+/** separator	: separator_op linebreak
+ * 				| newline_list
+ * ;
+ */
+SeparatorNode separator():
+{
+	SeparatorNode ret=new SeparatorNode();
+	Separator_opNode separator_opN;
+	LinebreakNode linebreakN;
+}
+{
+	separator_opN=separator_op() linebreakN=linebreak() {
+		ret.addChild(separator_opN);
+		ret.addChild(linebreakN);
+	}
+|	newline_list() { }
+	{ return ret; }
+}
+	
+/** list 	:		list separator_op and_or
+*				|	and_or ;
+*/
+ListNode list():
+{
+	ListNode ret=new ListNode();
+	Separator_opNode separator_opN;
+	And_orNode and_orN;
+}
+{
+	and_orN=and_or() { ret.addChild(and_orN); }
+	( separator_opN=separator_op() and_orN=and_or() {
+		ret.addChild(separator_opN);
+		ret.addChild(and_orN); } )*
+		
+	{ return ret; }
+}
+
+/** complete_command :		list separator
+*                 		|	list ;
+*/
+void complete_command():
+{
+	ListNode listN;
+	ListNode listN2;
+	SeparatorNode separatorN;
+}
+{
+    listN=list() ( separatorN=separator() listN2=list() {
+    	listN.addChild(separatorN);
+    	listN.addChild(listN2);
+    	} )*
+    { listN.dump(0); }
 }
