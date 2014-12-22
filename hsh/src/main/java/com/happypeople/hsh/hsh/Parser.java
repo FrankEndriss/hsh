@@ -6,10 +6,12 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.happypeople.hsh.hsh.SimplePushbackInput.Transaction;
 import com.happypeople.hsh.hsh.Tokenizer.Tok;
 
 /** Parser of hsh. Implements the grammar described in
- * %token  WORD
+ * 
+%token  WORD
 %token  ASSIGNMENT_WORD
 %token  NAME
 %token  NEWLINE
@@ -212,29 +214,251 @@ sequential_sep   : ';' linebreak
                  ;
 
  *
+ *
+ *... and so on.
+ * Better try using JavaCC
  */
 public class Parser {
 
+	/** newline_list	:	NEWLINE
+	 * 					| newline_list NEWLINE
+	 * ;
+	 */
+	public class Newline_list extends SimpleNode {
+		@Override
+		public void parse() throws NotParsedException {
+			Tok.NEWLINE.parse(in);
+			try {
+				while(true)
+					Tok.NEWLINE.parse(in);
+			}catch(NotParsedException e) {
+				// empty since optional
+			}
+		}
+	}
+
+	/** linebreak	: newline_list
+	 * 				| // empty
+	 * ;
+	 * Its an optional newline_list
+	 */
+	public class Linebreak extends SimpleNode {
+		@Override
+		public void parse() throws NotParsedException {
+			new Newline_list().parseTransactional();
+		}
+	}
+
+	/** separator	: separator_op linebreak
+	 * 				| newline_list
+	 * ;
+	 */
 	public class Separator extends SimpleNode {
+		@Override
+		public void parse() throws NotParsedException {
+			// rule1
+			Transaction trans=in.transactionStart();
+			try {
+				Node separator_op=new Separator_op();
+				separator_op.parse();
+				Node linebreak=new Linebreak();
+				linebreak.parse();
+				addChild(separator_op);
+				addChild(linebreak);
+				trans.commit();
+				return;
+			}catch(NotParsedException e) {
+				trans.rollback();
+			}
+			
+			// else it must be a newline_list
+			SimpleNode newline_list=new Newline_list();
+			newline_list.parse();
+			addChild(newline_list);
+		}
+	}
+
+	public class Simple_command extends SimpleNode {
 		@Override
 		public void parse() throws NotParsedException {
 			throw new RuntimeException("not implemented");
 		}
 	}
 
+	public class Compound_command extends SimpleNode {
+		@Override
+		public void parse() throws NotParsedException {
+			throw new RuntimeException("not implemented");
+		}
+	}
 
-	/** and_or :		pipeline
+	public class Redirect_list extends SimpleNode {
+		@Override
+		public void parse() throws NotParsedException {
+			throw new RuntimeException("not implemented");
+		}
+	}
+
+	/** command		: simple_command
+	 * 				| compound_command
+	 * 				| compound_command redirect_list
+	 * 				| function_definition
+	 * ;
+	 */
+	public class Command extends SimpleNode {
+
+		@Override
+		public void parse() throws NotParsedException {
+			Transaction trans=in.transactionStart();
+			try { // rule1
+				final SimpleNode simple_command=new Simple_command();
+				simple_command.parse();
+				trans.commit();
+				addChild(simple_command);
+				return;
+			} catch(NotParsedException e) {
+				trans.rollback();
+			}
+
+			trans=in.transactionStart();
+			try { // rule2 + rule3
+				final SimpleNode compound_command=new Compound_command();
+				compound_command.parse();
+				trans.commit();
+				addChild(compound_command);
+
+				// optional Redirect_list()
+				try {
+					final SimpleNode redirect_list=new Redirect_list();
+					redirect_list.parseTransactional();
+					addChild(redirect_list);
+				}catch(NotParsedException e2) {
+					// ignore since optional
+				}
+
+				return;
+			} catch (NotParsedException e) {
+				trans.rollback();
+			}
+
+			// TODO functional_definition
+		}
+
+	}
+
+	/** original:
+	 * pipe_sequence	:	command
+	 * 					| pipe_sequence '|' linebreak command
+	 * ;
+	 * rewritten to:
+	 * pipe_sequence	:	command
+	 * 					| command '|' linebreak pipe_sequence
+	 * ;
+	 */
+	public class Pipe_sequence extends SimpleNode {
+		@Override
+		public void parse() throws NotParsedException {
+			SimpleNode command=new Command();
+			command.parse();
+			addChild(command);
+			
+			Transaction trans=in.transactionStart();
+			try {
+				Tok.PIPE.parse(in);
+				new Linebreak().parse();
+				SimpleNode pipe_sequence=new Pipe_sequence();
+				pipe_sequence.parse();
+				addChild(pipe_sequence);
+				trans.commit();
+			}catch(NotParsedException e) {
+				trans.rollback();
+			}
+		}
+	}
+
+	/** pipeline	:	pipe_sequence
+	 * 				| Bang pipe_sequence
+	 * 	;
+	 * Optional Bang followed by a pipe_sequence
+	 */
+	public class Pipeline extends SimpleNode {
+		@Override
+		public void parse() throws NotParsedException {
+			try {
+				Tok.BANG.parse(in);
+				addChild(new TokenNode(Tok.BANG));
+			}catch(NotParsedException e) {
+				// ignore since optional
+			}
+			SimpleNode pipe_sequence=new Pipe_sequence();
+			pipe_sequence.parse();
+			addChild(pipe_sequence);
+		}
+	}
+
+	/** original: 
+	 * and_or :		pipeline
 	 * 				| and_or AND_IF linebreak pipeline
 	 * 				| and_or OR_IF  linebreak pipeline
+	 *  ;
+	 *  
+	 *  rewritten to:
+	 * and_or :		pipeline
+	 * 				| pipeline AND_IF linebreak and_or
+	 * 				| pipeline OR_IF  linebreak and_or
 	 *  ;
 	 *
 	 */
 	public class And_Or extends SimpleNode {
 		@Override
 		public void parse() throws NotParsedException {
-			throw new RuntimeException("not implemented");
+			final Node pipeline=new Pipeline();
+			pipeline.parse();
+			addChild(pipeline);
+			
+			Transaction trans=in.transactionStart();
+			try {
+
+				SimpleNode tokNode=null;
+				try {
+					Tok.AND_IF.parse(in);
+					tokNode=new TokenNode(Tok.AND_IF);
+				}catch(NotParsedException e2) {
+					Tok.AND_OR.parse(in);
+					tokNode=new TokenNode(Tok.AND_OR);
+				}
+
+				final SimpleNode linebreak=new Linebreak();
+				linebreak.parse();
+				final SimpleNode and_or=new And_Or();
+				and_or.parse();
+				addChild(tokNode);
+				addChild(linebreak);
+				addChild(and_or);
+			}catch(NotParsedException e) {
+				trans.rollback();
+			}
 		}
 	}
+
+	/** Tries to read what from in.
+	 * If false is returnded, all read chars are pushback()ed
+	 * @param what what to read
+	 * @return true if what was read, else false
+	private boolean tryRead(String what) {
+		final char[] toRead=what.toCharArray();
+		for(int i=0; i<toRead.length; i++) {
+			char c=in.read();
+			if(c!=toRead[i]) {
+				in.pushback(c);
+				for(int j=i-1; j>=0; j--)
+					in.pushback(toRead[j]);
+				return false;
+			}
+		}
+		return true;
+	}
+	 */
 
 	/** separator_op     : '&' | ';'
 	 * Child of Separator_op is a single TokenNode with a Tok of
@@ -243,58 +467,45 @@ public class Parser {
 	public class Separator_op extends SimpleNode {
 		@Override
 		public void parse() throws NotParsedException {
-			final TokenNode upperNode=new TokenNode(Tok.UPPERSANT);
-			try {
-				upperNode.parse();
-				addChild(upperNode);
-			}catch(final NotParsedException e)  {
-				final TokenNode semicNode=new TokenNode(Tok.SEMICOLON);
-				semicNode.parse();
-				addChild(semicNode);
-			}
+			final char c=in.read();
+			if(c==Tok.UPPERSANT.value()[0]) 
+				addChild(new TokenNode(Tok.UPPERSANT));
+			else if(c==Tok.SEMICOLON.value()[0])
+				addChild(new TokenNode(Tok.SEMICOLON));
+			else
+				throw new NotParsedException();
 		}
 	}
 
-	/** list 	: list separator_op and_or | and_or ;
+	/** orig grammar:
+	 * list 	: list separator_op and_or | and_or ;
+	 * rewritten to:
+	 * list 	: and_or separator_op list | and_or ;
 	 */
 	public class NList extends SimpleNode {
 
 		@Override
 		public void parse() throws NotParsedException {
-			// two cases, rule1 or rule2
-			if(children().isEmpty()) { // rule2
-				parse_rule2();
-			} else { // rule1, because a sublist was parsed
-				parse_rule1();
-			}
-		}
-
-		private void parse_rule2() throws NotParsedException {
 			final And_Or and_or=new And_Or();
 			and_or.parse();
-			// if the and_or is followed by separator_op and another and_or, the and_or is a nlist
+			addChild(and_or);
+
+			// optional separator_op list
+			Transaction trans=null;
 			try {
-				// try to treat the and_or as a sublist
+				trans=in.transactionStart();
+				final Separator_op separator_op=new Separator_op();
+				separator_op.parse();
 				final NList sublist=new NList();
-				sublist.addChild(and_or);
 				sublist.parse();
+
+				addChild(separator_op);
 				addChild(sublist);
+				trans.commit();
 			}catch(final NotParsedException e) {
-				// the and_or is not followed by a separator
-				addChild(and_or);
+				trans.rollback();
 			}
 		}
-
-		private void parse_rule1() throws NotParsedException {
-			final Separator_op separator_op=new Separator_op();
-			separator_op.parse();
-			final And_Or and_or2=new And_Or();
-			and_or2.parse();
-
-			addChild(separator_op);
-			addChild(and_or2);
-		}
-
 	}
 
 	/**
@@ -307,21 +518,14 @@ public class Parser {
 			nlist.parse();
 			addChild(nlist);
 
+			// optional separator
 			final Separator lseparator=new Separator();
 			try {
-				lseparator.parse();
+				lseparator.parseTransactional();
 				addChild(nlist);
 			}catch(final NotParsedException e) {
-				// ignore
+				// ignore, optional
 			}
-		}
-	}
-
-	/** thrown if parsing of a construct was not successfull
-	 */
-	public class NotParsedException extends Exception {
-		public NotParsedException() {
-			super("parse failed");
 		}
 	}
 
@@ -337,16 +541,7 @@ public class Parser {
 
 		@Override
 		public void parse() throws NotParsedException {
-			try {
-				final char c=in.read();
-				if(c!=tok.value())
-					in.pushback(c);
-				return;
-			} catch (final Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			throw new NotParsedException();
+			tok.parse(in);
 		}
 	}
 
@@ -366,6 +561,22 @@ public class Parser {
 		public void addChild(final Node child) {
 			childs.add(child);
 		}
+		
+		/** This calls parse() within an Transaction.
+		 * If NotParsedException is thrown the Transaction is rollbacked()ed. But the exception is rethrown either.
+		 * Useful for optional constructs.
+		 */
+		public void parseTransactional() throws NotParsedException {
+			Transaction trans=null;
+			try {
+				trans=in.transactionStart();
+				parse();
+				trans.commit();
+			}catch(NotParsedException e) {
+				trans.rollback();
+				throw e;
+			}
+		}
 	}
 
 	/** Parser starts parsing here
@@ -373,17 +584,14 @@ public class Parser {
 	 * @throws NotParsedException
 	 */
 	public CompleteCommand start() throws NotParsedException {
+		// TODO error-handling and recovery
 		final CompleteCommand cc=new CompleteCommand();
 		cc.parse();
 		return cc;
 	}
 
 	public char read() throws EOFException {
-		try {
-			return in.read();
-		}catch(final IOException e) {
-			throw new EOFException();
-		}
+		return in.read();
 	}
 
 }

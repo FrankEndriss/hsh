@@ -9,9 +9,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.happypeople.hsh.hsh.Parser.NotParsedException;
-import com.happypeople.hsh.hsh.Tokenizer.Token;
-
 /** http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_02
  ** 2.3 Token Recognition
 * The shell shall read its input in terms of lines from a file, from a terminal in the case of an interactive shell,
@@ -73,8 +70,11 @@ import com.happypeople.hsh.hsh.Tokenizer.Token;
 * ******************************************************************************************
 * The implementation works as a Iterator<String>. So, it parses while calls to hasNext() and next().
 * No buffering or asynchronization is done at all.
+* 
+* ******************************
+* NOTE: This does not work, has to be integrated into Parser.java
 */
-public class Tokenizer implements Iterator<Token> {
+public class Tokenizer implements Iterator<Token>, TokenManager {
 	/** The input-stream of characters */
 	private final SimplePushbackInput in;
 	/** The next token to return */
@@ -114,6 +114,13 @@ public class Tokenizer implements Iterator<Token> {
 
 
 
+	private Token parse() {
+		throw new RuntimeException("not implemented");
+	}
+
+
+
+
 	// (starting) characters of operators
 	public static final EnumSet<Tok> operatorChars=EnumSet.of (
 			Tok.PIPE,
@@ -140,7 +147,10 @@ public class Tokenizer implements Iterator<Token> {
 		BIGGER('<'),
 		KLAMMER_AUF('('),
 		KLAMMER_ZU(')'),
-		DOLLAR('$')
+		DOLLAR('$'),
+		AND_IF("&&"),
+		AND_OR("||"),
+		BANG('!')
 		;
 
 		private char[] value;
@@ -157,66 +167,45 @@ public class Tokenizer implements Iterator<Token> {
 			return value;
 		}
 
-		public void parse() throws NotParsedException {
-			for (final char element : value) {
-				final char c=read();
-				if(c!=)
+		/** Parses this token transactional.
+		 * @param in input stream
+		 * @throws NotParsedException if parsing failed
+		 */
+		public void parse(final SimplePushbackInput in) throws NotParsedException {
+			for(int i=0; i<value.length; i++) {
+				final char c=in.read();
+				if(c!=value[i]) {
+					// pushback all previously read chars in reverse order
+					in.pushback(c);
+					for(int j=i-1; j>=0; j--)
+						in.pushback(value[i]);
+					throw new NotParsedException();
+				}
 			}
-
 		}
-	}
-
-	/** Parses the next token from in. Initial state.
-	 * @return the next token, or null if EOF
-	 */
-	private Token parse() {
-		if(closed)
-			return new Token(Tok.EOF);
-
-		try {
-			final char c=read();
-			currentToken.append(c);
-			switch(c) {
-			case BACKSLASH: state_backslash(); break;
-			case _SINGLEQUOTE: state_singlequote(); break;
-			case DOUBLEQUOTE: state_doublequote(); break;
-			default: // none
-			}
-		}catch(final EOFException e) {
-			// rule 1: On EOF the currentToken is the returned token
-			closed=true;
-		}
-
-		final Token ret=currentToken;
-		currentToken=null;
-		return ret;
 	}
 
 	private void state_doublequote() throws EOFException {
 		char c;
 		do {
 			currentToken.append(c=read());
-			switch(c) {
-			case BACKSLASH: state_backslash(); break;
-			default: // empty
-			}
-		}while(c!=DOUBLEQUOTE);
+			if(c==Tok.BACKSLASH.value()[0])
+				state_backslash();
+		}while(c!=Tok.DOUBLEQUOTE.value[0]);
 	}
 
 	private void state_singlequote() throws EOFException {
 		char c;
 		do {
 			currentToken.append(c=read());
-			switch(c) {
-			case BACKSLASH: state_backslash(); break;
-			default: // empty
-			}
-		}while(c!=_SINGLEQUOTE);
+			if(c==Tok.BACKSLASH.value()[0])
+				state_backslash();
+		}while(c!=Tok.SINGLEQUOTE.value[0]);
 	}
 
 	private void state_backslash() throws EOFException {
 		final char c=read();
-		if(c==NEWLINE)
+		if(c==Tok.NEWLINE.value[0])
 			currentToken.pop();
 		else
 			currentToken.append(c);
@@ -227,39 +216,18 @@ public class Tokenizer implements Iterator<Token> {
 	}
 
 	public char read() throws EOFException {
-		try {
-			return in.read();
-		}catch(final IOException e) {
-			throw new EOFException();
-		}
+		return in.read();
 	}
 
-	/** A Token is the abstraction of a unit in the input stream.
-	 * Usually it consists of list of sub-tokens.
-	 */
-	public class Token {
-		private final Tok tok;
-		private final StringBuilder value=new StringBuilder();
+	@Override
+	public void remove() {
+		// TODO Auto-generated method stub
+		
+	}
 
-		public Token(final Tok tok) {
-			this.tok=tok;
-		}
-		public Tok tok() {
-			return tok;
-		}
-
-		public String value() {
-			return value.toString();
-		}
-
-		public void append(final char c) {
-			value.append(c);
-		}
-
-		public char pop() {
-			final char ret=value.charAt(value.length());
-			value.deleteCharAt(value.length()-1);
-			return ret;
-		}
+	@Override
+	public Token getNextToken() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

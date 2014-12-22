@@ -11,7 +11,7 @@ import java.util.Stack;
 public class SimplePushbackInput {
 	private final Reader in;
 	/** pushback Stack */
-	private final Stack<Character> pushbackStack=new Stack<Character>();
+	private Stack<Character> pushbackStack=new Stack<Character>();
 
 	/** stack of Transactions */
 	private Stack<Transaction> transactionStack;
@@ -49,22 +49,38 @@ public class SimplePushbackInput {
 		return trans;
 	}
 
-	/**
+	/** A Transaction takes a snapshot of this SimplePushbackInput while it is created.
+	 * Later, on rollback(), the SimplePushbackInput is restored to the same state as the
+	 * snapshot.
+	 * On commit() nothing is done but to release this Transaction.
+	 * 
+	 * One can create nested Transactions. This is, after creating one Transaction you create another one.
+	 * The commit and rollback calls must be made in reverse order of creation of the Transaction.
+	 * So, you have to commit()/rollback() allways the last created Transaction, else you get an Exception.
+	 * 
+	 * The committing/rollback of an Transaction allways includes the actions of a sub-Transaction.
+	 * So, if you create two Transactions, committing the second, and rollback the first, the actions of 
+	 * the second Transaction are rolled back, too.
 	 */
 	public class Transaction {
 		private final Stack<Character> stackCopy=(Stack<Character>)pushbackStack.clone();
 		private final LinkedList<Character> chars=new LinkedList<Character>();
 
+		/** Closes this Transaction without modifying the underling Stream.
+		 */
 		public void commit() {
 			if(transactionStack.peek()!=this)
 				throw new RuntimeException("cannot commit, there are unclosed sub-transactions");
 			transactionStack.pop();
 		}
 
+		/** Closes this Transaction after restoring the underling Stream to the state when this
+		 * Transaction was created.
+		 */
 		public void rollback() {
 			if(transactionStack.peek()!=this)
 				throw new RuntimeException("cannot rollback, there are unclosed sub-transactions");
-			pushbackStack=stackCopy();
+			pushbackStack=stackCopy;
 			while(!chars.isEmpty())
 				pushback(chars.pop());
 			transactionStack.pop();

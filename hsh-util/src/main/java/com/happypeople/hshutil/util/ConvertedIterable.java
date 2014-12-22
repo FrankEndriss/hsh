@@ -1,4 +1,4 @@
-package com.happypeople.hsh.ls;
+package com.happypeople.hshutil.util;
 
 import java.io.Closeable;
 import java.io.IOException;

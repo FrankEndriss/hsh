@@ -1,0 +1,57 @@
+options
+{
+	USER_TOKEN_MANAGER=true;
+    LOOKAHEAD=2;
+}
+PARSER_BEGIN(HshParser)
+package com.happypeople.hsh.hsh;
+public class HshParser
+{
+}
+
+PARSER_END(HshParser)
+/*
+SKIP :
+{
+}
+*/
+TOKEN:
+{
+	< DUMMY >
+|	< DUMMY2 >
+}
+
+JJNode separator():
+{
+	JJNode node=new JJNode();
+}
+{
+	<DUMMY>
+	{ return node; }
+}
+	
+JJNode list():
+{
+	JJNode node=new JJNode();
+}
+{
+	<DUMMY>
+	{ return node; }
+}
+
+/*
+complete_command : list separator
+                 | list
+                 ;
+*/
+JJNode complete_command():
+{
+	JJNode node=new JJNode();
+	JJNode lList;
+	JJNode lSeparator;
+}
+{
+    lList=list() lSeparator=separator()	{ node.addChild(lList); node.addChild(lSeparator); }
+    |  lList=list() 					{ node.addChild(lList); }
+    { return node; }
+}

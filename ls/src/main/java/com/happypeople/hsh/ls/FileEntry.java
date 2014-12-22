@@ -17,6 +17,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
 
+import com.happypeople.hshutil.util.ConcatIterable;
+import com.happypeople.hshutil.util.ConvertedIterable;
+import com.happypeople.hshutil.util.OneToOneConverter;
+
 /** Encapsulates a File and its Attributes
  */
 class FileEntry implements Comparable<FileEntry> {
