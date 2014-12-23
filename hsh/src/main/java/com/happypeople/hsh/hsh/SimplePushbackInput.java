@@ -8,7 +8,7 @@ import java.util.Stack;
 /** Simplyfication of a character stream.
  * Transactional reading and rollback.
  */
-public class SimplePushbackInput {
+public class SimplePushbackInput extends Reader {
 	private final Reader in;
 	/** pushback Stack */
 	private Stack<Character> pushbackStack=new Stack<Character>();
@@ -16,6 +16,8 @@ public class SimplePushbackInput {
 	/** stack of Transactions */
 	private Stack<Transaction> transactionStack;
 
+	private char lastReadChar=(char)-1;
+	
 	public SimplePushbackInput(final Reader reader) {
 		this.in=reader;
 	}
@@ -23,21 +25,22 @@ public class SimplePushbackInput {
 	/**
 	 * @return the next read char, or -1 for EOF or Error
 	 */
-	public char read() {
+	private char _read() {
 		try {
 			if(!pushbackStack.isEmpty())
-				return pushbackStack.pop();
+				return lastReadChar=pushbackStack.pop();
 
 			final char ret=(char)in.read();
 			final Transaction trans=transactionStack.peek();
 			if(trans!=null)
 				trans.didRead(ret);
-			return ret;
+			return lastReadChar=ret;
 		}catch(final IOException e) {
 			e.printStackTrace(System.err);
-			return (char)-1;
+			return lastReadChar=(char)-1;
 		}
 	}
+	
 
 	public void pushback(final char c) {
 		pushbackStack.push(c);
@@ -89,5 +92,17 @@ public class SimplePushbackInput {
 		private void didRead(final char c) {
 			chars.push(c);
 		}
+	}
+
+	@Override
+	public void close() throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public int read(char[] arr, int offset, int length) throws IOException {
+		arr[offset]=_read();
+		return 1;
 	}
 }

@@ -111,15 +111,9 @@ public class Tokenizer implements Iterator<Token>, TokenManager {
 		return parse();
 	}
 
-
-
-
 	private Token parse() {
-		throw new RuntimeException("not implemented");
+		throw new RuntimeException("still not implemented");
 	}
-
-
-
 
 	// (starting) characters of operators
 	public static final EnumSet<Tok> operatorChars=EnumSet.of (
@@ -188,7 +182,7 @@ public class Tokenizer implements Iterator<Token>, TokenManager {
 	private void state_doublequote() throws EOFException {
 		char c;
 		do {
-			currentToken.append(c=read());
+			currentToken.append(c=in.read());
 			if(c==Tok.BACKSLASH.value()[0])
 				state_backslash();
 		}while(c!=Tok.DOUBLEQUOTE.value[0]);
@@ -197,37 +191,29 @@ public class Tokenizer implements Iterator<Token>, TokenManager {
 	private void state_singlequote() throws EOFException {
 		char c;
 		do {
-			currentToken.append(c=read());
+			currentToken.append(c=in.read());
 			if(c==Tok.BACKSLASH.value()[0])
 				state_backslash();
 		}while(c!=Tok.SINGLEQUOTE.value[0]);
 	}
 
 	private void state_backslash() throws EOFException {
-		final char c=read();
+		final char c=in.read();
 		if(c==Tok.NEWLINE.value[0])
 			currentToken.pop();
 		else
 			currentToken.append(c);
 	}
 
-	public void pushback(final char c) {
-		in.pushback(c);
-	}
-
-	public char read() throws EOFException {
-		return in.read();
-	}
-
 	@Override
 	public void remove() {
-		// TODO Auto-generated method stub
-		
+		throw new RuntimeException("not implemented");
 	}
 
 	@Override
 	public Token getNextToken() {
-		// TODO Auto-generated method stub
-		return null;
+		if(hasNext())
+			return next();
+		return new Token(0);
 	}
 }

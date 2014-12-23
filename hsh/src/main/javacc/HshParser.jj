@@ -1,8 +1,9 @@
 options
 {
+	STATIC=false;
 	USER_TOKEN_MANAGER=true;
-    // LOOKAHEAD=2;
     FORCE_LA_CHECK=true;
+    // LOOKAHEAD=2;
 }
 PARSER_BEGIN(HshParser)
 package com.happypeople.hsh.hsh;
@@ -10,23 +11,103 @@ import com.happypeople.hsh.hsh.parser.*;
 
 public class HshParser
 {
+// TODO: implement connection to TokenManager
 }
-
 PARSER_END(HshParser)
-/*
-SKIP :
-{
-}
-*/
+
 TOKEN:
 {
 	< TODO 		: "TODO" >
-|	< UPPERSANT	: "&" >
-|	< SEMICOLON : ";" >
+
+/* external defined token */
+|	< ASSIGNMENT_WORD >
+|	< IO_NUMBER	>
+|	< NAME >
+|	< NEWLINE : "\n" >
+|	< WORD >
+
+/* defined token. */
 |	< AND_IF	: "&&" >
-|	< OR_IF		: "||" >
 |	< BANG		: "!" >
+|	< CASE		: "case" >
+|	< CLOBBER	: ">|" >
+|	< DLESS		: "<<" >
+|	< DLESSDASH	: "<<-" >
+|	< DGREAT	: ">>" >
+|	< DO 		: "do" >
+|	< DONE		: "done" >
+|	< DSEMI		: ";;" >
+|	< ELSE		: "else" >
+|	< ELIF		: "elif" >
+|	< ESAC		: "esac" >
+|	< FI		: "fi" >
+|	< FOR		: "for" >
+|	< GREATAND	: ">&" >
+|	< GREATER	: ">" >
+|	< IF		: "if" >
+|	< IN		: "in" >
+|	< KLAMMER_AUF: "(" >
+|	< KLAMMER_ZU: ")" >
+|	< LBRACE	: "{" >
+|	< LESS		: "<" >
+|	< LESSAND	: "<&" >
+|	< LESSGREAT	: "<>" >
+|	< OR_IF		: "||" >
+|	< RBRACE	: "}" >
+|	< SEMICOLON : ";" >
+|	< THEN		: "then" >
+|	< UNTIL 	: "until" >
+|	< UPPERSANT	: "&" >
 |	< PIPE 		: "|" >
+|	< WHILE		: "while" >
+}
+
+/**
+here_end         : WORD                      // Apply rule 3
+                 ;
+*/
+void here_end():
+{
+}
+{
+	< WORD_3 >
+}
+/**
+io_here          : DLESS     here_end
+                 | DLESSDASH here_end
+                 ;
+*/
+void io_here():
+{
+}
+{
+	( < DLESS > | < DLESSDASH > ) here_end()
+}
+/*
+filename         : WORD                      // Apply rule 2
+                 ;
+*/
+void filename():
+{
+}
+{
+	< WORD_2 >
+}
+/*
+io_file          : '<'       filename
+                 | LESSAND   filename
+                 | '>'       filename
+                 | GREATAND  filename
+                 | DGREAT    filename
+                 | LESSGREAT filename
+                 | CLOBBER   filename
+                 ;
+*/
+void io_file():
+{
+}
+{
+	( "<" | < LESSAND > | ">" | < GREATAND > | < DGREAT > | < LESSGREAT > | < CLOBBER > ) filename()
 }
 
 /**
@@ -37,8 +118,11 @@ io_redirect      :           io_file
                  ;
 */
 void io_redirect():
-{}{
-	< TODO >}
+{
+}
+{
+	( < IO_NUMBER > )? ( io_file() | io_here() )
+}
 
 /**
 cmd_word         : WORD                   // Apply rule 7b
@@ -65,7 +149,8 @@ cmd_suffix       :            io_redirect
 */
 void cmd_suffix():
 {}{
-	< TODO >}
+	( io_redirect() | < WORD > )+
+}
 
 /**
 cmd_prefix       :            io_redirect
@@ -76,15 +161,41 @@ cmd_prefix       :            io_redirect
 */
 void cmd_prefix():
 {}{
-	< TODO >}
+	( io_redirect() | < ASSIGNMENT_WORD > )+}
+
+/**
+function_body    : compound_command                // Apply rule 9
+                 | compound_command redirect_list  // Apply rule 9
+                 ;
+*/
+void function_body():
+{
+}
+{
+	compound_command() ( redirect_list() )?
+}
+
+/**
+fname            : NAME                            // Apply rule 8
+                 ;
+*/
+void fname():
+{
+}
+{
+	< WORD_8 >
+}
 
 /**
 function_definition : fname '(' ')' linebreak function_body
                  ;
 */
 void function_definition():
-{}{
-	< TODO >}
+{
+}
+{
+	fname() < KLAMMER_AUF > < KLAMMER_ZU > linebreak() function_body()
+}
 
 /**
 redirect_list    :               io_redirect
@@ -93,7 +204,249 @@ redirect_list    :               io_redirect
 */
 void redirect_list():
 {}{
-	< TODO >}
+	( io_redirect() )+
+}
+
+/**
+brace_group      : Lbrace compound_list Rbrace
+                 ;
+*/
+void brace_group():
+{
+}
+{
+	< LBRACE > compound_list() < RBRACE >
+}
+
+/**
+subshell         : '(' compound_list ')'
+                 ;
+*/
+void subshell():
+{
+}
+{
+	< KLAMMER_AUF > compound_list() < KLAMMER_ZU >
+}
+
+/**
+for_clause       : For name linebreak                            do_group
+                 | For name linebreak in          sequential_sep do_group
+                 | For name linebreak in wordlist sequential_sep do_group
+                 ;
+*/
+void for_clause():
+{
+}
+{
+//	< FOR > name() linebreak() < IN > ( ( wordlist() )? sequential_sep() )? do_group()
+	< FOR > name() linebreak() < IN > ( (< WORD >)* sequential_sep() )? do_group()
+}
+
+/**
+sequential_sep   : ';' linebreak
+                 | newline_list
+                 ;
+*/
+void sequential_sep():
+{
+}
+{
+	( < SEMICOLON > | < NEWLINE > ) ( <NEWLINE> )*
+}
+
+/**
+wordlist         : wordlist WORD
+                 |          WORD
+                 ;
+*/
+void wordlist():
+{
+}
+{
+	( < WORD > )+
+}
+
+/**
+name             : NAME                     // Apply rule 5
+                 ;
+*/
+void name():
+{
+}
+{
+	< NAME5 >
+}
+
+/**
+case_list_ns     : case_list case_item_ns
+                 |           case_item_ns
+                 ;
+*/
+void case_list_ns():
+{
+}
+{
+	( case_item_ns() )+
+}
+
+/**
+pattern          :             WORD         // Apply rule 4
+                 | pattern '|' WORD         // Do not apply rule 4
+                 ;
+*/
+void pattern():
+{
+}
+{
+	< WORD4 > ( < PIPE > < WORD > )*
+}
+
+/**
+case_item_ns     :     pattern ')'               linebreak
+                 |     pattern ')' compound_list linebreak
+                 | '(' pattern ')'               linebreak
+                 | '(' pattern ')' compound_list linebreak
+                 ;
+*/
+void case_item_ns():
+{
+}
+{
+// TODO javacc crash
+//	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > ( compound_list() )? linebreak() 
+	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > linebreak() 
+}
+
+/**
+case_item        :     pattern ')' linebreak     DSEMI linebreak
+                 |     pattern ')' compound_list DSEMI linebreak
+                 | '(' pattern ')' linebreak     DSEMI linebreak
+                 | '(' pattern ')' compound_list DSEMI linebreak
+                 ;
+*/
+void case_item():
+{
+}
+{
+	/* compound_list() and linebreak() both may start with < NEWLINE > */
+// TODO javacc crash
+//	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > ( LOOKAHEAD(compound_list()) compound_list() | linebreak() ) < DSEMI > linebreak()
+	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > compound_list() < DSEMI > linebreak()
+}
+
+/**
+case_list        : case_list case_item
+                 |           case_item
+                 ;
+*/
+void case_list():
+{
+}
+{
+	( case_item() )+
+}
+
+/**
+case_clause      : Case WORD linebreak in linebreak case_list    Esac
+                 | Case WORD linebreak in linebreak case_list_ns Esac 
+                 | Case WORD linebreak in linebreak              Esac
+                 ;
+*/
+void case_clause():
+{
+}
+{
+// TODO javacc crash
+//	< CASE > < WORD > linebreak() < IN > linebreak() ( case_list() | case_list_ns() )? < ESAC >
+	< CASE > < WORD > linebreak() < IN > linebreak() ( case_list() )? < ESAC >
+			/* lookahead to case_item works since case_list() is a list of case_item() */
+}
+
+/**
+if_clause        : If compound_list Then compound_list else_part Fi
+                 | If compound_list Then compound_list           Fi
+                 ;
+*/
+void if_clause():
+{
+}
+{
+	< IF > compound_list() < THEN > compound_list() ( else_part() )? < FI >
+}
+
+/**
+else_part        : Elif compound_list Then else_part
+                 | Else compound_list
+                 ;
+*/
+void else_part():
+{
+}
+{
+	< ELIF > compound_list() < THEN > else_part()
+| 	< ELSE > compound_list()
+}
+
+/**
+while_clause     : While compound_list do_group
+                 ;
+*/
+void while_clause():
+{
+}
+{
+	< WHILE > compound_list() do_group()
+}
+
+/**
+until_clause     : Until compound_list do_group
+                 ;
+*/
+void until_clause():
+{
+}
+{
+	< UNTIL > compound_list() do_group()
+}
+
+/**
+do_group         : Do compound_list Done           // Apply rule 6
+                 ;
+*/
+void do_group():
+{
+}
+{
+	< DO > compound_list() < DONE >
+}
+
+/**
+compound_list    :              term
+                 | newline_list term
+                 |              term separator
+                 | newline_list term separator
+                 ;
+*/
+void compound_list():
+{
+}
+{
+	( newline_list() )? term() ( separator() )?
+}
+
+/**
+term             : term separator and_or
+                 |                and_or
+                 ;
+*/
+void term():
+{
+}
+{
+	and_or() ( LOOKAHEAD(separator()) separator() and_or() )*
+}
+
 /**
 compound_command : brace_group
                  | subshell
@@ -105,8 +458,11 @@ compound_command : brace_group
                  ;
 */
 void compound_command():
-{}{
-	< TODO >}
+{
+}
+{
+	brace_group() | subshell() | for_clause() | case_clause() | if_clause() | while_clause() | until_clause()
+}
 /**
 simple_command   : cmd_prefix cmd_word cmd_suffix
                  | cmd_prefix cmd_word
@@ -167,25 +523,27 @@ void command():
 |	function_definition()
 
 }
-Newline_listNode newline_list():
+/*
+newline_list     :              NEWLINE
+                 | newline_list NEWLINE
+                 ;
+*/
+void newline_list():
 {
-	Newline_listNode ret=null;
 }
 {
-	< TODO >
-	{
-		 return ret;
-	}
+	( < NEWLINE > )+
 }
-LinebreakNode linebreak():
+/**
+linebreak        : newline_list
+                 | // empty
+                 ;
+*/
+void linebreak():
 {
-	LinebreakNode ret=null;
 }
 {
-	< TODO >
-	{
-		 return ret;
-	}
+	( < NEWLINE > )*
 }
 /**
 and_or           :                         pipeline
@@ -199,9 +557,7 @@ And_orNode and_or():
 }
 {
 	pipeline() ( ( < AND_IF > | < OR_IF > ) linebreak() pipeline() )*
-	{
-		 return ret;
-	}
+	{ return ret; }
 }
 /** separator	: separator_op linebreak
  * 				| newline_list
@@ -211,12 +567,10 @@ SeparatorNode separator():
 {
 	SeparatorNode ret=new SeparatorNode();
 	Separator_opNode separator_opN;
-	LinebreakNode linebreakN;
 }
 {
-	separator_opN=separator_op() linebreakN=linebreak() {
+	separator_opN=separator_op() linebreak() {
 		ret.addChild(separator_opN);
-		ret.addChild(linebreakN);
 	}
 |	newline_list() { }
 	{ return ret; }
@@ -233,7 +587,7 @@ ListNode list():
 }
 {
 	and_orN=and_or() { ret.addChild(and_orN); }
-	( separator_opN=separator_op() and_orN=and_or() {
+	( LOOKAHEAD(separator_op()) separator_opN=separator_op() and_orN=and_or() {
 		ret.addChild(separator_opN);
 		ret.addChild(and_orN); } )*
 		
