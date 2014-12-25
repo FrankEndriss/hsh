@@ -4,3 +4,7 @@
 /HshParserConstants.java
 /TokenMgrError.java
 /Token.java
+/L1Parser.java
+/L1ParserConstants.java
+/L1ParserTokenManager.java
+/SimpleCharStream.java

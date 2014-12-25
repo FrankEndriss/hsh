@@ -518,6 +518,7 @@ void command():
 {
 }
 {
+LOOKAHEAD(2)
 	simple_command()
 |	compound_command() ( redirect_list() )?
 |	function_definition()

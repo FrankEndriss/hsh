@@ -1,0 +1,138 @@
+options
+{
+	STATIC=false;
+	USER_TOKEN_MANAGER=false;
+	FORCE_LA_CHECK=true;
+
+	DEBUG_PARSER=true;
+	DEBUG_TOKEN_MANAGER=true;
+}
+PARSER_BEGIN(L1Parser)
+package com.happypeople.hsh.hsh;
+import com.happypeople.hsh.hsh.parser.*;
+
+public class L1Parser // implements TokenManager
+{
+// TODO: implement connection to TokenManager
+}
+PARSER_END(L1Parser)
+
+TOKEN:
+{	< #SQUOTE: "'" >
+|	< #DQUOTE: "\"" > 
+|	< #BQUOTE: "\\" > 
+}
+
+<DEFAULT> TOKEN:
+{
+	< SQUOTE_START: < SQUOTE > > 	: SQUOTED
+|	< DQUOTE_START: < DQUOTE > >	: DQUOTED 
+|	< BACKSLASH: 	< BQUOTE > >	: BQUOTED 
+|	< WS		: ("\b"|"\t")+  >
+|	< NEWLINE	: "\n" | "\r\n" >
+|	< ANYTHING	: (~["'", "\"", "\\", "\b", "\t", "\n"])+ >
+}
+
+
+<SQUOTED> TOKEN:
+{
+	< SQUOTE_END: < SQUOTE > > 	: DEFAULT
+|	< SANYTHING	: (~["'"])+ >
+}
+
+
+<DQUOTED> TOKEN:
+{
+	< DQUOTE_END: < DQUOTE > > : DEFAULT
+|	< DANYTHING	: (~["\""])+ >
+}
+
+<BQUOTED> TOKEN:
+{
+	< BANYTHING	: ~[] > : DEFAULT
+}
+
+/** part of a word
+*/
+void word_part():
+{}{
+	<SQUOTE_START> (<SANYTHING>)? <SQUOTE_END>
+|	<DQUOTE_START> (<DANYTHING>)? <DQUOTE_END>
+|	<BACKSLASH> <BANYTHING>
+|	< ANYTHING >}
+
+void separator():
+{}{
+	( < WS > | < NEWLINE > )+}
+
+void complete_word():
+{
+}
+{
+	( word_part() )+
+}
+
+void words():
+{}{	( separator() | complete_word() )* < EOF >
+}
+
+/*
+TOKEN:
+{
+	< TODO 		: "TODO" >
+*/
+
+/* quoting */
+/*
+|	< SINGLEQUOTE	: "'" >
+|	< DOUBLEQUOTE	: "\"" >
+|	< BACKSLASH	: "\\" >
+*/
+
+/* Token for HshParser */
+/*
+|	< ASSIGNMENT_WORD >
+|	< IO_NUMBER	>
+|	< NAME >
+|	< NEWLINE >
+|	< WORD >
+*/
+
+/* language token. */
+/*
+|	< AND_IF	: "&&" >
+|	< BANG		: "!" >
+|	< CASE		: "case" >
+|	< CLOBBER	: ">|" >
+|	< DLESS		: "<<" >
+|	< DLESSDASH	: "<<-" >
+|	< DGREAT	: ">>" >
+|	< DO 		: "do" >
+|	< DONE		: "done" >
+|	< DSEMI		: ";;" >
+|	< ELSE		: "else" >
+|	< ELIF		: "elif" >
+|	< ESAC		: "esac" >
+|	< FI		: "fi" >
+|	< FOR		: "for" >
+|	< GREATAND	: ">&" >
+|	< GREATER	: ">" >
+|	< IF		: "if" >
+|	< IN		: "in" >
+|	< KLAMMER_AUF: "(" >
+|	< KLAMMER_ZU: ")" >
+|	< LBRACE	: "{" >
+|	< LESS		: "<" >
+|	< LESSAND	: "<&" >
+|	< LESSGREAT	: "<>" >
+|	< OR_IF		: "||" >
+|	< RBRACE	: "}" >
+|	< SEMICOLON : ";" >
+|	< THEN		: "then" >
+|	< UNTIL 	: "until" >
+|	< UPPERSANT	: "&" >
+|	< PIPE 		: "|" >
+|	< WHILE		: "while" >
+}
+*/
+
