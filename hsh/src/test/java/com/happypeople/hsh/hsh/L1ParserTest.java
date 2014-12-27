@@ -6,29 +6,37 @@ import java.io.StringReader;
 
 import org.junit.Test;
 
+import com.happypeople.hsh.hsh.l1parser.L1Parser;
+import com.happypeople.hsh.hsh.l1parser.L1ParserTokenManager;
+import com.happypeople.hsh.hsh.l1parser.ParseException;
+import com.happypeople.hsh.hsh.l1parser.SimpleCharStream;
+
 public class L1ParserTest {
 
 	@Test
 	public void test_simple_quoting() throws ParseException {
 		final String[] ok={
-				// some strings with ws
-			"",
 			"\n",
 			"yzx",
-			"x",
-			"x x",
+			"a",
+			"a x",
 				// and newline
-			"x\n x",
-			"xxx\nxx\n",
-			"xx x\n \nxx\n",
+			"a\n x",
+			"axx\nxx\n",
+			"ax x\n \nxx\n",
 				// and dquote
-			"\"\"",
-			"x\"x\"",
-			"x\" x\"",
-			"x \"\" xx \"\" x",
+			"a\"x\"",
+			"a\" x\"",
+			"a \"\" xx \"\" x",
 				// and squote
-			"x\"` x\"",
-			"x \"\"'x' '\"' \\xx \"\" x",
+			"a\"' x\"",
+			"''''",
+			"a \"\"'x' '\"' \\xx \"\" x",
+
+			"",
+			"''",
+			"\"\"",
+			"``"
 		};
 		for(int i=0; i<ok.length; i++) {
 			try {
@@ -41,26 +49,32 @@ public class L1ParserTest {
 	}
 
 	@Test
+	public void test_backticsInQuotes() throws ParseException {
+		final String str="\"`x`\"";
+		do_parse(0, str);
+	}
+
+	@Test
 	public void test_quote_failing() {
 		final String[] ok={
 				// some strings with ws
 			"'",
 			"\n\"",
-			"yz'x",
-			"'x",
-			"x' x",
+			"bz'x",
+			"'b",
+			"b' x",
 				// and newline
-			"x\n' x",
-			"xxx\nx'x\n",
-			"'xx x\n \nxx\n",
+			"b\n' x",
+			"bxx\nx'x\n",
+			"'bx x\n \nxx\n",
 				// and dquote
 			"\"\"'",
-			"x'\"x\"",
-			"x'\" x\"",
-			"x \"\" x'x \"\" x",
+			"b'\"x\"",
+			"b'\" x\"",
+			"b \"\" x'x \"\" x",
 				// and squote
-			"x\"` x\"'",
-			"x \"\"'x' '\"' \\x'x \"\" x",
+			"b\"` x\"'",
+			"b \"\"'x' '\"' \\x'x \"\" x",
 		};
 		for(int i=0; i<ok.length; i++) {
 			try {
@@ -68,12 +82,15 @@ public class L1ParserTest {
 				fail("should have failed at: "+i+" in:>"+ok[i]+"<");
 			}catch(final ParseException e) {
 				// ignore
+			}catch(final TokenMgrError e) {
+				// ignore
 			}
 		}
 	}
 
 
 	private void do_parse(final int tNum, final String test) throws ParseException {
+		System.out.println("do_parse "+tNum+": "+test);
 		final L1ParserTokenManager tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader(test)));
 		//tokenMgr.setDebugStream(System.out);
 		final L1Parser parser=new L1Parser(tokenMgr);

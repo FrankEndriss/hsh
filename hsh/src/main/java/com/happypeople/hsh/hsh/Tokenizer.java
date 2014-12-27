@@ -1,13 +1,8 @@
 package com.happypeople.hsh.hsh;
 
-import java.io.EOFException;
-import java.io.IOException;
 import java.io.Reader;
-import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 /** http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_02
  ** 2.3 Token Recognition
@@ -70,7 +65,7 @@ import java.util.Set;
 * ******************************************************************************************
 * The implementation works as a Iterator<String>. So, it parses while calls to hasNext() and next().
 * No buffering or asynchronization is done at all.
-* 
+*
 * ******************************
 * NOTE: This does not work, has to be integrated into Parser.java
 */
@@ -161,10 +156,14 @@ public class Tokenizer implements Iterator<Token>, TokenManager {
 			return value;
 		}
 
+		public void parse(final SimplePushbackInput in) throws NotParsedException {
+			throw new RuntimeException("not implemented");
+		}
 		/** Parses this token transactional.
 		 * @param in input stream
 		 * @throws NotParsedException if parsing failed
 		 */
+/*
 		public void parse(final SimplePushbackInput in) throws NotParsedException {
 			for(int i=0; i<value.length; i++) {
 				final char c=in.read();
@@ -204,6 +203,9 @@ public class Tokenizer implements Iterator<Token>, TokenManager {
 		else
 			currentToken.append(c);
 	}
+	*/
+	}
+
 
 	@Override
 	public void remove() {
