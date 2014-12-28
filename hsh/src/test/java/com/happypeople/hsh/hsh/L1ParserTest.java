@@ -6,6 +6,8 @@ import java.io.StringReader;
 
 import org.junit.Test;
 
+import com.happypeople.hsh.hsh.l1parser.EofL1Node;
+import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L1ParserTokenManager;
 import com.happypeople.hsh.hsh.l1parser.ParseException;
@@ -95,7 +97,9 @@ public class L1ParserTest {
 		//tokenMgr.setDebugStream(System.out);
 		final L1Parser parser=new L1Parser(tokenMgr);
 		//parser.enable_tracing();
-		parser.words();
+		L1Node node=null;
+		while(!((node=parser.nextL1Node())instanceof EofL1Node))
+			System.out.println(""+node);
 	}
 
 }

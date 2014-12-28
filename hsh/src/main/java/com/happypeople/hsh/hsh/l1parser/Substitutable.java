@@ -2,9 +2,11 @@ package com.happypeople.hsh.hsh.l1parser;
 
 import java.util.Iterator;
 
-/** A L1Node which can and should be substituted by a list of Nodes of type N
- * @param the type of the result of the substitution.
+import com.happypeople.hsh.HshContext;
+
+
+/** A L1Node which can and should be substituted to another String
  */
-public interface Substitutable<N> extends L1Node {
-	public Iterator<N> doSubstitution() throws ParseException;
+public interface Substitutable extends L1Node {
+	public Iterator<String> doSubstitution(HshContext env) throws ParseException;
 }

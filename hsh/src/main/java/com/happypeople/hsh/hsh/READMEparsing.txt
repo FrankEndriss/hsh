@@ -9,6 +9,6 @@ Level:
 4b. Parser constructs are executed
 
 
-new HshParser(new L1Parser(new EscapedNewlineFilterReader(System.in)));
+new HshParser(new L2TokenManager(new L1Parser(new EscapedNewlineFilterReader(System.in))));
 
 //new Parser(new Tokenizer(new SimplePushbackInput(new EscapedNewlineFilterReader(System.in))));

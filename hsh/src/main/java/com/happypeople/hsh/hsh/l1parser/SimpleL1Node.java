@@ -1,12 +1,12 @@
 package com.happypeople.hsh.hsh.l1parser;
 
 
-/** SimpleNode is a not Substitutable node.
+/** SimpleL1Node is a not Substitutable node.
  */
-public class SimpleNode implements L1Node {
+public class SimpleL1Node implements L1Node {
 	private final StringBuilder sb=new StringBuilder();
 
-	public SimpleNode(final String str) {
+	public SimpleL1Node(final String str) {
 		sb.append(str);
 	}
 

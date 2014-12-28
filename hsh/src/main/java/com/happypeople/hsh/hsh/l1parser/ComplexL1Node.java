@@ -4,22 +4,27 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ComplexL1Node implements L1Node, Substitutable<String> {
+import com.happypeople.hsh.HshContext;
+
+/** Node with children.
+ */
+public abstract class ComplexL1Node implements L1Node, Substitutable {
 	private final List<L1Node> children=new ArrayList<L1Node>();
 
-	public void addChild(final L1Node child) {
+	public void add(final L1Node child) {
 		children.add(child);
 	}
 
+	// TODO: check if this makes sense
 	@Override
-	public Iterator<String> doSubstitution() throws ParseException {
+	public Iterator<String> doSubstitution(final HshContext env) throws ParseException {
 		final List<String> ret=new ArrayList<String>();
 		for(final L1Node child : children)
 			if(child instanceof BacktickedNode) {
-				for(final Iterator<String> iter=((BacktickedNode)child).doSubstitution() ;; iter.hasNext())
+				for(final Iterator<String> iter=((BacktickedNode)child).doSubstitution(env) ;; iter.hasNext())
 					ret.add(iter.next());
-			} else if (child instanceof SimpleNode) {
-				ret.add(((SimpleNode) child).getString());
+			} else if (child instanceof SimpleL1Node) {
+				ret.add(((SimpleL1Node) child).getString());
 			} else
 				throw new RuntimeException("unknown node: "+child.getClass());
 

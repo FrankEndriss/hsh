@@ -2,7 +2,9 @@ package com.happypeople.hsh.hsh.l1parser;
 
 import java.util.Iterator;
 
-public class BacktickedNode implements Substitutable<String> {
+import com.happypeople.hsh.HshContext;
+
+public class BacktickedNode implements Substitutable {
 	private final String command;
 
 	public BacktickedNode(final String command) {
@@ -10,7 +12,7 @@ public class BacktickedNode implements Substitutable<String> {
 	}
 
 	@Override
-	public Iterator<String> doSubstitution() throws ParseException {
+	public Iterator<String> doSubstitution(final HshContext env) throws ParseException {
 		// TODO:
 		// -do create HshParser
 		// -do run parser over command
