@@ -11,6 +11,8 @@ import com.happypeople.hsh.hsh.parser.*;
 
 public class HshParser
 {
+	private void throwNotImplemented() {		throw new RuntimeException("not implemented");
+	}
 }
 PARSER_END(HshParser)
 
@@ -509,11 +511,16 @@ simple_command   : cmd_prefix cmd_word cmd_suffix
                  | cmd_name
                  ;
 */
-void simple_command():
-{}
+SimpleCommand simple_command():
 {
-	cmd_prefix() ( cmd_word() ( cmd_suffix())? )?
-|	cmd_name() ( cmd_suffix() )?	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	SimpleCommand simpleCommand=new SimpleCommand();
+	L2Token cmdName;}
+{
+	cmd_prefix() { throwNotImplemented(); } ( cmd_word() ( cmd_suffix())? )?
+|	cmdName=cmd_name() ( cmd_suffix() { throwNotImplemented(); })?	{
+		simpleCommand.setCmdName(cmdName);
+	 	return simpleCommand;
+	}
 }
 
 /** separator_op     : '&' | ';'
@@ -530,22 +537,25 @@ pipeline         :      pipe_sequence
                  | Bang pipe_sequence
                  ;
 */
-void pipeline():
+PipeSequence pipeline():
 {	HshParserRules.applyRule7a(getToken(0));
+	PipeSequence ret;
 }
 {
-	( pipe_sequence()
-|	< BANG > pipe_sequence() )	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	( ret=pipe_sequence()
+|	< BANG > ret=pipe_sequence() { ret.setBanged(true); } )	{ return ret; }
 }
 /**
 pipe_sequence    :                             command
                  | pipe_sequence '|' linebreak command
                  ;
 */
-void pipe_sequence():
-{}
-{	command() ( < PIPE > linebreak() command() )*
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+PipeSequence pipe_sequence():
+{
+	PipeSequence ret=new PipeSequence();
+	L2Node cmd;}
+{	cmd=command() { ret.addChild(cmd); } ( < PIPE > linebreak() command() { throwNotImplemented(); } )*
+	{ return ret; }
 }
 /**
 command          : simple_command
@@ -554,16 +564,17 @@ command          : simple_command
                  | function_definition
                  ;
 */
-void command():
+Command command():
 {
+	Command ret=new Command();
+	L2Node simpleCommand;
 }
 {
-LOOKAHEAD(2)
-	simple_command()
-|	compound_command() ( redirect_list() )?
-|	function_definition()
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
-
+	( LOOKAHEAD(2)
+	simpleCommand=simple_command() { ret.addChild(simpleCommand); }
+|	compound_command() ( redirect_list() )? { throwNotImplemented(); }
+|	function_definition() { throwNotImplemented(); } )
+	{ return ret; }
 }
 /*
 newline_list     :              NEWLINE
@@ -597,11 +608,15 @@ and_or           :                         pipeline
 */
 And_orNode and_or():
 {
-	And_orNode ret=null;
+	And_orNode ret=new And_orNode();
+	L2Node pipeline;
+	Token t;
 }
 {
-	( pipeline() ( ( < AND_IF > | < OR_IF > ) linebreak() pipeline() )* )
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	( pipeline=pipeline() { ret.addChild(pipeline); }
+		( ( t=< AND_IF > | t=< OR_IF > ) { ret.addChild((L2Token)t); } linebreak()
+		pipeline=pipeline()		{ ret.addChild(pipeline); } )* )
+	{ return ret; }
 }
 /** separator	: separator_op linebreak
  * 				| newline_list
