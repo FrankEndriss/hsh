@@ -8,7 +8,7 @@ import java.util.List;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
-import com.happypeople.hsh.hsh.l1parser.Substitutable;
+import com.happypeople.hsh.hsh.l1parser.SubstitutableL1Node;
 
 /** A L2Token extends Token to have:
  * -a list of L1Nodes as childs
@@ -23,6 +23,17 @@ public class L2Token extends Token {
 
 	public void addParts(final Collection<L1Node> lparts) {
 		parts.addAll(lparts);
+	}
+
+	/** Creates a printout of the node-tree
+	 * @param level the level of the tree this node lives in
+	 */
+	public void dump(final int level) {
+		for(int i=0; i<level; i++)
+			System.out.print("\t");
+		System.out.println(getClass().getName());
+		for(final L1Node child : parts)
+			child.dump(level+1);
 	}
 
 	/**
@@ -60,8 +71,8 @@ public class L2Token extends Token {
 	public Iterator<String> doSubstitution(final HshContext env) throws com.happypeople.hsh.hsh.l1parser.ParseException, ParseException {
 		final List<String> list=new ArrayList<String>();
 		for(final L1Node part : parts) {
-			if(part instanceof Substitutable)
-				for(final Iterator<String> iter=((Substitutable)part).doSubstitution(env);; iter.hasNext())
+			if(part instanceof SubstitutableL1Node)
+				for(final Iterator<String> iter=((SubstitutableL1Node)part).doSubstitution(env);; iter.hasNext())
 					list.add(iter.next());
 			else // it is a SimpleL1Node
 				list.add(((SimpleL1Node)part).getString());

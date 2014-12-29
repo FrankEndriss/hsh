@@ -1,5 +1,5 @@
 package com.happypeople.hsh.hsh.parser;
 
-public class LinebreakNode extends JJNode {
+public class LinebreakNode extends L2Node {
 
 }

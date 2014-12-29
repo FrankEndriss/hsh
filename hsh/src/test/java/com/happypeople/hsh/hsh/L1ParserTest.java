@@ -15,6 +15,8 @@ import com.happypeople.hsh.hsh.l1parser.SimpleCharStream;
 
 public class L1ParserTest {
 
+	private final static boolean DEBUG=false;
+	
 	@Test
 	public void test_simple_quoting() throws ParseException {
 		final String[] ok={
@@ -44,7 +46,8 @@ public class L1ParserTest {
 			try {
 				do_parse(i, ok[i]);
 			}catch(final ParseException e) {
-				System.out.println("ParseException at test "+i);
+				if(DEBUG)
+					System.out.println("ParseException at test "+i);
 				throw e;
 			}
 		}
@@ -92,14 +95,16 @@ public class L1ParserTest {
 
 
 	private void do_parse(final int tNum, final String test) throws ParseException {
-		System.out.println("do_parse "+tNum+": "+test);
+		if(DEBUG)
+			System.out.println("do_parse "+tNum+": "+test);
 		final L1ParserTokenManager tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader(test)));
 		//tokenMgr.setDebugStream(System.out);
 		final L1Parser parser=new L1Parser(tokenMgr);
 		//parser.enable_tracing();
 		L1Node node=null;
 		while(!((node=parser.nextL1Node())instanceof EofL1Node))
-			System.out.println(""+node);
+			if(DEBUG)
+				System.out.println(""+node);
 	}
 
 }

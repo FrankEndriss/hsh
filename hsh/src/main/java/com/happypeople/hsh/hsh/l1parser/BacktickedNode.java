@@ -4,11 +4,15 @@ import java.util.Iterator;
 
 import com.happypeople.hsh.HshContext;
 
-public class BacktickedNode implements Substitutable {
+public class BacktickedNode implements SubstitutableL1Node {
 	private final String command;
 
 	public BacktickedNode(final String command) {
 		this.command=command;
+	}
+
+	public String getCommand() {
+		return command;
 	}
 
 	@Override
@@ -22,6 +26,15 @@ public class BacktickedNode implements Substitutable {
 		// -output should be parsed into simple words (like squoted) according to $IFS
 		// -and returned throu iterator
 		return null;
+	}
+
+	public void dump(final int level) {
+		for(int i=0; i<level; i++)
+			System.out.print("\t");
+		System.out.println(getClass().getName());
+		for(int i=0; i<level+1; i++)
+			System.out.print("\t");
+		System.out.println("command="+getCommand());
 	}
 
 }

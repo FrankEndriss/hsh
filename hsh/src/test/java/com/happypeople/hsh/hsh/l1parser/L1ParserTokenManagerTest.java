@@ -9,6 +9,8 @@ import org.junit.Test;
 
 public class L1ParserTokenManagerTest {
 
+	private final static boolean DEBUG=false;
+	
 	private class TTest {
 		TTest(final int parserState, final String s, final int c) {
 			this.str=s;
@@ -80,12 +82,14 @@ public class L1ParserTokenManagerTest {
 
 		tokenMgr.ReInit(new SimpleCharStream(new StringReader(ttest.str)), ttest.parserState);
 
-		System.out.println("new Test, state="+tokenMgr.curLexState);
+		if(DEBUG)
+			System.out.println("new Test, state="+tokenMgr.curLexState);
 		int i=0;
 		Token t;
 		while((t=tokenMgr.getNextToken()).kind!=L1ParserConstants.EOF && i<MAXLOOP) {
 			i++;
-			System.out.println(L1ParserConstants.tokenImage[t.kind]+": "+t);
+			if(DEBUG)
+				System.out.println(L1ParserConstants.tokenImage[t.kind]+": "+t);
 		}
 		assertEquals(message, ttest.count, i);
 	}

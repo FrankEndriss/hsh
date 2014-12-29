@@ -4,26 +4,23 @@ package com.happypeople.hsh.hsh.l1parser;
 /** SimpleL1Node is a not Substitutable node.
  */
 public class SimpleL1Node implements L1Node {
-	private final StringBuilder sb=new StringBuilder();
+	private final String str;
 
 	public SimpleL1Node(final String str) {
-		sb.append(str);
+		this.str=str;
 	}
 
 	public String getString() {
-		return sb.toString();
+		return str;
 	}
 
-	/*
-	public void append(final String s) {
-		sb.append(s);
+	public void dump(final int level) {
+		for(int i=0; i<level; i++)
+			System.out.print("\t");
+		System.out.println(getClass().getName());
+		for(int i=0; i<level+1; i++)
+			System.out.print("\t");
+		System.out.println("value="+getString());
 	}
-	*/
-
-	@Override
-	public String toString() {
-		return getString();
-	}
-
 
 }

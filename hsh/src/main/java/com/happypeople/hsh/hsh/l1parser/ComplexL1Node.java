@@ -6,9 +6,9 @@ import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 
-/** Node with children.
+/** L1Node with children.
  */
-public abstract class ComplexL1Node implements L1Node, Substitutable {
+public abstract class ComplexL1Node implements SubstitutableL1Node {
 	private final List<L1Node> children=new ArrayList<L1Node>();
 
 	public void add(final L1Node child) {
@@ -29,6 +29,14 @@ public abstract class ComplexL1Node implements L1Node, Substitutable {
 				throw new RuntimeException("unknown node: "+child.getClass());
 
 		return ret.iterator();
+	}
+
+	public void dump(final int level) {
+		for(int i=0; i<level; i++)
+			System.out.print("\t");
+		System.out.println(getClass().getName());
+		for(L1Node child : children)
+			child.dump(level+1);
 	}
 
 }

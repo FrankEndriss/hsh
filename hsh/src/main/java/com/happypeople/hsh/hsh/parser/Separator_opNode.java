@@ -2,7 +2,7 @@ package com.happypeople.hsh.hsh.parser;
 
 import com.happypeople.hsh.hsh.Token;
 
-public class Separator_opNode extends JJNode {
+public class Separator_opNode extends L2Node {
 	private Token token;
 
 	public void setToken(final Token t) {

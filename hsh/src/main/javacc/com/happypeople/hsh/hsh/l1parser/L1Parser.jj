@@ -153,16 +153,21 @@ public class L1Parser // implements TokenManager
 	/** Interface for token-translation between L1Parser and L2Parser
 	*/
 	public L1Node nextL1Node() throws ParseException {
+		return word_part();
+		/*
 		if(partQueue.isEmpty())			fetchMoreL1Nodes();
 		return partQueue.removeFirst();
+		*/
 	}
 
+/*
 	private Deque<L1Node> partQueue=new LinkedList<L1Node>();
 
 	private void fetchMoreL1Nodes() throws ParseException {
 		List<L1Node> more=word_part();
 		for(L1Node node : more)
 			partQueue.addLast(node);	}
+	*/
 		}
 
 PARSER_END(L1Parser)
@@ -228,7 +233,7 @@ TOKEN:
 |	< DQUOTE_START	: < DQUOTE > >	 /* :DQUOTED  */
 |	< WS			: (" "|"\t")+  >
 |	< NEWLINE		: "\n" | "\r\n" >
-|	< DEFAULT_ANYTHING		: (~["'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">"])+ >
+|	< DEFAULT_ANYTHING		: (~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">"])+ >
 }
 
 /** According to 2.2.3
@@ -307,14 +312,14 @@ BacktickedNode backticked():
 		}}
 
 /** creates a String representing what is found between the two single-quotes */
-SimpleL1Node squoted():
+SQuotedL1Node squoted():
 {	final StringBuilder sb=new StringBuilder();
 	Token t;
 }{	<SQUOTE_START> { pushState(SQUOTED); }
 	( t=<SANYTHING> { sb.append(t.image); } )?
 	<SQUOTE_END> {
 		popState();
-		return new SimpleL1Node(sb.toString());
+		return new SQuotedL1Node(sb.toString());
 	}}
 
 OperatorL1Node operator():
@@ -344,28 +349,26 @@ OperatorL1Node operator():
 
 /** part of a word or whole word.
 * Result of parsing on L1-Level is a stream of word_part, which are
-* then concatenated to words according to severeal rules.
+* then concatenated to words according to several rules.
 * These words are the tokens for parsing on L2-Level.
-* A word_part is a List of L1Nodes wich are the content of that part of a word.
-* Which word_parts are concatenated to form complete words, and wich onds act as
+* A word_part is a  L1Nodes which is the content of that part of a word.
+* Which word_parts are concatenated to form complete words, and which ones act as
 * word separators is implemented in L2TokenManager.
 */
-List<L1Node> word_part():
+L1Node word_part():
 {
-	List<L1Node> ret=new ArrayList<L1Node>();
-	List<L1Node> childs;
-	L1Node child;
+	L1Node ret;
 	Token t;
 }
 {
 	(
-	child=default_part()	{ ret.add(child); }|	child=backticked()		{ ret.add(child); }
-|	child=dquoted()			{ ret.add(child); }
-|	child=squoted()			{ ret.add(child); }
-|	child=operator()		{ ret.add(child); }
-|	t=< WS >				{ ret.add(new WsL1Node(t)); }
-|	t=< NEWLINE >			{ ret.add(new NlL1Node(t)); }
-|	t=< EOF >				{ ret.add(new EofL1Node(t)); }
+	ret=default_part()|	ret=backticked()	
+|	ret=dquoted()		
+|	ret=squoted()		
+|	ret=operator()	
+|	t=< WS >				{ ret=new WsL1Node(t); }
+|	t=< NEWLINE >			{ ret=new NlL1Node(t); }
+|	t=< EOF >				{ ret=new EofL1Node(t); }
 	)
 	{ return ret; }
 }

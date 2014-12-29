@@ -26,6 +26,8 @@ TOKEN:
 |	< NEWLINE : "\n" >
 |	< WORD >
 
+|	< WS >
+
 /* defined token. */
 |	< AND_IF	: "&&" >
 |	< BANG		: "!" >
