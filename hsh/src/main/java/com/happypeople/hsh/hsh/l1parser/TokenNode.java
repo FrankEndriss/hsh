@@ -16,6 +16,10 @@ public abstract class TokenNode implements L1Node, WordSeparator {
 		return t;
 	}
 
+	public String getString() {
+		return t.image;
+	}
+
 	public void dump(final int level) {
 		for(int i=0; i<level; i++)
 			System.out.print("\t");

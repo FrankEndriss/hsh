@@ -193,12 +193,35 @@ TOKEN:
 |	< LESSGREAT	: "<>" >
 |	< DLESSDASH : "<<-" > 
 |	< CLOBBER	: ">|" >
-// first letters of operators
+
+// first letters of operators (these should be defined in HshParser.jj, too)
 |	< BG 		: "&" >
 |	< PIPE 		: "|" >
 |	< SEMICOLON : ";" >  
 |	< LESS  	: "<" >  
 |	< GREAT  	: ">" >  
+
+// reserved words
+|	< IF  		: "if" >  
+|	< THEN 		: "then" >  
+|	< ELSE 		: "else" >  
+|	< ELIF 		: "elif" >  
+|	< FI  		: "fi" >  
+|	< DO  		: "do" >  
+|	< DONE 		: "done" >  
+|	< CASE 		: "case" >  
+|	< ESAC 		: "esac" >  
+|	< WHILE		: "while" >  
+|	< UNTIL		: "until" >  
+|	< FOR		: "for" >  
+
+// other reserved words
+// These are reserved words, not operator tokens, and are
+// recognized when reserved words are recognized.
+|	< LBRACE	: "{" >  
+|	< RBRACE	: "}" >  
+|	< BANG		: "!" >  
+|	< IN		: "in" >  
 }
 
 < DEFAULT, BACKTICKED > TOKEN:

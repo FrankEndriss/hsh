@@ -14,6 +14,10 @@ public class BacktickedNode implements SubstitutableL1Node {
 	public String getCommand() {
 		return command;
 	}
+	
+	public String getString() {
+		return new StringBuilder("`").append(getCommand()).append("`").toString();
+	}
 
 	@Override
 	public Iterator<String> doSubstitution(final HshContext env) throws ParseException {

@@ -10,7 +10,7 @@ import com.happypeople.hsh.hsh.HshParserConstants;
 import com.happypeople.hsh.hsh.L2Token;
 
 public class L2TokenManagerTest {
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 	
 	public L2TokenManager setup(String input) {
 		final L1ParserTokenManager tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader(input)));

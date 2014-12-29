@@ -16,14 +16,20 @@ import com.happypeople.hsh.hsh.l1parser.SubstitutableL1Node;
  */
 public class L2Token extends Token {
 	private final List<L1Node> parts=new ArrayList<L1Node>();
+	
+	public L2Token() {
+		image="L2Token";
+	}
 
 	public void addPart(final L1Node part) {
 		parts.add(part);
 	}
 
+	/*
 	public void addParts(final Collection<L1Node> lparts) {
 		parts.addAll(lparts);
 	}
+	*/
 
 	/** Creates a printout of the node-tree
 	 * @param level the level of the tree this node lives in
@@ -79,6 +85,13 @@ public class L2Token extends Token {
 		}
 
 		return list.iterator();
+	}
+
+	public String getString() {
+		StringBuilder sb=new StringBuilder();
+		for(L1Node part : parts)
+			sb.append(part.getString());
+		return sb.toString();
 	}
 
 

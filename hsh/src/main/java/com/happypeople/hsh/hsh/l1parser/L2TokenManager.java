@@ -98,10 +98,13 @@ public class L2TokenManager implements TokenManager {
 		return token;
 	}
 
-	private final static int[] kindMap=new int[39];
+	private final static int[] kindMap=new int[Math.max(
+			L1ParserConstants.tokenImage.length, 
+			HshParserConstants.tokenImage.length)];
 	static {
 		for(int i=0; i<kindMap.length; i++)
 			kindMap[i]=-1;	// undefined
+
 		kindMap[L1ParserConstants.EOF]=HshParserConstants.EOF;
 		kindMap[L1ParserConstants.AND_IF]=HshParserConstants.AND_IF;
 		kindMap[L1ParserConstants.OR_IF]=HshParserConstants.OR_IF;

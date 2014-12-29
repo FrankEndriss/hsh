@@ -4,4 +4,8 @@ public class SQuotedL1Node extends SimpleL1Node {
 	public SQuotedL1Node(String str) {
 		super(str);
 	}
+	
+	public String getString() {
+		return "'"+super.getString()+"'";
+	}
 }

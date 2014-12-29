@@ -2,8 +2,8 @@ options
 {
 	STATIC=false;
 	USER_TOKEN_MANAGER=true;
-    FORCE_LA_CHECK=true;
-    // LOOKAHEAD=2;
+    //FORCE_LA_CHECK=true;
+    //LOOKAHEAD=2;
 }
 PARSER_BEGIN(HshParser)
 package com.happypeople.hsh.hsh;
@@ -11,58 +11,60 @@ import com.happypeople.hsh.hsh.parser.*;
 
 public class HshParser
 {
-// TODO: implement connection to TokenManager
 }
 PARSER_END(HshParser)
 
-TOKEN:
-{
-	< TODO 		: "TODO" >
+//TOKEN: {
+//	< TODO 		: "TODO" >
 
 /* external defined token */
-|	< ASSIGNMENT_WORD >
-|	< IO_NUMBER	>
-|	< NAME >
-|	< NEWLINE : "\n" >
-|	< WORD >
+/*
+	<ASSIGNMENT_WORD>
+|	<IO_NUMBER>
+|	<NAME>
+|	<NEWLINE>
+|	<WORD>
+*/
 
-|	< WS >
+//|	< WS >
 
 /* defined token. */
-|	< AND_IF	: "&&" >
-|	< BANG		: "!" >
-|	< CASE		: "case" >
-|	< CLOBBER	: ">|" >
-|	< DLESS		: "<<" >
-|	< DLESSDASH	: "<<-" >
-|	< DGREAT	: ">>" >
-|	< DO 		: "do" >
-|	< DONE		: "done" >
-|	< DSEMI		: ";;" >
-|	< ELSE		: "else" >
-|	< ELIF		: "elif" >
-|	< ESAC		: "esac" >
-|	< FI		: "fi" >
-|	< FOR		: "for" >
-|	< GREATAND	: ">&" >
-|	< GREATER	: ">" >
-|	< IF		: "if" >
-|	< IN		: "in" >
-|	< KLAMMER_AUF: "(" >
-|	< KLAMMER_ZU: ")" >
-|	< LBRACE	: "{" >
-|	< LESS		: "<" >
-|	< LESSAND	: "<&" >
-|	< LESSGREAT	: "<>" >
-|	< OR_IF		: "||" >
-|	< RBRACE	: "}" >
-|	< SEMICOLON : ";" >
-|	< THEN		: "then" >
-|	< UNTIL 	: "until" >
-|	< UPPERSANT	: "&" >
-|	< PIPE 		: "|" >
-|	< WHILE		: "while" >
-}
+/*
+|	< AND_IF >
+|	< BANG >
+|	< CASE >
+|	< CLOBBER >
+|	< DLESS >
+|	< DLESSDASH >
+|	< DGREAT >
+|	< DO >
+|	< DONE >
+|	< DSEMI >
+|	< ELSE >
+|	< ELIF >
+|	< ESAC >
+|	< FI >
+|	< FOR >
+|	< GREATAND >
+|	< GREAT >
+|	< IF >
+|	< IN >
+|	< KLAMMER_AUF >
+|	< KLAMMER_ZU >
+|	< LBRACE >
+|	< LESS >
+|	< LESSAND >
+|	< LESSGREAT >
+|	< OR_IF	>
+|	< RBRACE >
+|	< SEMICOLON >
+|	< THEN >
+|	< UNTIL >
+|	< UPPERSANT >
+|	< PIPE >
+|	< WHILE >
+*/
+//}
 
 /**
 here_end         : WORD                      // Apply rule 3
@@ -73,6 +75,7 @@ void here_end():
 }
 {
 	< WORD_3 >
+	{ throw new RuntimeException("not implemented"); }
 }
 /**
 io_here          : DLESS     here_end
@@ -83,7 +86,8 @@ void io_here():
 {
 }
 {
-	( < DLESS > | < DLESSDASH > ) here_end()
+	( ( < DLESS > | < DLESSDASH > ) here_end() )
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 /*
 filename         : WORD                      // Apply rule 2
@@ -93,7 +97,8 @@ void filename():
 {
 }
 {
-	< WORD_2 >
+	( < WORD_2 > )
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 /*
 io_file          : '<'       filename
@@ -109,7 +114,8 @@ void io_file():
 {
 }
 {
-	( "<" | < LESSAND > | ">" | < GREATAND > | < DGREAT > | < LESSGREAT > | < CLOBBER > ) filename()
+	( < LESS > | < LESSAND > | < GREAT > | < GREATAND > | < DGREAT > | < LESSGREAT > | < CLOBBER > ) filename()
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -124,6 +130,7 @@ void io_redirect():
 }
 {
 	( < IO_NUMBER > )? ( io_file() | io_here() )
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -132,15 +139,18 @@ cmd_word         : WORD                   // Apply rule 7b
 */
 void cmd_word():
 {}{
-	< WORD_7b >}
+	< WORD >	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+}
 
 /**
 cmd_name         : WORD                   // Apply rule 7a
                  ;
 */
-void cmd_name():
-{}{
-	< WORD_7a >}
+L2Token cmd_name():
+{
+	Token ret;}{
+	ret=< WORD >	{ return (L2Token)ret; }
+}
 
 /**
 cmd_suffix       :            io_redirect
@@ -152,6 +162,7 @@ cmd_suffix       :            io_redirect
 void cmd_suffix():
 {}{
 	( io_redirect() | < WORD > )+
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -163,7 +174,8 @@ cmd_prefix       :            io_redirect
 */
 void cmd_prefix():
 {}{
-	( io_redirect() | < ASSIGNMENT_WORD > )+}
+	( io_redirect() | < ASSIGNMENT_WORD > )+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+}
 
 /**
 function_body    : compound_command                // Apply rule 9
@@ -175,6 +187,7 @@ void function_body():
 }
 {
 	compound_command() ( redirect_list() )?
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -186,6 +199,7 @@ void fname():
 }
 {
 	< WORD_8 >
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -197,6 +211,7 @@ void function_definition():
 }
 {
 	fname() < KLAMMER_AUF > < KLAMMER_ZU > linebreak() function_body()
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -207,6 +222,7 @@ redirect_list    :               io_redirect
 void redirect_list():
 {}{
 	( io_redirect() )+
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -218,6 +234,7 @@ void brace_group():
 }
 {
 	< LBRACE > compound_list() < RBRACE >
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -229,6 +246,7 @@ void subshell():
 }
 {
 	< KLAMMER_AUF > compound_list() < KLAMMER_ZU >
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -243,6 +261,7 @@ void for_clause():
 {
 //	< FOR > name() linebreak() < IN > ( ( wordlist() )? sequential_sep() )? do_group()
 	< FOR > name() linebreak() < IN > ( (< WORD >)* sequential_sep() )? do_group()
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -255,6 +274,7 @@ void sequential_sep():
 }
 {
 	( < SEMICOLON > | < NEWLINE > ) ( <NEWLINE> )*
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -267,6 +287,7 @@ void wordlist():
 }
 {
 	( < WORD > )+
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -278,6 +299,7 @@ void name():
 }
 {
 	< NAME5 >
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -290,6 +312,7 @@ void case_list_ns():
 }
 {
 	( case_item_ns() )+
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -302,6 +325,7 @@ void pattern():
 }
 {
 	< WORD4 > ( < PIPE > < WORD > )*
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -318,6 +342,7 @@ void case_item_ns():
 // TODO javacc crash
 //	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > ( compound_list() )? linebreak() 
 	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > linebreak() 
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -335,6 +360,7 @@ void case_item():
 // TODO javacc crash
 //	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > ( LOOKAHEAD(compound_list()) compound_list() | linebreak() ) < DSEMI > linebreak()
 	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > compound_list() < DSEMI > linebreak()
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -347,6 +373,7 @@ void case_list():
 }
 {
 	( case_item() )+
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -363,6 +390,7 @@ void case_clause():
 //	< CASE > < WORD > linebreak() < IN > linebreak() ( case_list() | case_list_ns() )? < ESAC >
 	< CASE > < WORD > linebreak() < IN > linebreak() ( case_list() )? < ESAC >
 			/* lookahead to case_item works since case_list() is a list of case_item() */
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -375,6 +403,7 @@ void if_clause():
 }
 {
 	< IF > compound_list() < THEN > compound_list() ( else_part() )? < FI >
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -388,6 +417,7 @@ void else_part():
 {
 	< ELIF > compound_list() < THEN > else_part()
 | 	< ELSE > compound_list()
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -399,6 +429,7 @@ void while_clause():
 }
 {
 	< WHILE > compound_list() do_group()
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -410,6 +441,7 @@ void until_clause():
 }
 {
 	< UNTIL > compound_list() do_group()
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -421,6 +453,7 @@ void do_group():
 }
 {
 	< DO > compound_list() < DONE >
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -435,6 +468,7 @@ void compound_list():
 }
 {
 	( newline_list() )? term() ( separator() )?
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -447,6 +481,7 @@ void term():
 }
 {
 	and_or() ( LOOKAHEAD(separator()) separator() and_or() )*
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -464,6 +499,7 @@ void compound_command():
 }
 {
 	brace_group() | subshell() | for_clause() | case_clause() | if_clause() | while_clause() | until_clause()
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 /**
 simple_command   : cmd_prefix cmd_word cmd_suffix
@@ -474,11 +510,11 @@ simple_command   : cmd_prefix cmd_word cmd_suffix
                  ;
 */
 void simple_command():
-{
-}
+{}
 {
 	cmd_prefix() ( cmd_word() ( cmd_suffix())? )?
-|	cmd_name() ( cmd_suffix() )?}
+|	cmd_name() ( cmd_suffix() )?	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+}
 
 /** separator_op     : '&' | ';'
 */
@@ -495,19 +531,21 @@ pipeline         :      pipe_sequence
                  ;
 */
 void pipeline():
-{}
+{	HshParserRules.applyRule7a(getToken(0));
+}
 {
-	pipe_sequence()
-|	< BANG > pipe_sequence()}
+	( pipe_sequence()
+|	< BANG > pipe_sequence() )	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+}
 /**
 pipe_sequence    :                             command
                  | pipe_sequence '|' linebreak command
                  ;
 */
 void pipe_sequence():
-{
-}
+{}
 {	command() ( < PIPE > linebreak() command() )*
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 /**
 command          : simple_command
@@ -524,6 +562,7 @@ LOOKAHEAD(2)
 	simple_command()
 |	compound_command() ( redirect_list() )?
 |	function_definition()
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 
 }
 /*
@@ -536,6 +575,7 @@ void newline_list():
 }
 {
 	( < NEWLINE > )+
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 /**
 linebreak        : newline_list
@@ -547,6 +587,7 @@ void linebreak():
 }
 {
 	( < NEWLINE > )*
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 /**
 and_or           :                         pipeline
@@ -559,8 +600,8 @@ And_orNode and_or():
 	And_orNode ret=null;
 }
 {
-	pipeline() ( ( < AND_IF > | < OR_IF > ) linebreak() pipeline() )*
-	{ return ret; }
+	( pipeline() ( ( < AND_IF > | < OR_IF > ) linebreak() pipeline() )* )
+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 /** separator	: separator_op linebreak
  * 				| newline_list
@@ -600,16 +641,14 @@ ListNode list():
 /** complete_command :		list separator
 *                 		|	list ;
 */
-void complete_command():
+CompleteCommand complete_command():
 {
+	final CompleteCommand cc=new CompleteCommand();
 	ListNode listN;
-	ListNode listN2;
 	SeparatorNode separatorN;
+
 }
 {
-    listN=list() ( separatorN=separator() listN2=list() {
-    	listN.addChild(separatorN);
-    	listN.addChild(listN2);
-    	} )*
-    { listN.dump(0); }
+    ( listN=list() { cc.setList(listN); } ( separatorN=separator() { cc.setSeparator(separatorN); } )? )
+    { return cc; }
 }

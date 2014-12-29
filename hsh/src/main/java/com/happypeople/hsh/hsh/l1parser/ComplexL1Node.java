@@ -15,6 +15,13 @@ public abstract class ComplexL1Node implements SubstitutableL1Node {
 		children.add(child);
 	}
 
+	public String getString() {
+		StringBuilder sb=new StringBuilder();
+		for(L1Node child : children)
+			sb.append(child.getString());
+		return sb.toString();
+	}
+
 	// TODO: check if this makes sense
 	@Override
 	public Iterator<String> doSubstitution(final HshContext env) throws ParseException {
