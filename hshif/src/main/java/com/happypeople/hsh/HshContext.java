@@ -24,8 +24,24 @@ public interface HshContext {
 	 */
 	public int getRows();
 
-	/** Denotes that the calling context should exit after the execution of the current command.
+	/** Denotes that this context should exit after the execution of the current command.
 	 * Used ie by "exit".
 	 */
 	public void finish();
+	
+	/** Creates a new HshContext with this context as parent.
+	 * @return the new created context
+	 */
+	public HshContext createChildContext();
+	
+	/**
+	 * @return the environment of this context
+	 */
+	public HshEnvironment getEnv();
+	
+	/**
+	 * @return the executor of this context, usefull to execute commands. And has nothing to do with javas
+	 * ExecutorService.
+	 */
+	public HshExecutor getExecutor();
 }
