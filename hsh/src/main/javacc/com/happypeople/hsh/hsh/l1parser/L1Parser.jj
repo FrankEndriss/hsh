@@ -3,7 +3,7 @@ options
 	STATIC=false;
 	USER_TOKEN_MANAGER=false;
 	FORCE_LA_CHECK=true;
-
+	TOKEN_MANAGER_USES_PARSER=true;
 //	DEBUG_PARSER=true;
 //	DEBUG_TOKEN_MANAGER=true;
 }
@@ -141,11 +141,14 @@ public class L1Parser // implements TokenManager
 	/** Stack of states. Usefull to switch to "previous" state. Initialized to DEFAULT. */
 	private LinkedList<Integer> stateStack=new LinkedList<Integer>(Arrays.asList(DEFAULT));
 
-	private void pushState(int state) {
+	/** Called by TokenManager */
+	void pushState(int state) {
 		stateStack.push(state);
 		token_source.SwitchTo(state);
 	}
-	private void popState() {
+
+	/** Called by TokenManager */
+	void popState() {
 		stateStack.pop();
 		token_source.SwitchTo(stateStack.peek());
 	}
@@ -183,8 +186,7 @@ TOKEN:
 
 TOKEN:
 { // operators
-	< AND_IF	: "&&" >
-|	< OR_IF		: "||" >
+	< AND_IF	: "&&" >|	< OR_IF		: "||" >
 |   < DSEMI		: ";;" >
 |	< DLESS		: "<<" >
 |	< DGREAT	: ">>" >
@@ -230,13 +232,13 @@ TOKEN:
 }
 
 < DEFAULT, DQUOTED > TOKEN:
-{	< BACKTIC_START		: < BACKTIC > >
+{	< BACKTIC_START		: < BACKTIC > > { parser.pushState(BACKTICKED); }
 }
 
 /** no escaped chars possible in SQUOTED */
 <SQUOTED> TOKEN:
 {
-	< SQUOTE_END: < SQUOTE > > 	 // :DEFAULT	
+	< SQUOTE_END: < SQUOTE > > { parser.popState(); }	 // :DEFAULT	
 |	< SANYTHING	: (~["'"])+ >
 }
 
@@ -247,13 +249,13 @@ TOKEN:
 <BACKTICKED > TOKEN:
 {
 	< BACKTIC_ANYTHING	: (~["`", "\\"])+ >
-|	< BACKTIC_END 		: < BACKTIC > >	
+|	< BACKTIC_END 		: < BACKTIC > >	{ parser.popState(); }
 }
 
 <DEFAULT> TOKEN:
 {
-	< SQUOTE_START	: < SQUOTE > > 	 /* :SQUOTED */
-|	< DQUOTE_START	: < DQUOTE > >	 /* :DQUOTED  */
+	< SQUOTE_START	: < SQUOTE > >  { parser.pushState(SQUOTED); }	 /* :SQUOTED */
+|	< DQUOTE_START	: < DQUOTE > > { parser.pushState(DQUOTED); } /* :DQUOTED  */
 |	< WS			: (" "|"\t")+  >
 |	< NEWLINE		: "\n" | "\r\n" >
 |	< DEFAULT_ANYTHING		: (~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">"])+ >
@@ -273,7 +275,7 @@ $   `   "   \   <newline>
 //|	< DOLLAR 				: "$" >
 	/* a backslash is a simple char if not followed by one of the above. */
 |	< CHAR_BACKSLASH		: < BQUOTE > >
-|	< DQUOTE_END			: < DQUOTE > >	/* : DEFAULT */
+|	< DQUOTE_END			: < DQUOTE > >	{ parser.popState(); }/* : DEFAULT */
 //|	< DOLLAR_SUBST_START	: "$(" >		: DOLLAR_SUBST
 //|	< DOLLAR				: "$" >			: DOLLAR
 	/** anything else */
@@ -290,17 +292,15 @@ DQuotedL1Node dquoted():
 	BacktickedNode bn;
 }
 {
-	< DQUOTE_START > { pushState(DQUOTED); }	(
+	< DQUOTE_START >	(
 		  t=< ESC_DQUOTE >		{ ret.add(new SimpleL1Node("\"")); }		| t=< ESC_DOLLAR >		{ ret.add(new SimpleL1Node("$")); }
 		| t=< ESC_BACKTIC >		{ ret.add(new SimpleL1Node("`")); }
 		| t=< ESC_BACKSLASH >	{ ret.add(new SimpleL1Node("\\")); }
 		| t=< CHAR_BACKSLASH >	{ ret.add(new SimpleL1Node("\\")); }
 		| t=< DANYTHING >		{ ret.add(new SimpleL1Node(t.image)); }
 		| bn=backticked()		{ ret.add(bn); }	)*
-	< DQUOTE_END > {
-		popState();
-		return ret;
-	}
+	< DQUOTE_END >
+	{ return ret; }
 }
 
 /** A part of a word in state DEFAULT, simple text.
@@ -323,12 +323,11 @@ BacktickedNode backticked():
 	Token t;
 }
 {
-	< BACKTIC_START > { pushState(BACKTICKED); }	(
+	< BACKTIC_START >	(
 		t=< ESC_CHAR > { sb.append(t.image.substring(1, 1)); }	
 	|	t=< BACKTIC_ANYTHING > { sb.append(t.image); }
 	)*
 	< BACKTIC_END > {
-			popState();
 			// TODO could check if number of ", ' and ` are even and/or nested wrong
 			// But the subsequent parsing of the backticked command will do this either
 			return new BacktickedNode(sb.toString());
@@ -338,10 +337,9 @@ BacktickedNode backticked():
 SQuotedL1Node squoted():
 {	final StringBuilder sb=new StringBuilder();
 	Token t;
-}{	<SQUOTE_START> { pushState(SQUOTED); }
+}{	<SQUOTE_START>
 	( t=<SANYTHING> { sb.append(t.image); } )?
 	<SQUOTE_END> {
-		popState();
 		return new SQuotedL1Node(sb.toString());
 	}}
 

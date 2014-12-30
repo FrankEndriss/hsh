@@ -10,7 +10,7 @@ import org.junit.Test;
 public class L1ParserTokenManagerTest {
 
 	private final static boolean DEBUG=false;
-	
+
 	private class TTest {
 		TTest(final int parserState, final String s, final int c) {
 			this.str=s;
@@ -26,7 +26,6 @@ public class L1ParserTokenManagerTest {
 
 	@Before
 	public void init() {
-		tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader("")));
 	}
 
 	@Test
@@ -78,9 +77,13 @@ public class L1ParserTokenManagerTest {
 
 	final static int MAXLOOP=1000;
 	private void countToken(final TTest ttest, final String message) {
+		final L1Parser parser=new L1Parser(new StringReader(ttest.str));
+		tokenMgr=parser.token_source;
+		parser.pushState(0);
+		tokenMgr.SwitchTo(ttest.parserState);
 
 
-		tokenMgr.ReInit(new SimpleCharStream(new StringReader(ttest.str)), ttest.parserState);
+		//tokenMgr.ReInit(new SimpleCharStream(new StringReader(ttest.str)), ttest.parserState);
 
 		if(DEBUG)
 			System.out.println("new Test, state="+tokenMgr.curLexState);

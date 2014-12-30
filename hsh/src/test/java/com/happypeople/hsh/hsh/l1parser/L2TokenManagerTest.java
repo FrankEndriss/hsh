@@ -11,11 +11,9 @@ import com.happypeople.hsh.hsh.L2Token;
 
 public class L2TokenManagerTest {
 	private final static boolean DEBUG=false;
-	
-	public L2TokenManager setup(String input) {
-		final L1ParserTokenManager tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader(input)));
-		//tokenMgr.setDebugStream(System.out);
-		final L1Parser parser=new L1Parser(tokenMgr);
+
+	public L2TokenManager setup(final String input) {
+		final L1Parser parser=new L1Parser(new StringReader(input));
 		return new L2TokenManager(parser);
 	}
 
@@ -37,7 +35,7 @@ public class L2TokenManagerTest {
 		for(int i=0; i<str.length; i++) {
 			if(DEBUG)
 				System.out.println("Test "+i+":"+str[i]);
-			L2TokenManager tokenManager=setup(str[i]);
+			final L2TokenManager tokenManager=setup(str[i]);
 			L2Token t;
 			final int MAXLOOP=1000;
 			int c=0;

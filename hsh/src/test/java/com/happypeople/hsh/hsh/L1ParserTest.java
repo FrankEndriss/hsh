@@ -9,14 +9,12 @@ import org.junit.Test;
 import com.happypeople.hsh.hsh.l1parser.EofL1Node;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
-import com.happypeople.hsh.hsh.l1parser.L1ParserTokenManager;
 import com.happypeople.hsh.hsh.l1parser.ParseException;
-import com.happypeople.hsh.hsh.l1parser.SimpleCharStream;
 
 public class L1ParserTest {
 
 	private final static boolean DEBUG=false;
-	
+
 	@Test
 	public void test_simple_quoting() throws ParseException {
 		final String[] ok={
@@ -97,9 +95,9 @@ public class L1ParserTest {
 	private void do_parse(final int tNum, final String test) throws ParseException {
 		if(DEBUG)
 			System.out.println("do_parse "+tNum+": "+test);
-		final L1ParserTokenManager tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader(test)));
+		//final L1ParserTokenManager tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader(test)));
 		//tokenMgr.setDebugStream(System.out);
-		final L1Parser parser=new L1Parser(tokenMgr);
+		final L1Parser parser=new L1Parser(new StringReader(test));
 		//parser.enable_tracing();
 		L1Node node=null;
 		while(!((node=parser.nextL1Node())instanceof EofL1Node))

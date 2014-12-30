@@ -78,6 +78,7 @@
 			<configuration>
 				<isStatic>false</isStatic>
 				<debug>true</debug>
+				<CHOICE_AMBIGUITY_CHECK>5</CHOICE_AMBIGUITY_CHECK>
 			</configuration>
 		</execution>
 	</executions>
