@@ -11,7 +11,7 @@ import com.happypeople.hsh.hsh.parser.*;
 
 public class HshParser
 {
-	private void throwNotImplemented() {		throw new RuntimeException("not implemented");
+	private void throwNI() {		throw new RuntimeException("not implemented");
 	}
 }
 PARSER_END(HshParser)
@@ -139,19 +139,20 @@ void io_redirect():
 cmd_word         : WORD                   // Apply rule 7b
                  ;
 */
-void cmd_word():
-{}{
-	< WORD >	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+void cmd_word(SimpleCommand simpleCommand):
+{
+	Token t;}{
+	t=< WORD > { simpleCommand.setCmdName((L2Token)t); }
 }
 
 /**
 cmd_name         : WORD                   // Apply rule 7a
                  ;
 */
-L2Token cmd_name():
+void cmd_name(SimpleCommand simpleCommand):
 {
-	Token ret;}{
-	ret=< WORD >	{ return (L2Token)ret; }
+	Token t;}{
+	t=< WORD > { simpleCommand.setCmdName((L2Token)t); }
 }
 
 /**
@@ -161,10 +162,10 @@ cmd_suffix       :            io_redirect
                  | cmd_suffix WORD
                  ;
 */
-void cmd_suffix():
-{}{
-	( io_redirect() | < WORD > )+
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+void cmd_suffix(final SimpleCommand simpleCommand):
+{
+	Token t;}{
+	( io_redirect() { throwNI(); } | t=< WORD > { simpleCommand.addArg((L2Token)t); } )+
 }
 
 /**
@@ -174,10 +175,13 @@ cmd_prefix       :            io_redirect
                  | cmd_prefix ASSIGNMENT_WORD
                  ;
 */
-void cmd_prefix():
-{}{
-	( io_redirect() | < ASSIGNMENT_WORD > )+	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
-}
+void cmd_prefix(SimpleCommand simpleCommand):
+{
+	Token t;}{
+	( 
+		( io_redirect() { throwNI(); } | t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); } )
+		{ HshParserRules.applyRule7a(getToken(1)); }
+		)+}
 
 /**
 function_body    : compound_command                // Apply rule 9
@@ -514,11 +518,11 @@ simple_command   : cmd_prefix cmd_word cmd_suffix
 SimpleCommand simple_command():
 {
 	SimpleCommand simpleCommand=new SimpleCommand();
-	L2Token cmdName;}
+}
 {
-	cmd_prefix() { throwNotImplemented(); } ( cmd_word() ( cmd_suffix())? )?
-|	cmdName=cmd_name() ( cmd_suffix() { throwNotImplemented(); })?	{
-		simpleCommand.setCmdName(cmdName);
+( 	cmd_prefix(simpleCommand) ( cmd_word(simpleCommand) ( cmd_suffix(simpleCommand))? )?
+|	cmd_name(simpleCommand) ( cmd_suffix(simpleCommand) )? 
+)	{
 	 	return simpleCommand;
 	}
 }
@@ -538,7 +542,8 @@ pipeline         :      pipe_sequence
                  ;
 */
 PipeSequence pipeline():
-{	HshParserRules.applyRule7a(getToken(0));
+{
+//	jj_ntk();	// need to fetch kind of next token	HshParserRules.applyRule7a(getToken(1));
 	PipeSequence ret;
 }
 {
@@ -554,7 +559,7 @@ PipeSequence pipe_sequence():
 {
 	PipeSequence ret=new PipeSequence();
 	L2Node cmd;}
-{	cmd=command() { ret.addChild(cmd); } ( < PIPE > linebreak() command() { throwNotImplemented(); } )*
+{	cmd=command() { ret.addChild(cmd); } ( < PIPE > linebreak() command() { throwNI(); } )*
 	{ return ret; }
 }
 /**
@@ -572,8 +577,8 @@ Command command():
 {
 	( LOOKAHEAD(2)
 	simpleCommand=simple_command() { ret.addChild(simpleCommand); }
-|	compound_command() ( redirect_list() )? { throwNotImplemented(); }
-|	function_definition() { throwNotImplemented(); } )
+|	compound_command() ( redirect_list() )? { throwNI(); }
+|	function_definition() { throwNI(); } )
 	{ return ret; }
 }
 /*

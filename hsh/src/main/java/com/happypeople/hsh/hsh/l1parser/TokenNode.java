@@ -1,12 +1,16 @@
 package com.happypeople.hsh.hsh.l1parser;
 
+import java.util.Collections;
+import java.util.Iterator;
+
+
 /** Base class for Token which translate 1:1 from L1 to L2 (Operators, NL, WS and EOF)
  * Luckily, all of these are WordSeparators, too.
  *
  */
 public abstract class TokenNode implements L1Node, WordSeparator {
 
-	protected final Token t;
+	private final Token t;
 
 	public TokenNode(final Token t) {
 		this.t=t;
@@ -14,6 +18,10 @@ public abstract class TokenNode implements L1Node, WordSeparator {
 
 	public Token getToken() {
 		return t;
+	}
+	
+	public Iterator<L1Node> iterator() {
+		return Collections.emptyIterator();
 	}
 
 	public String getString() {

@@ -68,6 +68,8 @@ import java.util.Map;
 * consisting only of characters that are exactly the token described in Token Recognition.
 */
 public class HshParserRules {
+	private final static boolean DEBUG=true;
+	
 	// reserved words
 	private static Map<String, Integer> reservedWords=new HashMap<String, Integer>();
 	static {
@@ -97,6 +99,14 @@ public class HshParserRules {
 			t.kind=reservedKind;
 	}
 
+	public static void applyRule7b(L2Token t) {
+		if(DEBUG)
+			System.out.println("applyRule7b to Token, kind="+
+				HshParserConstants.tokenImage[t.kind]+
+				" image="+t.getString());
+		applyRule7b(t, t.getString());
+	}
+
 	public static void applyRule7b(L2Token t, String string) {
 		if(string.startsWith("="))
 			t.kind=HshParserConstants.WORD;
@@ -105,6 +115,10 @@ public class HshParserRules {
 	}
 
 	public static void applyRule7a(Token token) {
+		if(DEBUG)
+			System.out.println("applyRule7a to Token, kind="+
+				HshParserConstants.tokenImage[token.kind]+
+				" image="+((L2Token)token).getString());
 		if(token.kind!=HshParserConstants.WORD)
 			return;
 		

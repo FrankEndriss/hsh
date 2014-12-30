@@ -4,19 +4,10 @@ import java.util.Iterator;
 
 import com.happypeople.hsh.HshContext;
 
-public class BacktickedNode implements SubstitutableL1Node {
-	private final String command;
+public class BacktickedNode extends SimpleL1Node implements Substitutable {
 
 	public BacktickedNode(final String command) {
-		this.command=command;
-	}
-
-	public String getCommand() {
-		return command;
-	}
-	
-	public String getString() {
-		return new StringBuilder("`").append(getCommand()).append("`").toString();
+		super(command);
 	}
 
 	@Override
@@ -38,7 +29,7 @@ public class BacktickedNode implements SubstitutableL1Node {
 		System.out.println(getClass().getName());
 		for(int i=0; i<level+1; i++)
 			System.out.print("\t");
-		System.out.println("command="+getCommand());
+		System.out.println("command="+getString());
 	}
 
 }

@@ -6,9 +6,9 @@ import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 
-/** L1Node with children.
+/** L1Node with children. Because of the children it is Substitutable, too.
  */
-public abstract class ComplexL1Node implements SubstitutableL1Node {
+public abstract class ComplexL1Node implements Substitutable, L1Node {
 	private final List<L1Node> children=new ArrayList<L1Node>();
 
 	public void add(final L1Node child) {
@@ -20,6 +20,10 @@ public abstract class ComplexL1Node implements SubstitutableL1Node {
 		for(L1Node child : children)
 			sb.append(child.getString());
 		return sb.toString();
+	}
+
+	public Iterator<L1Node> iterator() {
+		return children.iterator();
 	}
 
 	// TODO: check if this makes sense

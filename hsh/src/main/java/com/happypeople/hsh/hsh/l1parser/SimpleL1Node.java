@@ -1,5 +1,8 @@
 package com.happypeople.hsh.hsh.l1parser;
 
+import java.util.Collections;
+import java.util.Iterator;
+
 
 /** SimpleL1Node is a not Substitutable node.
  */
@@ -12,6 +15,10 @@ public class SimpleL1Node implements L1Node {
 
 	public String getString() {
 		return str;
+	}
+
+	public Iterator<L1Node> iterator() {
+		return Collections.emptyIterator();
 	}
 
 	public void dump(final int level) {
