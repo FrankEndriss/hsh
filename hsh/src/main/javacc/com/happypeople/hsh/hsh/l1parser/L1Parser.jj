@@ -4,8 +4,8 @@ options
 	USER_TOKEN_MANAGER=false;
 	FORCE_LA_CHECK=true;
 	TOKEN_MANAGER_USES_PARSER=true;
-//	DEBUG_PARSER=true;
-//	DEBUG_TOKEN_MANAGER=true;
+	DEBUG_PARSER=true;
+	DEBUG_TOKEN_MANAGER=true;
 }
 PARSER_BEGIN(L1Parser)
 /** http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_02
@@ -182,6 +182,7 @@ TOKEN:
 |	< #BACKTIC:	"`" >
 |	< #DOLLAR:	"$" >
 |	< #BANYTHING: ~[] >
+|	< #DEF_ESC_BACKSLASH			: "\\\\" >
 }
 
 TOKEN:
@@ -226,14 +227,23 @@ TOKEN:
 |	< IN		: "in" >  
 }
 
-< DEFAULT, BACKTICKED > TOKEN:
+< DEFAULT, BACKTICKED, DOLLAR_LBRACE > TOKEN:
 {
 	< ESC_CHAR			: "\\" < BANYTHING > >
 }
 
-< DEFAULT, DQUOTED > TOKEN:
-{	< BACKTIC_START		: < BACKTIC > > { parser.pushState(BACKTICKED); }
+< DEFAULT, DQUOTED, DOLLAR_LBRACE > TOKEN:
+{	< BACKTIC_START			: < BACKTIC > > { parser.pushState(BACKTICKED); }
+|	< DOLLAR_LBRACE_START	: "${" >		{ parser.pushState(DOLLAR_LBRACE); }
 }
+
+<DOLLAR_LBRACE> TOKEN: // can be nested
+{	< DOLLAR_LBRACE_END		: "}" >		{ parser.popState(); }
+|	< COLON_OP				: ":" ["-", "=", "?", "+"] >
+|	< DS_ESC_BACKSLASH		: < DEF_ESC_BACKSLASH > >
+// TODO do not match colon_op as part of anything
+|	< DOLLAR_LBRACE_ANYTHING : (~["\\", "}", ":", "{", "$" ])+ >
+}	
 
 /** no escaped chars possible in SQUOTED */
 <SQUOTED> TOKEN:
@@ -258,7 +268,7 @@ TOKEN:
 |	< DQUOTE_START	: < DQUOTE > > { parser.pushState(DQUOTED); } /* :DQUOTED  */
 |	< WS			: (" "|"\t")+  >
 |	< NEWLINE		: "\n" | "\r\n" >
-|	< DEFAULT_ANYTHING		: (~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">"])+ >
+|	< DEFAULT_ANYTHING		: (~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">", "$", "{"])+ >
 }
 
 /** According to 2.2.3
@@ -271,7 +281,7 @@ $   `   "   \   <newline>
 	< ESC_DQUOTE			: "\\\"" >
 |	< ESC_DOLLAR			: "\\$" >
 |	< ESC_BACKTIC			: "\\`" >
-|	< ESC_BACKSLASH			: "\\\\" >
+|	< ESC_BACKSLASH			: < DEF_ESC_BACKSLASH > >
 //|	< DOLLAR 				: "$" >
 	/* a backslash is a simple char if not followed by one of the above. */
 |	< CHAR_BACKSLASH		: < BQUOTE > >
@@ -280,6 +290,32 @@ $   `   "   \   <newline>
 //|	< DOLLAR				: "$" >			: DOLLAR
 	/** anything else */
 |	< DANYTHING				: (~["\"", "$", "`", "\\"])+ >
+}
+
+ComplexL1Node dollar_subst_part():
+{
+	ComplexL1Node list=new ComplexL1Node();
+	Token t;
+	L1Node subDollar;}{
+	(		t=< DOLLAR_LBRACE_ANYTHING >	{ list.add(new SimpleL1Node(t.image)); }
+|		t=< ESC_CHAR >					{ list.add(new SimpleL1Node(t.image)); }
+|		subDollar=dollar_subst()		{ list.add(subDollar); } 	)+
+	{ return list; }	
+}
+
+DollarSubstNode dollar_subst():
+{
+	DollarSubstNode ret=new DollarSubstNode();
+	ComplexL1Node paramPartList;
+	ComplexL1Node wordPartList;
+	Token t;}{
+	(	< DOLLAR_LBRACE_START >
+		paramPartList=dollar_subst_part() { ret.setParameter(paramPartList); }
+		(
+			t=< COLON_OP >						{ ret.setOperator(new SimpleL1Node(t.image)); }			wordPartList=dollar_subst_part()	{ ret.setWord(wordPartList); }
+		)?
+	< DOLLAR_LBRACE_END >
+	) { return ret; }
 }
 
 /** Creates a List of L1Node, types are SimpleL1Node or Backticked. */
@@ -292,7 +328,8 @@ DQuotedL1Node dquoted():
 	BacktickedNode bn;
 }
 {
-	< DQUOTE_START >	(
+	< DQUOTE_START >
+	(
 		  t=< ESC_DQUOTE >		{ ret.add(new SimpleL1Node("\"")); }		| t=< ESC_DOLLAR >		{ ret.add(new SimpleL1Node("$")); }
 		| t=< ESC_BACKTIC >		{ ret.add(new SimpleL1Node("`")); }
 		| t=< ESC_BACKSLASH >	{ ret.add(new SimpleL1Node("\\")); }
@@ -385,7 +422,8 @@ L1Node word_part():
 	(
 	ret=default_part()|	ret=backticked()	
 |	ret=dquoted()		
-|	ret=squoted()		
+|	ret=squoted()
+|	ret=dollar_subst()
 |	ret=operator()	
 |	t=< WS >				{ ret=new WsL1Node(t); }
 |	t=< NEWLINE >			{ ret=new NlL1Node(t); }

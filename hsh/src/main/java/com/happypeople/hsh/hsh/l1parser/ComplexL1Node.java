@@ -8,20 +8,27 @@ import com.happypeople.hsh.HshContext;
 
 /** L1Node with children. Because of the children it is Substitutable, too.
  */
-public abstract class ComplexL1Node implements Substitutable, L1Node {
+public class ComplexL1Node implements Substitutable, L1Node {
 	private final List<L1Node> children=new ArrayList<L1Node>();
 
-	public void add(final L1Node child) {
+	public int add(final L1Node child) {
 		children.add(child);
+		return children.size()-1;
 	}
 
+	public L1Node get(final int idx) {
+		return children.get(idx);
+	}
+
+	@Override
 	public String getString() {
-		StringBuilder sb=new StringBuilder();
-		for(L1Node child : children)
+		final StringBuilder sb=new StringBuilder();
+		for(final L1Node child : children)
 			sb.append(child.getString());
 		return sb.toString();
 	}
 
+	@Override
 	public Iterator<L1Node> iterator() {
 		return children.iterator();
 	}
@@ -42,11 +49,12 @@ public abstract class ComplexL1Node implements Substitutable, L1Node {
 		return ret.iterator();
 	}
 
+	@Override
 	public void dump(final int level) {
 		for(int i=0; i<level; i++)
 			System.out.print("\t");
 		System.out.println(getClass().getName());
-		for(L1Node child : children)
+		for(final L1Node child : children)
 			child.dump(level+1);
 	}
 

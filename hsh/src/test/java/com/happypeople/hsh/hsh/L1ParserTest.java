@@ -38,7 +38,13 @@ public class L1ParserTest {
 			"",
 			"''",
 			"\"\"",
-			"``"
+			"``",
+			// some dollar
+			"${xy}",
+			"${xy:-hallo}",
+			"${xy:+hallo}",
+			"${x_:?hallo}",
+			"${x :=hallo}"
 		};
 		for(int i=0; i<ok.length; i++) {
 			try {

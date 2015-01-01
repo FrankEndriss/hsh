@@ -1,7 +1,6 @@
 package com.happypeople.hsh.hsh;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,15 +15,25 @@ import com.happypeople.hsh.hsh.l1parser.Substitutable;
  */
 public class L2Token extends Token implements L1Node {
 	private final List<L1Node> parts=new ArrayList<L1Node>();
-	
+
 	public L2Token() {
 		image="L2Token";
 	}
 
-	public void addPart(final L1Node part) {
+	/** Adds part as a new Child
+	 * @param part
+	 * @return index of the added part
+	 */
+	public int addPart(final L1Node part) {
 		parts.add(part);
+		return parts.size()-1;
 	}
 
+	public L1Node getPart(final int idx) {
+		return parts.get(idx);
+	}
+
+	@Override
 	public Iterator<L1Node> iterator() {
 		return parts.iterator();
 	}
@@ -32,6 +41,7 @@ public class L2Token extends Token implements L1Node {
 	/** Creates a printout of the node-tree
 	 * @param level the level of the tree this node lives in
 	 */
+	@Override
 	public void dump(final int level) {
 		for(int i=0; i<level; i++)
 			System.out.print("\t");
@@ -85,9 +95,10 @@ public class L2Token extends Token implements L1Node {
 		return list.iterator();
 	}
 
+	@Override
 	public String getString() {
-		StringBuilder sb=new StringBuilder();
-		for(L1Node part : parts)
+		final StringBuilder sb=new StringBuilder();
+		for(final L1Node part : parts)
 			sb.append(part.getString());
 		return sb.toString();
 	}

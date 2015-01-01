@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class L1ParserTokenManagerTest {
 
-	private final static boolean DEBUG=false;
+	private final static boolean DEBUG=true;
 
 	private class TTest {
 		TTest(final int parserState, final String s, final int c) {
@@ -69,6 +69,13 @@ public class L1ParserTokenManagerTest {
 				new TTest(L1ParserConstants.BACKTICKED, "aa", 1),
 				new TTest(L1ParserConstants.BACKTICKED, "a\\a", 2),
 				new TTest(L1ParserConstants.BACKTICKED, "a\\`", 2),
+				// TODO DOLLAR_LBRACE_START
+				new TTest(L1ParserConstants.DEFAULT, "${x}", 3),
+				new TTest(L1ParserConstants.DEFAULT, "${x:-hallo}", 5),
+				new TTest(L1ParserConstants.DEFAULT, "${x:+hallo}", 5),
+				new TTest(L1ParserConstants.DEFAULT, "${x:?hallo}", 5),
+				new TTest(L1ParserConstants.DEFAULT, "${x:=hallo}", 5),
+				new TTest(L1ParserConstants.DEFAULT, "${x\\=hallo}", 5),
 		};
 		int i=0;
 		for(final TTest ttest : tests)

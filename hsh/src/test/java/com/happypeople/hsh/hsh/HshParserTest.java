@@ -1,6 +1,7 @@
 package com.happypeople.hsh.hsh;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
@@ -9,6 +10,8 @@ import java.io.StringReader;
 import org.junit.Test;
 
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListener;
+import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
+import com.happypeople.hsh.hsh.l1parser.DollarSubstNode;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
@@ -17,12 +20,73 @@ import com.happypeople.hsh.hsh.parser.SimpleCommand;
 
 public class HshParserTest {
 
-	private final static boolean DEBUG=false;
+	private final static boolean DEBUG=true;
 
 	public HshParser setup(final String input) {
 		//final L1ParserTokenManager tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader(input)));
 		final L1Parser parser=new L1Parser(new StringReader(input));
 		return new HshParser(new L2TokenManager(parser));
+	}
+
+	@Test
+	public void testComplete_dollar5() throws ParseException {
+		final CompleteCommand cc=doTestCompleteCommand("${${y:-hallo}:?bla}");
+		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
+		assertNotNull("# parameter", dsn.getParameter());
+		assertEquals("operator", ":?", dsn.getOperator().getString());
+		assertEquals("word", "bla", dsn.getWord().getString());
+	}
+
+	@Test
+	public void testComplete_dollar4() throws ParseException {
+		final CompleteCommand cc=doTestCompleteCommand("${${y:-hallo}}");
+		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
+		assertNotNull("# parameter", dsn.getParameter());
+		assertNull("no operator", dsn.getOperator());
+		assertNull("no word", dsn.getWord());
+	}
+
+	@Test
+	public void testComplete_dollar3() throws ParseException {
+		final CompleteCommand cc=doTestCompleteCommand("${${y}}");
+		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
+		assertNotNull("# parameter", dsn.getParameter());
+		assertNull("no operator", dsn.getOperator());
+		assertNull("no word", dsn.getWord());
+	}
+
+	@Test
+	public void testComplete_dollar2() throws ParseException {
+		final CompleteCommand cc=doTestCompleteCommand("${x:-hallo}");
+		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
+		assertNotNull("# parameter", dsn.getParameter());
+		assertNotNull("# operator", dsn.getOperator());
+		assertNotNull("# word", dsn.getWord());
+	}
+
+	@Test
+	public void testComplete_dollar1() throws ParseException {
+		final CompleteCommand cc=doTestCompleteCommand("${x}");
+		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
+		assertNotNull("# parameter", dsn.getParameter());
+		assertNull("no operator", dsn.getOperator());
+		assertNull("no word", dsn.getWord());
+	}
+
+	private DollarSubstNode findFirstDollarSubstNode(final CompleteCommand cc) {
+		final DollarSubstNode[] dsnode=new DollarSubstNode[1];
+
+		NodeTraversal.traverse(cc, new TraverseListener() {
+			@Override
+			public TraverseListenerResult node(final L1Node node, final int level) {
+				if(node instanceof DollarSubstNode) {
+					dsnode[0]=(DollarSubstNode)node;
+					return TraverseListenerResult.STOP;
+				}
+				return TraverseListenerResult.CONTINUE;
+			}
+		});
+		return dsnode[0];
 	}
 
 	@Test
@@ -145,11 +209,12 @@ public class HshParserTest {
 	private void classTreeTraversal(final L1Node root) {
 		NodeTraversal.traverse(root, new TraverseListener() {
 			@Override
-			public void node(final L1Node node, final int level) {
+			public TraverseListenerResult node(final L1Node node, final int level) {
 				final StringBuilder sb=new StringBuilder();
 				for(int i=0; i<level; i++)
 					sb.append("\t");
 				System.out.println(sb.toString()+node.getClass().getName());
+				return TraverseListenerResult.CONTINUE;
 			}
 		});
 	}
@@ -159,13 +224,14 @@ public class HshParserTest {
 		final SimpleCommand[] sc=new SimpleCommand[1];
 		NodeTraversal.traverse(cc, new NodeTraversal.TraverseListener() {
 			@Override
-			public void node(final L1Node node, final int level) {
+			public TraverseListenerResult node(final L1Node node, final int level) {
 				if(node instanceof SimpleCommand) {
 					c[0]++;
 					if(c[0]>1)
 						fail("found second SimpleCommand");
 					sc[0]=(SimpleCommand)node;
 				}
+				return TraverseListenerResult.CONTINUE;
 			}
 		});
 

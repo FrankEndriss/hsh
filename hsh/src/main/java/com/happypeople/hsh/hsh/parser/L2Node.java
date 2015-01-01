@@ -8,13 +8,18 @@ import com.happypeople.hsh.hsh.l1parser.L1Node;
  * directly the tokens to place them as childs into the tree of nodes.
  */
 public class L2Node extends L2Token {
-	public void addChild(final L2Token node) {
-		addPart(node);
+	public int addChild(final L2Token node) {
+		return addPart(node);
+	}
+
+	public L2Token getChild(final int idx) {
+		return (L2Token)getPart(idx);
 	}
 
 	/** Creates a printout of the node-tree
 	 * @param level the level of the tree this node lives in
 	 */
+	@Override
 	public void dump(final int level) {
 		for(int i=0; i<level; i++)
 			System.out.print("\t");
