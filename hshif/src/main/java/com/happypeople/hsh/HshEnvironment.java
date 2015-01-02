@@ -2,44 +2,77 @@ package com.happypeople.hsh;
 
 
 /** Environment settings of a HshContext
- * shell variables
- * shell functions (TODO)
  * 
- * TODO implement declare/typeset
+ * TODO implement declare/typeset functionality complete
  */
 public interface HshEnvironment {
 
-	/** Sets a property
-	 * @param name of the property. Must not be null.
-	 * @param value of the property. Note that can be null, and null is different to the empty String ""
+	/** Removes a parameter from the environment
+	 * @param name of the parameter. Must not be null.
 	 */
-	public void setVar(final String name, final String value);
+	public void unsetParameter(final String name);
 	
-	/** Removes a property from the environment
-	 * @param name of the property. Must not be null.
+	/** Check if var is set/exists.
 	 */
-	public void unsetVar(final String name);
-	
-	public boolean issetVar(final String name);
+	public boolean issetParameter(final String name);
 
 	/** Finds the value of a property.
-	 * @param name of the property. Must not be null.
-	 * @return value of the property
+	 * @param name of the parameter. Must not be null.
+	 * @return the parameter or null if unset
 	 */
-	public String getVar(final String name);
+	public Parameter getParameter(final String name);
+	
+	/** Set a variables value.
+	 * @param parameter
+	 * @param value
+	 */
+	public void setVariableValue(final String name, final String value);
 
 	/** Add a changeListener to this env
 	 * @param listener
 	 */
 	public void addListener(ChangeListener listener);
 
-	public final static String UNDEFINED="<undefined>";
+	/** Special parameter used for explicit unset variables.
+	 */
+	public final static Parameter UNDEFINED=new Parameter() {
+
+		@Override
+		public String getName() {
+			return null;
+		}
+
+		@Override
+		public Type getType() {
+			return null;
+		}
+
+		@Override
+		public boolean isReadOnly() {
+			return false;
+		}
+
+		@Override
+		public boolean isExport() {
+			return false;
+		}
+
+		@Override
+		public Parameter createCopy() {
+			return this;
+		}
+	};
 	
 	public interface ChangeListener {
-		/** Called if a var changed its value. (set or unset was called)
-		 * @param name of the var
-		 */
-		public void varChanged(final String name, final String oldValue);
+		public void created(Parameter parameter);
+		
+		public void removed(Parameter parameter);
+		
+		public void exported(Parameter parameter);
+		
+		public void changed(VariableParameter parameter, String oldValue);
+
+		// TODO change of function definitions. Until implemented use remove/create
 	}
 	
 

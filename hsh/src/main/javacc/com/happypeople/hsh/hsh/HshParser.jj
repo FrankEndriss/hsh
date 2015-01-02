@@ -3,6 +3,7 @@ options
 	STATIC=false;
 	USER_TOKEN_MANAGER=true;
     FORCE_LA_CHECK=false;
+    //DEBUG_PARSER=true;
     //DEBUG_LOOKAHEAD=true;
     //LOOKAHEAD=2;
 }
@@ -12,7 +13,22 @@ import com.happypeople.hsh.hsh.parser.*;
 
 public class HshParser
 {
+private ListCallback listCallback;
+
 	private void throwNI() {		throw new RuntimeException("not implemented");
+	}
+	
+	public void setListCallback(ListCallback listCallback) {
+		this.listCallback=listCallback;
+	}
+	
+	private void fireListParsed(ListNode list) {
+		if(listCallback!=null)
+			listCallback.listParsed(list);
+	}
+	
+	interface ListCallback {
+		public void listParsed(ListNode list);
 	}
 }
 PARSER_END(HshParser)
@@ -544,7 +560,7 @@ pipeline         :      pipe_sequence
 */
 PipeSequence pipeline():
 {
-//	jj_ntk();	// need to fetch kind of next token	HshParserRules.applyRule7a(getToken(1));
+	HshParserRules.applyRule7a(getToken(1));
 	PipeSequence ret;
 }
 {
@@ -592,7 +608,6 @@ void newline_list():
 }
 {
 	( < NEWLINE > )+
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 /**
 linebreak        : newline_list
@@ -604,7 +619,7 @@ void linebreak():
 }
 {
 	( < NEWLINE > )*
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+//	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 /**
 and_or           :                         pipeline
@@ -652,9 +667,10 @@ ListNode list():
 }
 {
 	and_orN=and_or() { ret.addChild(and_orN); }
-	( LOOKAHEAD(separator_op()) separator_opN=separator_op() and_orN=and_or() {
-		ret.addChild(separator_opN);
-		ret.addChild(and_orN); } )*
+	( LOOKAHEAD(separator_op()) 
+		separator_opN=separator_op() and_orN=and_or() 
+			{ ret.addChild(separator_opN); ret.addChild(and_orN); }
+	)*
 		
 	{ return ret; }
 }
@@ -670,6 +686,6 @@ CompleteCommand complete_command():
 
 }
 {
-    ( listN=list() { cc.setList(listN); } ( separatorN=separator() { cc.setSeparator(separatorN); } )? )
+    ( listN=list() { cc.setList(listN); fireListParsed(listN); } ( separatorN=separator() { cc.setSeparator(separatorN); } )? )
     { return cc; }
 }

@@ -1,24 +1,20 @@
 package com.happypeople.hsh.hsh;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PipedReader;
+import java.io.PipedWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.lang.ProcessBuilder.Redirect;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import jline.console.ConsoleReader;
 
-import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
-import com.happypeople.hsh.HshExecutor;
+import com.happypeople.hsh.hsh.l1parser.L1Parser;
+import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
+import com.happypeople.hsh.hsh.parser.ListNode;
 
 /** Happy Shell main.
  * The program reads lines from stdin and executes them.
@@ -27,10 +23,15 @@ import com.happypeople.hsh.HshExecutor;
  * "exit <number>" exits with status <number>
  */
 public class Hsh implements HshContext {
+	private final static boolean DEBUG=false;
+
 	private static PrintWriter log;
 	private final ConsoleReader console;
-	private HshEnvironment env=new HshEnvironmentImpl(null);
-	private HshExecutor executor=new HshExecutorImpl(this);
+	private final HshEnvironment env=new HshEnvironmentImpl(null);
+	private final HshExecutorImpl executor=new HshExecutorImpl(this);
+	private final PipedReader parserPipeReader=new PipedReader();
+	private final PipedWriter parserPipeWriter;
+	private final HshParser parser;
 
 	/** exit status of last command */
 	private int status=0;
@@ -44,7 +45,7 @@ public class Hsh implements HshContext {
 		log=new PrintWriter(System.err);
 
 		final ConsoleReader console = new ConsoleReader();
-		console.setPrompt("> ");
+		console.setPrompt(">>> ");
 
 		final Hsh instance=new Hsh(console);
 
@@ -52,9 +53,8 @@ public class Hsh implements HshContext {
 		try {
 			while(instance.acceptsFeed() && (line=console.readLine())!=null) {
 				instance.feedLine(line);
-				//log.println("cmd-line:>"+line+"<");
-				//log.flush();
 			}
+			System.exit(0);
 		} catch (final Exception e) {
 			System.err.println("fatal failure in Hsh.main(), will System.exit(1)");
 			e.printStackTrace(System.err);
@@ -65,26 +65,63 @@ public class Hsh implements HshContext {
 
 	/** Called throu main() only, its a singleton
 	 * @param console the interactive screen
+	 * @throws IOException
 	 */
-	private Hsh(final ConsoleReader console) {
+	private Hsh(final ConsoleReader console) throws IOException {
 		this.console=console;
+		// TODO need to create recursive Loop from parserPipeReader, so that
+		// it calls "getMoreInputFromConsole" whenever the parser/tokenizer
+		// requests more input.
+		// This will cause the listParsed()-callback to be called after every line,
+		// and the getMoreInputFromConsole() whenever more input is needed.
+		// The Prompt can be set according to the states of these two callbacks.
+		parserPipeWriter=new PipedWriter(parserPipeReader);
+		parser=new HshParser(new L2TokenManager(new L1Parser(parserPipeReader)));
+
 		// copy the System properties into the environment
-		for(Map.Entry<Object, Object> ent : System.getProperties().entrySet())
-			getEnv().setVar(""+ent.getKey(), ""+ent.getValue());
+		final HshEnvironment env=getEnv();
+		for(final Map.Entry<Object, Object> ent : System.getProperties().entrySet())
+			env.setVariableValue(""+ent.getKey(), ""+ent.getValue());
+
+		// run parser in separate Thread
+		new Thread() {
+			@Override
+			public void run() {
+				try {
+					parserLoop();
+				} catch (final ParseException e) {
+					e.printStackTrace();
+					// TODO: reInit parser and go on
+					System.exit(1);
+				}
+			}
+		}.start();
 	}
 
-	private void feedLine(final String line) {
+	private void feedLine(final String line) throws IOException {
 		if(finished)
 			throw new IllegalStateException("This instance has finished work");
 
-		final String[] tokenlist=parse_and_substitution(line);
-		if(tokenlist.length>0)
-			try {
-				setStatus(getExecutor().execute(tokenlist));
-			} catch (final Exception e) {
-				System.err.println("failure while cmd execution");
-				e.printStackTrace(System.err);
+		parserPipeWriter.write(line);
+		parserPipeWriter.write("\n");
+	}
+
+	private void parserLoop() throws ParseException {
+		parser.setListCallback(new HshParser.ListCallback() {
+			@Override
+			public void listParsed(final ListNode list) {
+				// TODO set status to denote something gets executed
+				setStatus(getExecutor().execute(list));
+				// TODO set status to denote something was executed
+				// TODO restore prompt here
 			}
+		});
+
+		while(true) {
+			parser.complete_command();
+			if(DEBUG)
+				System.out.println("parsed complete command: ");
+		}
 	}
 
 	private boolean acceptsFeed() {
@@ -94,6 +131,7 @@ public class Hsh implements HshContext {
 	/** A call to this method causes the Hsh to exit after the current command did finish.
 	 *
 	 */
+	@Override
 	public void finish() {
 		finished=true;
 	}
@@ -133,22 +171,27 @@ public class Hsh implements HshContext {
 		return line.split("\\s"); // split by whitespace
 	}
 
+	@Override
 	public PrintStream getStdOut() {
 		return System.out;
 	}
 
+	@Override
 	public InputStream getStdIn() {
 		return System.in;
 	}
 
+	@Override
 	public PrintStream getStdErr() {
 		return System.err;
 	}
 
+	@Override
 	public int getCols() {
 		return console.getTerminal().getWidth();
 	}
 
+	@Override
 	public int getRows() {
 		return console.getTerminal().getHeight();
 	}
@@ -163,8 +206,7 @@ public class Hsh implements HshContext {
 		return env;
 	}
 
-	@Override
-	public HshExecutor getExecutor() {
+	public HshExecutorImpl getExecutor() {
 		return executor;
 	}
 }

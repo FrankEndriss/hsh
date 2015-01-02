@@ -77,7 +77,7 @@ public class L2TokenManager implements TokenManager {
 			throw new TokenMgrError("error while parsing L1", 0);
 		}
 	}
-	
+
 	private boolean isWS(final L1Node l1node) {
 		return l1node instanceof WsL1Node;
 	}
@@ -88,7 +88,7 @@ public class L2TokenManager implements TokenManager {
 	 * @return a new L2Token
 	 */
 	private L2Token createL2Token(final L1Node l1node) {
-		L2Token token=new L2Token();
+		final L2Token token=new L2Token();
 		token.addPart(l1node);
 
 		if(l1node instanceof TokenNode)
@@ -99,7 +99,7 @@ public class L2TokenManager implements TokenManager {
 	}
 
 	private final static int[] kindMap=new int[Math.max(
-			L1ParserConstants.tokenImage.length, 
+			L1ParserConstants.tokenImage.length,
 			HshParserConstants.tokenImage.length)];
 	static {
 		for(int i=0; i<kindMap.length; i++)
@@ -116,14 +116,16 @@ public class L2TokenManager implements TokenManager {
 		kindMap[L1ParserConstants.LESSGREAT]=HshParserConstants.LESSGREAT;
 		kindMap[L1ParserConstants.DLESSDASH]=HshParserConstants.DLESSDASH;
 		kindMap[L1ParserConstants.CLOBBER]=HshParserConstants.CLOBBER;
+		kindMap[L1ParserConstants.NEWLINE]=HshParserConstants.NEWLINE;
+		kindMap[L1ParserConstants.SEMICOLON]=HshParserConstants.SEMICOLON;
 		// TODO others
 	}
-	
+
 	/** Returns the L2-kind according to l1kind
 	 * @param kind L1 kind
 	 * @return L2 kind
 	 */
-	private int translateL1KindToL2Kind(int l1kind) {
+	private int translateL1KindToL2Kind(final int l1kind) {
 		final int l2kind=kindMap[l1kind];
 		if(l2kind<0)
 			throw new RuntimeException("internal error: cannot map L1-Kind: "+l1kind);

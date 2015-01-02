@@ -4,8 +4,8 @@ options
 	USER_TOKEN_MANAGER=false;
 	FORCE_LA_CHECK=true;
 	TOKEN_MANAGER_USES_PARSER=true;
-	DEBUG_PARSER=true;
-	DEBUG_TOKEN_MANAGER=true;
+	DEBUG_PARSER=false;
+	DEBUG_TOKEN_MANAGER=false;
 }
 PARSER_BEGIN(L1Parser)
 /** http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_02

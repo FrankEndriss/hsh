@@ -42,6 +42,6 @@ public interface HshContext {
 	/**
 	 * @return the executor of this context, usefull to execute commands. And has nothing to do with javas
 	 * ExecutorService.
-	 */
 	public HshExecutor getExecutor();
+	 */
 }

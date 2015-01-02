@@ -13,29 +13,89 @@ import java.util.Map;
 
 import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.HshExecutor;
+import com.happypeople.hsh.Parameter;
+import com.happypeople.hsh.VariableParameter;
+import com.happypeople.hsh.hsh.NodeTraversal.TraverseListener;
+import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
+import com.happypeople.hsh.hsh.l1parser.L1Node;
+import com.happypeople.hsh.hsh.parser.ListNode;
+import com.happypeople.hsh.hsh.parser.SimpleCommand;
 
-public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeListener {
+public class HshExecutorImpl implements HshEnvironmentImpl.ChangeListener {
 	private final static Map<String, String> predefs=init_predefines();
 	private List<File> path=new ArrayList<File>();
-	private HshContext hshContext;
-	
-	public HshExecutorImpl(HshContext hshContext) {
+	private final HshContext hshContext;
+
+	public HshExecutorImpl(final HshContext hshContext) {
 		this.hshContext=hshContext;
 	}
 
-	@Override
-	public int execute(String[] command) throws Exception {
+	// TODO implement execution of all commands
+	public int execute(final ListNode completeCommand) {
+
+		final int[] res=new int[1];
+
+		// simple implementation. Executes all SimpleCommands.
+		NodeTraversal.traverse(completeCommand, new TraverseListener() {
+			@Override
+			public TraverseListenerResult node(final L1Node node, final int level) {
+				if(node instanceof SimpleCommand) {
+					try {
+						System.out.println("found SimpleCommand to execute: "+node);
+						execute((SimpleCommand)node);
+					} catch (final Exception e) {
+						e.printStackTrace();
+						return TraverseListenerResult.STOP;
+					}
+					return TraverseListenerResult.DONT_CHILDREN;
+				}
+				return TraverseListenerResult.CONTINUE;
+			}
+		});
+
+		return res[0];
+	}
+
+	/** Creates a command line from parser construct SimpleCommand and excutes it.
+	 * @param simpleCommand
+	 * @return the exit-status of the command
+	 * @throws Exception
+	 */
+	public int execute(final SimpleCommand simpleCommand) throws Exception {
+		final HshContext cmdContext=hshContext.createChildContext();
+
+		// TODO: execute substitution
+
+		// execute assignments
+		for(final L2Token assi : simpleCommand.getAssignments()) {
+			final String assiString=assi.getString();
+			final int eqIdx=assiString.indexOf("=");
+			final String varName=assiString.substring(0, eqIdx);
+			final String varVal=assiString.substring(eqIdx+1);
+			cmdContext.getEnv().setVariableValue(varName, varVal);
+		}
+
+		// construct cmd line
+		final List<String> cmd=new ArrayList<String>();
+		cmd.add(simpleCommand.getCmdName().getString());
+		for(final L2Token arg : simpleCommand.getArgs())
+			cmd.add(arg.getString());
+
+		System.out.println("executing cmd-line: "+cmd);
+		return execute(cmdContext, cmd.toArray(new String[0]));
+	}
+
+	private int execute(final HshContext cmdContext, final String[] command) throws Exception {
 		if(command.length<1)
 			return 0;	// empty line
 
 		final String buildin=predefs.get(command[0]);
 		if(buildin!=null)
-			return exec_buildin_Main(buildin, command);
+			return exec_buildin_Main(cmdContext, buildin, command);
 		else
-			return exec_extern_synchron(command);
+			return exec_extern_synchron(cmdContext, command);
 	}
-	
+
 	/** Executes the cmd line given in args.
 	 * args[0] is the command to execute.
 	 * $PATH is resolved to find that program.
@@ -44,8 +104,8 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private int exec_extern_synchron(final String[] args) {
-		// TODO handle piped commands and stdstream redirection
+	private int exec_extern_synchron(final HshContext cmdContext, final String[] args) {
+		// TODO export cmdContext as environment
 		try {
 			final ProcessBuilder builder=new ProcessBuilder();
 			args[0]=resolveCmd(args[0]);
@@ -74,12 +134,12 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	 * @throws IllegalArgumentException if the class cannot be loaded or called
 	 * @throws IllegalAccessException if the class cannot be loaded or called
 	 */
-	private int exec_buildin_Main(final String buildinClass, final String[] args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+	private int exec_buildin_Main(final HshContext cmdContext, final String buildinClass, final String[] args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 		try {
 			final Class<?> cls=Class.forName(buildinClass);
 			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
 				final HshCmd hshCmd=(HshCmd) cls.newInstance(); // TODO cache instance or not
-				return hshCmd.execute(hshContext, new ArrayList<String>(Arrays.asList(args)));
+				return hshCmd.execute(cmdContext, new ArrayList<String>(Arrays.asList(args)));
 			} else {
 				Class.forName(buildinClass).getMethod("main", new Class[]{ args.getClass()}).invoke(
 					null, new Object[] { args });
@@ -148,11 +208,31 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 		return predefs;
 	}
 
-	@Override
-	public void varChanged(String name, String oldValue) {
+	// HshEnvirionment-Listener
+	private void varChanged(final String name) {
 		// throw away cache
 		if("PATH".equals(name))
 			path=null;
+	}
+
+	@Override
+	public void created(final Parameter parameter) {
+		varChanged(parameter.getName());
+	}
+
+	@Override
+	public void removed(final Parameter parameter) {
+		varChanged(parameter.getName());
+	}
+
+	@Override
+	public void exported(final Parameter parameter) {
+	}
+
+	@Override
+	public void changed(final VariableParameter parameter, final String oldValue) {
+		varChanged(parameter.getName());
 	};
+	// end HshEnvirionment-Listener
 
 }
