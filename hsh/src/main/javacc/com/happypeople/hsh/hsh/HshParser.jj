@@ -3,7 +3,7 @@ options
 	STATIC=false;
 	USER_TOKEN_MANAGER=true;
     FORCE_LA_CHECK=false;
-    //DEBUG_PARSER=true;
+    DEBUG_PARSER=false;
     //DEBUG_LOOKAHEAD=true;
     //LOOKAHEAD=2;
 }
@@ -488,9 +488,10 @@ compound_list    :              term
 */
 void compound_list():
 {
+	TermNode termN;
 }
 {
-	( newline_list() )? term() ( separator() )?
+	( newline_list() )? termN=term() ( separator(termN) )?
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -499,12 +500,14 @@ term             : term separator and_or
                  |                and_or
                  ;
 */
-void term():
+TermNode term():
 {
+	TermNode ret=new TermNode();
+	And_orNode and_orN;
 }
 {
-	and_or() ( LOOKAHEAD(separator()) separator() and_or() )*
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	and_orN=and_or() { ret.addChild(and_orN); }		( LOOKAHEAD(separator()) separator(and_orN) and_orN=and_or() { ret.addChild(and_orN); }		)*
+	{ return ret; }
 }
 
 /**
@@ -545,14 +548,14 @@ SimpleCommand simple_command():
 }
 
 /** separator_op     : '&' | ';'
+@param parent this separator belongs to
 */
-Separator_opNode separator_op():
-{	Separator_opNode ret=new Separator_opNode();
-	Token t;
+void separator_op(Backgroundable parent):
+{}
+{	(		< UPPERSANT >	{ parent.setBackground(true); }	|	< SEMICOLON >	{ parent.setBackground(false); }
+	)
 }
-{	t=< UPPERSANT > { ret.setToken(t); }
-|	t=< SEMICOLON > { ret.setToken(t); }
-	{ return ret; }}
+
 /**
 pipeline         :      pipe_sequence
                  | Bang pipe_sequence
@@ -598,6 +601,7 @@ Command command():
 |	function_definition() { throwNI(); } )
 	{ return ret; }
 }
+
 /*
 newline_list     :              NEWLINE
                  | newline_list NEWLINE
@@ -618,8 +622,7 @@ void linebreak():
 {
 }
 {
-	( < NEWLINE > )*
-//	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	( newline_list() )?
 }
 /**
 and_or           :                         pipeline
@@ -642,18 +645,17 @@ And_orNode and_or():
 /** separator	: separator_op linebreak
  * 				| newline_list
  * ;
+ * @param parent where setBackground(true) is called if it should be executed in background
+ * @param cb callback which is called if parent should not be executed in background, and
+ * therefore might be executed right now.
  */
-SeparatorNode separator():
+void separator(Backgroundable parent):
 {
-	SeparatorNode ret=new SeparatorNode();
-	Separator_opNode separator_opN;
 }
 {
-	separator_opN=separator_op() linebreak() {
-		ret.addChild(separator_opN);
-	}
-|	newline_list() { }
-	{ return ret; }
+	(	separator_op(parent) linebreak()
+		|		{ parent.setBackground(false); }		newline_list()
+	)
 }
 	
 /** list 	:		list separator_op and_or
@@ -662,14 +664,13 @@ SeparatorNode separator():
 ListNode list():
 {
 	ListNode ret=new ListNode();
-	Separator_opNode separator_opN;
 	And_orNode and_orN;
 }
 {
 	and_orN=and_or() { ret.addChild(and_orN); }
 	( LOOKAHEAD(separator_op()) 
-		separator_opN=separator_op() and_orN=and_or() 
-			{ ret.addChild(separator_opN); ret.addChild(and_orN); }
+		separator_op(and_orN) and_orN=and_or() 
+			{ ret.addChild(and_orN); }
 	)*
 		
 	{ return ret; }
@@ -681,11 +682,18 @@ ListNode list():
 CompleteCommand complete_command():
 {
 	final CompleteCommand cc=new CompleteCommand();
-	ListNode listN;
-	SeparatorNode separatorN;
-
+	final ListNode[] listN=new ListNode[1];
+	Backgroundable bg=new Backgroundable() {
+		public void setBackground(boolean bg) {
+			listN[0].setBackground(bg);   			fireListParsed(listN[0]);
+		}	};
 }
 {
-    ( listN=list() { cc.setList(listN); fireListParsed(listN); } ( separatorN=separator() { cc.setSeparator(separatorN); } )? )
+    (	listN[0]=list()
+    	{ 	if(listCallback==null)
+    			cc.setList(listN[0]);
+    	}
+		( separator(bg) )?
+	)
     { return cc; }
 }

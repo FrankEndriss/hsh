@@ -28,20 +28,20 @@ public interface HshContext {
 	 * Used ie by "exit".
 	 */
 	public void finish();
-	
+
 	/** Creates a new HshContext with this context as parent.
 	 * @return the new created context
 	 */
 	public HshContext createChildContext();
-	
+
 	/**
 	 * @return the environment of this context
 	 */
 	public HshEnvironment getEnv();
-	
+
 	/**
 	 * @return the executor of this context, usefull to execute commands. And has nothing to do with javas
 	 * ExecutorService.
-	public HshExecutor getExecutor();
 	 */
+	public HshExecutor getExecutor();
 }

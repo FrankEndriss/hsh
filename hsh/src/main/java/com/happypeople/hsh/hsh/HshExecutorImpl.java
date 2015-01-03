@@ -13,15 +13,11 @@ import java.util.Map;
 
 import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hsh.HshExecutor;
 import com.happypeople.hsh.Parameter;
 import com.happypeople.hsh.VariableParameter;
-import com.happypeople.hsh.hsh.NodeTraversal.TraverseListener;
-import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
-import com.happypeople.hsh.hsh.l1parser.L1Node;
-import com.happypeople.hsh.hsh.parser.ListNode;
-import com.happypeople.hsh.hsh.parser.SimpleCommand;
 
-public class HshExecutorImpl implements HshEnvironmentImpl.ChangeListener {
+public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeListener {
 	private final static Map<String, String> predefs=init_predefines();
 	private List<File> path=new ArrayList<File>();
 	private final HshContext hshContext;
@@ -31,6 +27,7 @@ public class HshExecutorImpl implements HshEnvironmentImpl.ChangeListener {
 	}
 
 	// TODO implement execution of all commands
+	/*
 	public int execute(final ListNode completeCommand) {
 
 		final int[] res=new int[1];
@@ -55,12 +52,14 @@ public class HshExecutorImpl implements HshEnvironmentImpl.ChangeListener {
 
 		return res[0];
 	}
+	*/
 
 	/** Creates a command line from parser construct SimpleCommand and excutes it.
 	 * @param simpleCommand
 	 * @return the exit-status of the command
 	 * @throws Exception
 	 */
+	/*
 	public int execute(final SimpleCommand simpleCommand) throws Exception {
 		final HshContext cmdContext=hshContext.createChildContext();
 
@@ -84,16 +83,18 @@ public class HshExecutorImpl implements HshEnvironmentImpl.ChangeListener {
 		System.out.println("executing cmd-line: "+cmd);
 		return execute(cmdContext, cmd.toArray(new String[0]));
 	}
+	*/
 
-	private int execute(final HshContext cmdContext, final String[] command) throws Exception {
+	@Override
+	public int execute(final String[] command) throws Exception {
 		if(command.length<1)
 			return 0;	// empty line
 
 		final String buildin=predefs.get(command[0]);
 		if(buildin!=null)
-			return exec_buildin_Main(cmdContext, buildin, command);
+			return exec_buildin_Main(buildin, command);
 		else
-			return exec_extern_synchron(cmdContext, command);
+			return exec_extern_synchron(command);
 	}
 
 	/** Executes the cmd line given in args.
@@ -104,8 +105,8 @@ public class HshExecutorImpl implements HshEnvironmentImpl.ChangeListener {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private int exec_extern_synchron(final HshContext cmdContext, final String[] args) {
-		// TODO export cmdContext as environment
+	private int exec_extern_synchron(final String[] args) {
+		// TODO export hshContext as environment
 		try {
 			final ProcessBuilder builder=new ProcessBuilder();
 			args[0]=resolveCmd(args[0]);
@@ -134,12 +135,12 @@ public class HshExecutorImpl implements HshEnvironmentImpl.ChangeListener {
 	 * @throws IllegalArgumentException if the class cannot be loaded or called
 	 * @throws IllegalAccessException if the class cannot be loaded or called
 	 */
-	private int exec_buildin_Main(final HshContext cmdContext, final String buildinClass, final String[] args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+	private int exec_buildin_Main(final String buildinClass, final String[] args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 		try {
 			final Class<?> cls=Class.forName(buildinClass);
 			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
 				final HshCmd hshCmd=(HshCmd) cls.newInstance(); // TODO cache instance or not
-				return hshCmd.execute(cmdContext, new ArrayList<String>(Arrays.asList(args)));
+				return hshCmd.execute(hshContext, new ArrayList<String>(Arrays.asList(args)));
 			} else {
 				Class.forName(buildinClass).getMethod("main", new Class[]{ args.getClass()}).invoke(
 					null, new Object[] { args });
@@ -232,7 +233,8 @@ public class HshExecutorImpl implements HshEnvironmentImpl.ChangeListener {
 	@Override
 	public void changed(final VariableParameter parameter, final String oldValue) {
 		varChanged(parameter.getName());
-	};
+	}
+
 	// end HshEnvirionment-Listener
 
 }

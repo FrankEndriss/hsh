@@ -1,7 +1,7 @@
 package com.happypeople.hsh.hsh.parser;
 
-public class And_orNode extends L2Node implements Backgroundable {
-	boolean background;
+public class TermNode extends L2Node implements Backgroundable {
+	private boolean background;
 
 	public boolean isBackground() {
 		return background;
@@ -9,7 +9,6 @@ public class And_orNode extends L2Node implements Backgroundable {
 
 	@Override
 	public void setBackground(final boolean background) {
-		this.background = background;
+		this.background=background;
 	}
-
 }

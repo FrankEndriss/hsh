@@ -198,7 +198,7 @@ TOKEN:
 |	< CLOBBER	: ">|" >
 
 // first letters of operators (these should be defined in HshParser.jj, too)
-|	< BG 		: "&" >
+|	< UPPERSANT	: "&" >
 |	< PIPE 		: "|" >
 |	< SEMICOLON : ";" >  
 |	< LESS  	: "<" >  
@@ -262,13 +262,15 @@ TOKEN:
 |	< BACKTIC_END 		: < BACKTIC > >	{ parser.popState(); }
 }
 
+// TODO: find a way to parse "=" in Assignment
 <DEFAULT> TOKEN:
 {
 	< SQUOTE_START	: < SQUOTE > >  { parser.pushState(SQUOTED); }	 /* :SQUOTED */
 |	< DQUOTE_START	: < DQUOTE > > { parser.pushState(DQUOTED); } /* :DQUOTED  */
+|	< EQUALS		: "=" >
 |	< WS			: (" "|"\t")+  >
 |	< NEWLINE		: "\n" | "\r\n" >
-|	< DEFAULT_ANYTHING		: (~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">", "$", "{"])+ >
+|	< DEFAULT_ANYTHING		: (~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">", "$", "{", "="])+ >
 }
 
 /** According to 2.2.3
@@ -393,16 +395,29 @@ OperatorL1Node operator():
 |	t=< LESSGREAT >
 |	t=< DLESSDASH > 
 |	t=< CLOBBER >
-// TODO: not sure what to do whith these.
+// Not sure what to do with these.
 // They must be parsed, they separate words.
 // But they are no Operators. ???
-|	t=< BG >
+// However, since OperatorL1Node simple acts as a word separator its ok to add them here.
+|	t=< UPPERSANT >
 |	t=< PIPE >
 |	t=< SEMICOLON >
 |	t=< LESS >
 |	t=< GREAT >
 	) {
 		return new OperatorL1Node(t);	}
+}
+
+AssignmentL1Node assignment():
+{
+	AssignmentL1Node ret=new AssignmentL1Node();
+	Token t1;
+	L1Node wp2;
+}{
+	// TODO: should be a name, not a DEFAULT_ANYTHING
+	t1=< DEFAULT_ANYTHING >	{ ret.add(new SimpleL1Node(t1.image)); }
+	< EQUALS >				{ ret.add(new SimpleL1Node("=")); }	//wp2=word_part()			{ ret.add(wp2); }
+	{ return ret; }
 }
 
 /** part of a word or whole word.
@@ -420,14 +435,17 @@ L1Node word_part():
 }
 {
 	(
-	ret=default_part()|	ret=backticked()	
+	LOOKAHEAD(2)
+	ret=assignment()
+|	ret=default_part()
+|	ret=backticked()	
 |	ret=dquoted()		
 |	ret=squoted()
 |	ret=dollar_subst()
 |	ret=operator()	
 |	t=< WS >				{ ret=new WsL1Node(t); }
 |	t=< NEWLINE >			{ ret=new NlL1Node(t); }
-|	t=< EOF >				{ ret=new EofL1Node(t); }
+|	t=< EQUALS >		    { ret=new SimpleL1Node("="); }|	t=< EOF >				{ ret=new EofL1Node(t); }
 	)
 	{ return ret; }
 }

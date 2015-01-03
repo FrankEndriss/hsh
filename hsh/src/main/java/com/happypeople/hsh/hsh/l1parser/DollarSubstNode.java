@@ -1,7 +1,11 @@
 package com.happypeople.hsh.hsh.l1parser;
 
+import java.io.IOException;
 
-public class DollarSubstNode extends ComplexL1Node {
+import com.happypeople.hsh.HshContext;
+
+
+public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 	int parameterIdx=-1;
 	int operatorIdx=-1;
 	int wordIdx=-1;
@@ -42,5 +46,14 @@ public class DollarSubstNode extends ComplexL1Node {
 		if(wordIdx<0)
 			return null;
 		return (ComplexL1Node)get(wordIdx);
+	}
+
+	@Override
+	public String getSubstitutedString(final HshContext env) throws IOException {
+		final ComplexL1Node variable=getParameter();
+		final String value=env.getEnv().getVariableValue(variable.getString());
+		if(getOperator()!=null)
+			throw new RuntimeException("substitution with operator not implemented");
+		return value;
 	}
 }

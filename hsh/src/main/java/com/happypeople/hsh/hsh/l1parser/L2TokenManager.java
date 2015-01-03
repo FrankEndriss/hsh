@@ -118,6 +118,7 @@ public class L2TokenManager implements TokenManager {
 		kindMap[L1ParserConstants.CLOBBER]=HshParserConstants.CLOBBER;
 		kindMap[L1ParserConstants.NEWLINE]=HshParserConstants.NEWLINE;
 		kindMap[L1ParserConstants.SEMICOLON]=HshParserConstants.SEMICOLON;
+		kindMap[L1ParserConstants.UPPERSANT]=HshParserConstants.UPPERSANT;
 		// TODO others
 	}
 

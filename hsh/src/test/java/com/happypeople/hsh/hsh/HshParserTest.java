@@ -23,9 +23,7 @@ public class HshParserTest {
 	private final static boolean DEBUG=true;
 
 	public HshParser setup(final String input) {
-		//final L1ParserTokenManager tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader(input)));
-		final L1Parser parser=new L1Parser(new StringReader(input));
-		return new HshParser(new L2TokenManager(parser));
+		return new HshParser(new L2TokenManager(new L1Parser(new StringReader(input))));
 	}
 
 	@Test

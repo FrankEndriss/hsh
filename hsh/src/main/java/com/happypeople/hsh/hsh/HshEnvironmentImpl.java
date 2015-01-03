@@ -153,6 +153,12 @@ public class HshEnvironmentImpl implements HshEnvironment {
 		fireCreated(p);
 	}
 
+	@Override
+	public String getVariableValue(final String name) {
+		final Parameter p=getParameter(name);
+		return p!=null && (p instanceof VariableParameter)?((VariableParameter)p).getValue():null;
+	}
+
 	private void fireCreated(final Parameter parameter) {
 		for(final ChangeListener listener : listeners)
 			listener.created(parameter);

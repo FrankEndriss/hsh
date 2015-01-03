@@ -13,14 +13,17 @@ public class SimpleL1Node implements L1Node {
 		this.str=str;
 	}
 
+	@Override
 	public String getString() {
 		return str;
 	}
 
+	@Override
 	public Iterator<L1Node> iterator() {
 		return Collections.emptyIterator();
 	}
 
+	@Override
 	public void dump(final int level) {
 		for(int i=0; i<level; i++)
 			System.out.print("\t");
@@ -29,5 +32,6 @@ public class SimpleL1Node implements L1Node {
 			System.out.print("\t");
 		System.out.println("value="+getString());
 	}
+
 
 }

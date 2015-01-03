@@ -19,15 +19,18 @@ public abstract class TokenNode implements L1Node, WordSeparator {
 	public Token getToken() {
 		return t;
 	}
-	
+
+	@Override
 	public Iterator<L1Node> iterator() {
 		return Collections.emptyIterator();
 	}
 
+	@Override
 	public String getString() {
 		return t.image;
 	}
 
+	@Override
 	public void dump(final int level) {
 		for(int i=0; i<level; i++)
 			System.out.print("\t");

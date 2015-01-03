@@ -27,11 +27,4 @@ public class L2Node extends L2Token {
 		for(final L1Node child : this)
 			child.dump(level+1);
 	}
-
-	/*
-	public void execute() {
-		for(final L2Node child : children)
-			child.execute();
-	}
-	*/
 }
