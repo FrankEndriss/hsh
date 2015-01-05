@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Iterator;
 
 
-/** Base class for Token which translate 1:1 from L1 to L2 (Operators, NL, WS and EOF)
+/** Base class for Token which translate 1:1 from L1 to L2 (Operators, NL, DOLLAR_ONLY, WS and EOF)
  * Luckily, all of these are WordSeparators, too.
  *
  */

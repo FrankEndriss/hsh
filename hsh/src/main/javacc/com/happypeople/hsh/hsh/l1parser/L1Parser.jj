@@ -215,9 +215,14 @@ TOKEN:
 |	< #DQUOTE: "\"" > 
 |	< #BQUOTE: "\\" >
 |	< #BACKTIC:	"`" >
-|	< #DOLLAR:	"$" >
+//|	< #def_DOLLAR:	"$" >
 |	< #BANYTHING: ~[] >
-|	< #DEF_ESC_BACKSLASH			: "\\\\" >
+|	< #DEF_ESC_BACKSLASH	: "\\\\" >
+|	< #def_DEFAULT_ANYTHING	: (~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">", "$", "{", "="])+ >
+	// chars of DEFAULT_ANYTHING and DO_SPECIAL
+|	< #def_DA_AND_DO_SPECIAL	:  ~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">", "$", "{", "=",
+									"0"-"9", "@", "*", "#", "?", "_", "$", "!"] >
+|	< #def_DO_SPECIAL			:  ["0"-"9", "@", "*", "#", "?", "_", "$", "!"] >
 }
 
 TOKEN:
@@ -269,21 +274,17 @@ TOKEN:
 
 < DEFAULT, DQUOTED, DOLLAR_LBRACE > TOKEN:
 {	< BACKTIC_START			: < BACKTIC > > { parser.pushState(BACKTICKED); }
-|	< DOLLAR_LBRACE_START	: "${" >		{ parser.pushState(DOLLAR_LBRACE); }
-}
+|	< DOLLAR_LBRACE_START	: "${"	>		{ parser.pushState(DOLLAR_LBRACE); }
+|	< DOLLAR				: "$"	>		{ parser.pushState(DOLLAR_ONLY); }}
 
-/*
-// TODO switchTo(DOLLAR_ONLY) somewhere
+// reached on "$"
 <DOLLAR_ONLY> TOKEN:
 {
-	< VARNAME				: ([a-z]|[A-Z]|[0-9])+ >
-|	< DO_DOLLAR				: < DOLLAR >>
-|	< DO_BANG				: < BANG >>
-|	< DO_CROSS				: "#" >
-// TODO: others, all special parameters
+	< DO_SPECIAL	:< def_DO_SPECIAL > >									{ parser.popState(); }
+|	< DO_MULTI		:< def_DA_AND_DO_SPECIAL > (<def_DEFAULT_ANYTHING >)? >	{ parser.popState(); }
 }
-*/
 
+// reached on "${"	
 <DOLLAR_LBRACE> TOKEN: // can be nested
 {	< DOLLAR_LBRACE_END		: "}" >		{ parser.popState(); }
 |	< COLON_OP				: ":" ["-", "=", "?", "+"] >
@@ -312,12 +313,12 @@ TOKEN:
 // TODO: find a way to parse "=" in Assignment
 <DEFAULT> TOKEN:
 {
-	< SQUOTE_START	: < SQUOTE > >  { parser.pushState(SQUOTED); }	 /* :SQUOTED */
-|	< DQUOTE_START	: < DQUOTE > > { parser.pushState(DQUOTED); } /* :DQUOTED  */
+	< SQUOTE_START	: < SQUOTE > > { parser.pushState(SQUOTED); }
+|	< DQUOTE_START	: < DQUOTE > > { parser.pushState(DQUOTED); }
 |	< EQUALS		: "=" >
 |	< WS			: (" "|"\t")+  >
 |	< NEWLINE		: "\n" | "\r\n" >
-|	< DEFAULT_ANYTHING		: (~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">", "$", "{", "="])+ >
+|	< DEFAULT_ANYTHING		: < def_DEFAULT_ANYTHING > >
 }
 
 /** According to 2.2.3
@@ -331,12 +332,9 @@ $   `   "   \   <newline>
 |	< ESC_DOLLAR			: "\\$" >
 |	< ESC_BACKTIC			: "\\`" >
 |	< ESC_BACKSLASH			: < DEF_ESC_BACKSLASH > >
-//|	< DOLLAR 				: "$" >
 	/* a backslash is a simple char if not followed by one of the above. */
 |	< CHAR_BACKSLASH		: < BQUOTE > >
 |	< DQUOTE_END			: < DQUOTE > >	{ parser.popState(); }/* : DEFAULT */
-//|	< DOLLAR_SUBST_START	: "$(" >		: DOLLAR_SUBST
-//|	< DOLLAR				: "$" >			: DOLLAR
 	/** anything else */
 |	< DANYTHING				: (~["\"", "$", "`", "\\"])+ >
 }
@@ -366,6 +364,14 @@ DollarSubstNode dollar_subst():
 	< DOLLAR_LBRACE_END >
 	) { return ret; }
 }
+
+DollarVarNode dollar_var():
+{
+	Token t;}{
+	< DOLLAR >
+	( t=< DO_SPECIAL >
+|	  t=< DO_MULTI > )
+	{ return new DollarVarNode(t); }}
 
 /** Creates a List of L1Node, types are SimpleL1Node or Backticked. */
 // TODO change to DQuoteNode, because one must know for all subnodes that these are part of a DQuoted,
@@ -493,6 +499,7 @@ L1Node word_part():
 |	ret=dquoted()		
 |	ret=squoted()
 |	ret=dollar_subst()
+|	ret=dollar_var()
 	)
 	{ return ret; }
 }
