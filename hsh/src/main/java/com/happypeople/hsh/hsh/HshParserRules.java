@@ -3,7 +3,7 @@ package com.happypeople.hsh.hsh;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.happypeople.hsh.hsh.l1parser.AssignmentL1Node;
+import com.happypeople.hsh.hsh.l1parser.AssignmentL2Token;
 
 /**
 * 2.10.2 Shell Grammar Rules
@@ -70,7 +70,7 @@ import com.happypeople.hsh.hsh.l1parser.AssignmentL1Node;
 * consisting only of characters that are exactly the token described in Token Recognition.
 */
 public class HshParserRules {
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	// reserved words
 	private static Map<String, Integer> reservedWords=new HashMap<String, Integer>();
@@ -116,14 +116,18 @@ public class HshParserRules {
 			t.kind=HshParserConstants.ASSIGNMENT_WORD;
 	}
 
-	/** Reworked. Now it tests if subnode is AssignmentL1Node.
-	 * @param t
+	/** Reworked. Now it tests if subnode is AssignmentL2Token.
+	 * @param t the Token to test
 	 */
 	public static void applyRule7a(final Token token) {
+		if(DEBUG)
+			System.out.println("applyRule7a to Token, kind="+
+				HshParserConstants.tokenImage[token.kind]+
+				" image="+((L2Token)token).getString()+" class="+token.getClass());
 		if(token.kind!=HshParserConstants.WORD)
 			return;
 		final L2Token t=(L2Token)token;
-		if(t.getPart(0) instanceof AssignmentL1Node)
+		if(t instanceof AssignmentL2Token)
 			t.kind=HshParserConstants.ASSIGNMENT_WORD;
 		else
 			applyRule1(t, t.getString());

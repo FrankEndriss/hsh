@@ -18,13 +18,22 @@ public class L2TokenManager implements TokenManager {
 	private L2Token cachedL2Token=null;
 	private boolean cachedL2TokenIsAppendable=false;
 
+	@Override
+	public Token getNextToken() {
+		try {
+			return l1Parser.nextL1Node();
+		} catch (final ParseException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	/* (non-Javadoc)
 	 * @see com.happypeople.hsh.hsh.TokenManager#getNextToken()
 	 * White spaces are appended as childs of otherwise appendable L2Token. So, they do not act as L2Token,
 	 * but they are reconstructable later in the process while substituting (and concatenating).
-	 */
 	@Override
-	public Token getNextToken() {
+	 */
+	public Token getNextToken_old() {
 		// cases:
 		// ct==null
 		//  1. nt not appendable -> nt is returned

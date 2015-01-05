@@ -129,6 +129,14 @@ public class Hsh implements HshContext {
 	@Override
 	public void finish() {
 		finished=true;
+		// if interactive close stream to make parser return
+		if(console!=null)
+			try {
+				in.close();
+			} catch (final IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	}
 
 	private int getStatus() {

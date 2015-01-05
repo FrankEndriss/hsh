@@ -1,17 +1,10 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-import static org.junit.Assert.fail;
-
-import java.io.StringReader;
-
-import org.junit.Test;
-
-import com.happypeople.hsh.hsh.HshParserConstants;
-import com.happypeople.hsh.hsh.L2Token;
 
 public class L2TokenManagerTest {
 	private final static boolean DEBUG=false;
 
+	/*
 	public L2TokenManager setup(final String input) {
 		final L1Parser parser=new L1Parser(new StringReader(input));
 		return new L2TokenManager(parser);
@@ -48,5 +41,6 @@ public class L2TokenManagerTest {
 			} while(t.kind!=HshParserConstants.EOF);
 		}
 	}
+	*/
 
 }

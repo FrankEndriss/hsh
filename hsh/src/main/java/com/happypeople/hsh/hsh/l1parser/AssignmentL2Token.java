@@ -1,14 +1,12 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-/** AssignmentL1Node is the left-hand side of a assignment.
- * i.e. "x="
- * It has two children, first is the left-hand side, second the equals-sign.
+import com.happypeople.hsh.hsh.L2Token;
+
+/** AssignmentL2Token is a assignment()
+ * It has three children:
+ * -SimpleL1Node(<DEFAULT_ANYTHING>)
+ * -SimpleL1Node(<EQUALS>)
+ * -optional word_part_list()
  */
-public class AssignmentL1Node extends ComplexL1Node {
-	/**
-	 * @return the variable name (left hand side of assignment)
-	 */
-	public L1Node getVarname() {
-		return get(0);
-	}
+public class AssignmentL2Token extends L2Token {
 }

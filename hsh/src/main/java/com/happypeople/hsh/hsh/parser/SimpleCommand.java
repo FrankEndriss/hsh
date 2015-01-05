@@ -9,8 +9,7 @@ import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListener;
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
-import com.happypeople.hsh.hsh.l1parser.AssignmentL1Node;
-import com.happypeople.hsh.hsh.l1parser.ComplexL1Node;
+import com.happypeople.hsh.hsh.l1parser.AssignmentL2Token;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
@@ -78,24 +77,30 @@ public class SimpleCommand extends L2Node implements Executable {
 
 		// execute assignments
 		for(final L2Token assi : getAssignments()) {
-			//L2Token of kind ASSIGNMENT_WORD are structured:
-			// First child is AssignmentL1Node
-			// All other childs are the right-hand side of the assignment
+			// assignment should allways be AssignmentL2Token
+			// fail fast if not
+			final AssignmentL2Token assiTok=(AssignmentL2Token)assi;
+			// AssignmentL2Token (kind=ASSIGNMENT_WORD) are structured:
+			// First child SimpleNode(varName)
+			// Second is SimpleNode("=")
+			// Third is optional L2Token, the rhs of the assignment
 			String varName=null;
-			final ComplexL1Node rhs=new ComplexL1Node();
+			L2Token rhs=null;
 			boolean first=true;
-			boolean rhsHasChildren=false;
-			for(final L1Node child : assi) {
+			boolean second=true;
+			for(final L1Node child : assiTok) {
 				if(first) {
-					varName=((AssignmentL1Node)child).getVarname().getString();
+					varName=((SimpleL1Node)child).getString();
 					first=false;
+				} else if(second) {
+					second=false;
+					// ignore
 				} else {
-					rhs.add(child);
-					rhsHasChildren=true;
+					rhs=(L2Token)child;
 				}
 			}
 
-			final String value=rhsHasChildren?NodeTraversal.substituteSubtree(rhs, context):null;
+			final String value=rhs!=null?NodeTraversal.substituteSubtree(rhs, context):null;
 			context.getEnv().setVariableValue(varName, value);
 		}
 

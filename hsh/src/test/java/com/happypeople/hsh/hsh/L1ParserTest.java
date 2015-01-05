@@ -6,14 +6,13 @@ import java.io.StringReader;
 
 import org.junit.Test;
 
-import com.happypeople.hsh.hsh.l1parser.EofL1Node;
-import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
+import com.happypeople.hsh.hsh.l1parser.L1ParserConstants;
 import com.happypeople.hsh.hsh.l1parser.ParseException;
 
 public class L1ParserTest {
 
-	private final static boolean DEBUG=false;
+	private final static boolean DEBUG=true;
 
 	@Test
 	public void test_simple_quoting() throws ParseException {
@@ -101,12 +100,9 @@ public class L1ParserTest {
 	private void do_parse(final int tNum, final String test) throws ParseException {
 		if(DEBUG)
 			System.out.println("do_parse "+tNum+": "+test);
-		//final L1ParserTokenManager tokenMgr=new L1ParserTokenManager(new SimpleCharStream(new StringReader(test)));
-		//tokenMgr.setDebugStream(System.out);
 		final L1Parser parser=new L1Parser(new StringReader(test));
-		//parser.enable_tracing();
-		L1Node node=null;
-		while(!((node=parser.nextL1Node())instanceof EofL1Node))
+		L2Token node=null;
+		while(((node=parser.nextL1Node()).kind!=L1ParserConstants.EOF))
 			if(DEBUG)
 				System.out.println(""+node);
 	}

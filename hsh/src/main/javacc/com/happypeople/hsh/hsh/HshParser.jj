@@ -538,10 +538,14 @@ simple_command   : cmd_prefix cmd_word cmd_suffix
 SimpleCommand simple_command():
 {
 	SimpleCommand simpleCommand=new SimpleCommand();
+	HshParserRules.applyRule7a(getToken(1));
+	// switch jj_ntk as the token switched its type
+	jj_ntk=getToken(1).kind;
 }
 {
-( 	cmd_prefix(simpleCommand) ( cmd_word(simpleCommand) ( cmd_suffix(simpleCommand))? )?
-|	cmd_name(simpleCommand) ( cmd_suffix(simpleCommand) )? 
+(
+	 	cmd_prefix(simpleCommand)	( cmd_word(simpleCommand) ( cmd_suffix(simpleCommand))? )?
+	|	cmd_name(simpleCommand)		( cmd_suffix(simpleCommand) )? 
 )	{
 	 	return simpleCommand;
 	}

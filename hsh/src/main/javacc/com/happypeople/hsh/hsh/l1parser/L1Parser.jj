@@ -135,6 +135,8 @@ DLESS  DGREAT  LESSAND  GREATAND  LESSGREAT  DLESSDASH
 
 package com.happypeople.hsh.hsh.l1parser;
 import java.util.*;
+import com.happypeople.hsh.hsh.L2Token;
+import com.happypeople.hsh.hsh.HshParserConstants;
 
 public class L1Parser // implements TokenManager
 {
@@ -155,23 +157,56 @@ public class L1Parser // implements TokenManager
 
 	/** Interface for token-translation between L1Parser and L2Parser
 	*/
-	public L1Node nextL1Node() throws ParseException {
-		return word_part();
-		/*
-		if(partQueue.isEmpty())			fetchMoreL1Nodes();
-		return partQueue.removeFirst();
-		*/
+	public L2Token nextL1Node() throws ParseException {
+		L2Token t;
+		while((t=word()).kind==WS_KIND); // skip WS
+		return t;
 	}
 
-/*
-	private Deque<L1Node> partQueue=new LinkedList<L1Node>();
-
-	private void fetchMoreL1Nodes() throws ParseException {
-		List<L1Node> more=word_part();
-		for(L1Node node : more)
-			partQueue.addLast(node);	}
+	/** This needs to be defined, because in L2Parser there is no WS.
+	*	Note that WS-Token are not sent to L2Parser.
+	* 	It is defined as -42, because this is an unused number for Token-constants (they are all >=0)
 	*/
-		}
+	private final static int WS_KIND=-42;
+	private final static int UNDEFINED_KIND=-1;
+
+	private final static int[] kindMap=new int[Math.max(
+		L1ParserConstants.tokenImage.length,
+		HshParserConstants.tokenImage.length)];
+	static {
+		for(int i=0; i<kindMap.length; i++)
+			kindMap[i]=UNDEFINED_KIND;
+
+		kindMap[L1ParserConstants.EOF]=HshParserConstants.EOF;
+		kindMap[L1ParserConstants.AND_IF]=HshParserConstants.AND_IF;
+		kindMap[L1ParserConstants.OR_IF]=HshParserConstants.OR_IF;
+		kindMap[L1ParserConstants.DSEMI]=HshParserConstants.DSEMI;
+		kindMap[L1ParserConstants.DLESS]=HshParserConstants.DLESS;
+		kindMap[L1ParserConstants.DGREAT]=HshParserConstants.DGREAT;
+		kindMap[L1ParserConstants.LESSAND]=HshParserConstants.LESSAND;
+		kindMap[L1ParserConstants.GREATAND]=HshParserConstants.GREATAND;
+		kindMap[L1ParserConstants.LESSGREAT]=HshParserConstants.LESSGREAT;
+		kindMap[L1ParserConstants.DLESSDASH]=HshParserConstants.DLESSDASH;
+		kindMap[L1ParserConstants.CLOBBER]=HshParserConstants.CLOBBER;
+		kindMap[L1ParserConstants.NEWLINE]=HshParserConstants.NEWLINE;
+		kindMap[L1ParserConstants.SEMICOLON]=HshParserConstants.SEMICOLON;
+		kindMap[L1ParserConstants.UPPERSANT]=HshParserConstants.UPPERSANT;
+		kindMap[L1ParserConstants.WS]=WS_KIND;
+		// TODO others ???
+	}
+
+	/** Returns the L2-kind according to l1kind
+	 * @param kind L1 kind
+	 * @return L2 kind
+	 */
+	private int translateL1KindToL2Kind(final int l1kind) {
+		final int l2kind=kindMap[l1kind];
+		if(l2kind==UNDEFINED_KIND)
+			throw new RuntimeException("internal error: cannot map L1-Kind: "+l1kind);
+		return l2kind;
+	}
+
+}
 
 PARSER_END(L1Parser)
 
@@ -197,7 +232,7 @@ TOKEN:
 |	< DLESSDASH : "<<-" > 
 |	< CLOBBER	: ">|" >
 
-// first letters of operators (these should be defined in HshParser.jj, too)
+// first letters of operators
 |	< UPPERSANT	: "&" >
 |	< PIPE 		: "|" >
 |	< SEMICOLON : ";" >  
@@ -236,6 +271,18 @@ TOKEN:
 {	< BACKTIC_START			: < BACKTIC > > { parser.pushState(BACKTICKED); }
 |	< DOLLAR_LBRACE_START	: "${" >		{ parser.pushState(DOLLAR_LBRACE); }
 }
+
+/*
+// TODO switchTo(DOLLAR_ONLY) somewhere
+<DOLLAR_ONLY> TOKEN:
+{
+	< VARNAME				: ([a-z]|[A-Z]|[0-9])+ >
+|	< DO_DOLLAR				: < DOLLAR >>
+|	< DO_BANG				: < BANG >>
+|	< DO_CROSS				: "#" >
+// TODO: others, all special parameters
+}
+*/
 
 <DOLLAR_LBRACE> TOKEN: // can be nested
 {	< DOLLAR_LBRACE_END		: "}" >		{ parser.popState(); }
@@ -343,17 +390,17 @@ DQuotedL1Node dquoted():
 }
 
 /** A part of a word in state DEFAULT, simple text.
-* @return the part as a String
+* @return the part as a SimpleL1Node
 */
 SimpleL1Node default_part():
 {
 	final StringBuilder sb=new StringBuilder();
 	Token t;
 }{
-	(	t=< ESC_CHAR > { sb.append(t.image.substring(1, 1)); }	
-|		t=< DEFAULT_ANYTHING > { sb.append(t.image); }
+	(	t=< ESC_CHAR >
+|		t=< EQUALS >|		t=< DEFAULT_ANYTHING >
 	)
-	{ return new SimpleL1Node(sb.toString()); }}
+	{ return new SimpleL1Node(t.image); }}
 
 /** creates a BacktickedNode representing what is found between the two backtics */
 BacktickedNode backticked():
@@ -382,7 +429,7 @@ SQuotedL1Node squoted():
 		return new SQuotedL1Node(sb.toString());
 	}}
 
-OperatorL1Node operator():
+L2Token separating_part():
 {
 	Token t;}{
 	(	t=< AND_IF >
@@ -404,20 +451,26 @@ OperatorL1Node operator():
 |	t=< SEMICOLON >
 |	t=< LESS >
 |	t=< GREAT >
+// these are no operators, but separate words, too
+|	t=< WS > // Note: WS is not sent to HshParser, but separates words.
+|	t=< NEWLINE >
 	) {
-		return new OperatorL1Node(t);	}
+		return new L2Token(translateL1KindToL2Kind(t.kind), t.image);
+	}
 }
 
-AssignmentL1Node assignment():
+AssignmentL2Token assignment():
 {
-	AssignmentL1Node ret=new AssignmentL1Node();
-	Token t1;
-	L1Node wp2;
+	// Note that the token-kind is switched dynamically while parsing in HshParser
+	// from WORD to ASSIGNMENT_WORD if needed.
+	AssignmentL2Token ret=new AssignmentL2Token();
+	Token t;
+	L2Token rhs;	// right hand side of assignment
 }{
-	// TODO: should be a name, not a DEFAULT_ANYTHING
-	t1=< DEFAULT_ANYTHING >	{ ret.add(new SimpleL1Node(t1.image)); }
-	< EQUALS >				{ ret.add(new SimpleL1Node("=")); }	//wp2=word_part()			{ ret.add(wp2); }
-	{ return ret; }
+	(	// TODO: should be a name, not a DEFAULT_ANYTHING
+	t=< DEFAULT_ANYTHING >	{ ret.addPart(new SimpleL1Node(t.image)); }
+	< EQUALS >				{ ret.addPart(new SimpleL1Node("=")); }
+	( rhs=word_part_list()	{ ret.addPart(rhs); } )?	)	{ return ret; }
 }
 
 /** part of a word or whole word.
@@ -435,84 +488,29 @@ L1Node word_part():
 }
 {
 	(
-	LOOKAHEAD(2)
-	ret=assignment()
-|	ret=default_part()
+	ret=default_part()
 |	ret=backticked()	
 |	ret=dquoted()		
 |	ret=squoted()
 |	ret=dollar_subst()
-|	ret=operator()	
-|	t=< WS >				{ ret=new WsL1Node(t); }
-|	t=< NEWLINE >			{ ret=new NlL1Node(t); }
-|	t=< EQUALS >		    { ret=new SimpleL1Node("="); }|	t=< EOF >				{ ret=new EofL1Node(t); }
 	)
 	{ return ret; }
 }
 
-/*
-void complete_word():
-{
-	ComplexL1Node node=new ComplexL1Node();
-	List<L1Node> child;
-}
-{
-	( child=word_part() { node.addChilds(child); } )+
-}
+L2Token word_part_list():
+{	L2Token ret=new L2Token();
+	L1Node part;
+}{		(	part=word_part()	{ ret.addPart(part); }	)+
+		{ return ret; }}
 
-void words():
-{}{	( separator() | complete_word() )* < EOF >
-}
+/** A word is a separating_part() or a concatenation of word_part() or <EOF>
 */
-
-/*
-TOKEN:
+L2Token word():
 {
-
-/* Token for HshParser */
-/*
-|	< ASSIGNMENT_WORD >
-|	< IO_NUMBER	>
-|	< NAME >
-|	< NEWLINE >
-|	< WORD >
-*/
-
-/* language token. */
-/*
-|	< AND_IF	: "&&" >
-|	< BANG		: "!" >
-|	< CASE		: "case" >
-|	< CLOBBER	: ">|" >
-|	< DLESS		: "<<" >
-|	< DLESSDASH	: "<<-" >
-|	< DGREAT	: ">>" >
-|	< DO 		: "do" >
-|	< DONE		: "done" >
-|	< DSEMI		: ";;" >
-|	< ELSE		: "else" >
-|	< ELIF		: "elif" >
-|	< ESAC		: "esac" >
-|	< FI		: "fi" >
-|	< FOR		: "for" >
-|	< GREATAND	: ">&" >
-|	< GREATER	: ">" >
-|	< IF		: "if" >
-|	< IN		: "in" >
-|	< KLAMMER_AUF: "(" >
-|	< KLAMMER_ZU: ")" >
-|	< LBRACE	: "{" >
-|	< LESS		: "<" >
-|	< LESSAND	: "<&" >
-|	< LESSGREAT	: "<>" >
-|	< OR_IF		: "||" >
-|	< RBRACE	: "}" >
-|	< SEMICOLON : ";" >
-|	< THEN		: "then" >
-|	< UNTIL 	: "until" >
-|	< UPPERSANT	: "&" >
-|	< PIPE 		: "|" >
-|	< WHILE		: "while" >
-}
-*/
-
+	L2Token ret;
+	Token t;}{
+	( LOOKAHEAD(2) // assignment needs lookahead(2) to find the "="
+			// there is still a warning, but its ok since assingment() includes everything up to the next separator_part()			ret=assignment()
+		|	ret=word_part_list()
+		|	ret=separating_part()		|	t=< EOF >				{ ret=new L2Token(HshParserConstants.EOF, "EOF"); }
+	) { return ret; }}
