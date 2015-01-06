@@ -80,5 +80,17 @@ public interface HshEnvironment {
 		// TODO change of function definitions. Until implemented use remove/create
 	}
 
+	/**
+	 * @return the count of positional parameters set in this context, or if not set the count of 
+	 * the parents positional parameters.
+	 */
+	public int getPositionalCount();
+
+	/** Sets the positional parameters ($1, $2, ...) all at once and implicit the positionalCount.
+	 * If these where not set on the current environment, the parents positional parameters are used.
+	 * @param values
+	 */
+	public void setPositionalValues(String[] values);
+
 
 }

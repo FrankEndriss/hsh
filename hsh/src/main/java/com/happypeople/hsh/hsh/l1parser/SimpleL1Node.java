@@ -4,7 +4,9 @@ import java.util.Collections;
 import java.util.Iterator;
 
 
-/** SimpleL1Node is a not Substitutable node.
+/** SimpleL1Node is a node with simple text. The text is interpreted to have no special meaning.
+ * So, that can be text with really no special meaning, or text which has not special meaning in
+ * the context where it is found.
  */
 public class SimpleL1Node implements L1Node {
 	private final String str;

@@ -5,13 +5,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 
+import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListener;
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
 import com.happypeople.hsh.hsh.l1parser.DollarSubstNode;
+import com.happypeople.hsh.hsh.l1parser.DollarVarNode;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
@@ -22,8 +28,32 @@ public class HshParserTest {
 
 	private final static boolean DEBUG=true;
 
+	private HshContext context;
+
+	@Before
+	public void init_setup() {
+		context=new HshChildContext(null);
+	}
 	public HshParser setup(final String input) {
 		return new HshParser(new L2TokenManager(new L1Parser(new StringReader(input))));
+	}
+
+	@Test
+	public void testComplete_dollar_only2() throws ParseException, IOException {
+		context.getEnv().setVariableValue("x", "3");
+		context.getEnv().setVariableValue("y", "x");
+		final CompleteCommand cc=doTestCompleteCommand("${$y}");
+		//final DollarVarNode dvn=findFirstNodeOfClass(cc, DollarVarNode.class);
+		final String s=NodeTraversal.substituteSubtree(cc, context);
+		assertEquals("substitution", "3", s);
+	}
+
+	@Test
+	public void testComplete_dollar_only1() throws ParseException, IOException {
+		context.getEnv().setVariableValue("x", "3");
+		final CompleteCommand cc=doTestCompleteCommand("$x");
+		final DollarVarNode dvn=findFirstNodeOfClass(cc, DollarVarNode.class);
+		assertEquals("substitution", "3", dvn.getSubstitutedString(context));
 	}
 
 	@Test
@@ -45,12 +75,15 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_dollar3() throws ParseException {
+	public void testComplete_dollar3() throws ParseException, IOException {
+		context.getEnv().setVariableValue("x", "3");
+		context.getEnv().setVariableValue("y", "x");
 		final CompleteCommand cc=doTestCompleteCommand("${${y}}");
 		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
 		assertNotNull("# parameter", dsn.getParameter());
 		assertNull("no operator", dsn.getOperator());
 		assertNull("no word", dsn.getWord());
+		assertEquals("substitution", "3", dsn.getSubstitutedString(context));
 	}
 
 	@Test
@@ -63,12 +96,31 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_dollar1() throws ParseException {
+	public void testComplete_dollar1() throws ParseException, IOException {
+		context.getEnv().setVariableValue("x", "3");
 		final CompleteCommand cc=doTestCompleteCommand("${x}");
 		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
 		assertNotNull("# parameter", dsn.getParameter());
 		assertNull("no operator", dsn.getOperator());
 		assertNull("no word", dsn.getWord());
+		assertEquals("substitution", "3", dsn.getSubstitutedString(context));
+	}
+
+	private <T> T findFirstNodeOfClass(final CompleteCommand cc, final Class<T> class1) {
+		final List<T> listT=new ArrayList<T>();
+
+		NodeTraversal.traverse(cc, new TraverseListener() {
+			@Override
+			public TraverseListenerResult node(final L1Node node, final int level) {
+				if(class1.isAssignableFrom(node.getClass())) {
+					listT.add((T)node);
+					return TraverseListenerResult.STOP;
+				}
+				return TraverseListenerResult.CONTINUE;
+			}
+		});
+
+		return listT.size()>0?listT.get(0):null;
 	}
 
 	private DollarSubstNode findFirstDollarSubstNode(final CompleteCommand cc) {
@@ -205,11 +257,11 @@ public class HshParserTest {
 
 	private CompleteCommand doTestCompleteCommand(final String input) throws ParseException {
 		final HshParser p=setup(input);
-		final CompleteCommand cc=p.complete_command();
-		if(DEBUG) {
+		if(DEBUG)
 			System.out.println("Test input: "+input);
+		final CompleteCommand cc=p.complete_command();
+		if(DEBUG)
 			cc.dump(0);
-		}
 		return cc;
 	}
 

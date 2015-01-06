@@ -3,6 +3,7 @@ package com.happypeople.hsh.hsh.l1parser;
 import java.io.IOException;
 
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hsh.hsh.NodeTraversal;
 
 
 public class DollarSubstNode extends ComplexL1Node implements Substitutable {
@@ -10,14 +11,14 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 	int operatorIdx=-1;
 	int wordIdx=-1;
 
-	public void setParameter(final ComplexL1Node parts) {
+	public void setParameter(final L1Node parts) {
 		if(parameterIdx>=0)
 			throw new RuntimeException("must not set parameter parts more than once");
 		parameterIdx=add(parts);
 	}
 
-	public ComplexL1Node getParameter() {
-		return (ComplexL1Node)get(parameterIdx);
+	public L1Node getParameter() {
+		return get(parameterIdx);
 	}
 
 	public void setOperator(final L1Node operator) {
@@ -33,7 +34,7 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 		return operatorIdx>=0?get(operatorIdx):null;
 	}
 
-	public void setWord(final ComplexL1Node parts) {
+	public void setWord(final L1Node parts) {
 		if(wordIdx>=0)
 			throw new RuntimeException("must not set word parts more than once");
 		wordIdx=add(parts);
@@ -42,16 +43,18 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 	/**
 	 * @return null if not set, else the word
 	 */
-	public ComplexL1Node getWord() {
+	public L1Node getWord() {
 		if(wordIdx<0)
 			return null;
-		return (ComplexL1Node)get(wordIdx);
+		return get(wordIdx);
 	}
 
 	@Override
 	public String getSubstitutedString(final HshContext env) throws IOException {
-		final ComplexL1Node variable=getParameter();
-		final String value=env.getEnv().getVariableValue(variable.getString());
+		final L1Node variable=getParameter();
+		// if the variable name contains substitutions itself (i.e. "${${x}}"), substitute them now
+		final String varName=NodeTraversal.substituteSubtree(variable, env);
+		final String value=env.getEnv().getVariableValue(varName);
 		if(getOperator()!=null)
 			throw new RuntimeException("substitution with operator not implemented");
 		return value;

@@ -55,7 +55,12 @@ public class NodeTraversal {
 		TraverseListenerResult node(L1Node node, int level);
 	}
 
-	/** Executes substitution on a subtree
+	/** Executes substitution on a subtree.
+	 * The traversal is implemented in a way that all Substitutable are search in subtree, parent-first.
+	 * If one found, thats nodes getSubstitutedString() is called, and thats nodes children are not
+	 * traversed any more.
+	 * That means the implementation of getSubstitutedString() must take care of childs substitutions for
+	 * itself, i.e. by calling this method with the children as subtree.
 	 * @param subtree the subtree to substitute
 	 * @param context context of substitution
 	 * @return the stringified subtree, substitutions executed

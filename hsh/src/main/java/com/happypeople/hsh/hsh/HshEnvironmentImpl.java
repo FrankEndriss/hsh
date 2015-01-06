@@ -22,6 +22,9 @@ public class HshEnvironmentImpl implements HshEnvironment {
 	private final Map<String, Parameter> vars=new HashMap<String, Parameter>();
 	private final Set<ChangeListener> listeners=new HashSet<ChangeListener>();
 
+	/** Number of positional parameters set in this environment. -1==undefined */
+	private int positionalCount=-1;
+
 	/**
 	 * @param parent read-only delegate of this environment, can be null
 	 */
@@ -108,6 +111,23 @@ public class HshEnvironmentImpl implements HshEnvironment {
 	@Override
 	public boolean issetParameter(final String name) {
 		return getParameter(name)!=null;
+	}
+
+	@Override
+	public void setPositionalValues(final String[] values) {
+		for(int i=0; i<values.length; i++)
+			setVariableValue(""+i, values[i]);
+		positionalCount=values.length;
+
+		if(parent!=null) { // explicit unset all positionals parameters potentially inherited by parent context
+			for(int i=positionalCount; i<parent.getPositionalCount(); i++)
+				unsetParameter(""+i);
+		}
+	}
+
+	@Override
+	public int getPositionalCount() {
+		return positionalCount<0? parent.getPositionalCount() : positionalCount;
 	}
 
 	@Override

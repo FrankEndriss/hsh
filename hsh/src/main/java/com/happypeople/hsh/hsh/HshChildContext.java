@@ -13,7 +13,7 @@ class HshChildContext implements HshContext {
 
 	HshChildContext(final HshContext parent) {
 		this.parent=parent;
-		this.env=new HshEnvironmentImpl(parent.getEnv());
+		this.env=new HshEnvironmentImpl(parent!=null?parent.getEnv():null);
 		this.executor=new HshExecutorImpl(this);
 		((HshEnvironmentImpl)env).addListener(executor);
 	}
@@ -61,6 +61,7 @@ class HshChildContext implements HshContext {
 		return env;
 	}
 
+	@Override
 	public HshExecutorImpl getExecutor() {
 		return executor;
 	}

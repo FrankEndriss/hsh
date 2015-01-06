@@ -26,65 +26,6 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 		this.hshContext=hshContext;
 	}
 
-	// TODO implement execution of all commands
-	/*
-	public int execute(final ListNode completeCommand) {
-
-		final int[] res=new int[1];
-
-		// simple implementation. Executes all SimpleCommands.
-		NodeTraversal.traverse(completeCommand, new TraverseListener() {
-			@Override
-			public TraverseListenerResult node(final L1Node node, final int level) {
-				if(node instanceof SimpleCommand) {
-					try {
-						System.out.println("found SimpleCommand to execute: "+node);
-						execute((SimpleCommand)node);
-					} catch (final Exception e) {
-						e.printStackTrace();
-						return TraverseListenerResult.STOP;
-					}
-					return TraverseListenerResult.DONT_CHILDREN;
-				}
-				return TraverseListenerResult.CONTINUE;
-			}
-		});
-
-		return res[0];
-	}
-	*/
-
-	/** Creates a command line from parser construct SimpleCommand and excutes it.
-	 * @param simpleCommand
-	 * @return the exit-status of the command
-	 * @throws Exception
-	 */
-	/*
-	public int execute(final SimpleCommand simpleCommand) throws Exception {
-		final HshContext cmdContext=hshContext.createChildContext();
-
-		// TODO: execute substitution
-
-		// execute assignments
-		for(final L2Token assi : simpleCommand.getAssignments()) {
-			final String assiString=assi.getString();
-			final int eqIdx=assiString.indexOf("=");
-			final String varName=assiString.substring(0, eqIdx);
-			final String varVal=assiString.substring(eqIdx+1);
-			cmdContext.getEnv().setVariableValue(varName, varVal);
-		}
-
-		// construct cmd line
-		final List<String> cmd=new ArrayList<String>();
-		cmd.add(simpleCommand.getCmdName().getString());
-		for(final L2Token arg : simpleCommand.getArgs())
-			cmd.add(arg.getString());
-
-		System.out.println("executing cmd-line: "+cmd);
-		return execute(cmdContext, cmd.toArray(new String[0]));
-	}
-	*/
-
 	@Override
 	public int execute(final String[] command) throws Exception {
 		if(command.length<1)

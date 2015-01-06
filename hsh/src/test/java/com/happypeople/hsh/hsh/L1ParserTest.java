@@ -42,15 +42,18 @@ public class L1ParserTest {
 			"${xy}",
 			"${xy:-hallo}",
 			"${xy:+hallo}",
-			"${x_:?hallo}",
-			"${x :=hallo}"
+			"${x_:?hallo}"
 		};
 		for(int i=0; i<ok.length; i++) {
 			try {
 				do_parse(i, ok[i]);
 			}catch(final ParseException e) {
 				if(DEBUG)
-					System.out.println("ParseException at test "+i);
+					System.out.println("ParseException at test "+i+" in="+ok[i]);
+				throw e;
+			}catch(final TokenMgrError e) {
+				if(DEBUG)
+					System.out.println("TokenMgrError at test "+i+" in="+ok[i]);
 				throw e;
 			}
 		}
@@ -83,6 +86,7 @@ public class L1ParserTest {
 				// and squote
 			"b\"` x\"'",
 			"b \"\"'x' '\"' \\x'x \"\" x",
+			"${x :=hallo}"
 		};
 		for(int i=0; i<ok.length; i++) {
 			try {
@@ -90,7 +94,7 @@ public class L1ParserTest {
 				fail("should have failed at: "+i+" in:>"+ok[i]+"<");
 			}catch(final ParseException e) {
 				// ignore
-			}catch(final TokenMgrError e) {
+			}catch(final com.happypeople.hsh.hsh.l1parser.TokenMgrError e) {
 				// ignore
 			}
 		}
