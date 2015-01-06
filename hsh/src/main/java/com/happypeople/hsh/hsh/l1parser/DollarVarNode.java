@@ -1,6 +1,8 @@
 package com.happypeople.hsh.hsh.l1parser;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
@@ -9,9 +11,14 @@ import com.happypeople.hsh.HshEnvironment;
  * if token.kind==DO_SPECIAL it is one of the single-character defined in "special parameters".
  * Else token.image is simply the variable name.
  */
-public class DollarVarNode extends TokenNode implements Substitutable {
+public class DollarVarNode implements L1Node, Substitutable {
+	private final Token t;
 	DollarVarNode(final Token t) {
-		super(t);
+		this.t=t;
+	}
+
+	public Token getToken() {
+		return t;
 	}
 
 	@Override
@@ -74,5 +81,19 @@ public class DollarVarNode extends TokenNode implements Substitutable {
 			sb.append(val);
 		}
 		return sb.toString();
+	}
+
+	@Override
+	public Iterator<L1Node> iterator() {
+		return Collections.EMPTY_LIST.iterator();
+	}
+
+	@Override
+	public void dump(final int level) {
+		final StringBuilder sb=new StringBuilder();
+		for(int i=0; i<level; i++)
+			sb.append('\t');
+		sb.append(getClass().getName()+": $"+getToken().image);
+		System.out.println(""+sb);
 	}
 }

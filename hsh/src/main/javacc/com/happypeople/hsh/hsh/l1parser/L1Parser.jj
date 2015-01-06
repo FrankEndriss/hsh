@@ -351,7 +351,8 @@ $   `   "   \   <newline>
 |	< DANYTHING				: (~["\"", "$", "`", "\\"])+ >
 }
 
-void default_part_woColon(StringBuilder sb):
+/** default_part for varname in ${varname:.word}
+*/void default_part_woColon(StringBuilder sb):
 {
 	Token t;
 }
@@ -362,7 +363,7 @@ void default_part_woColon(StringBuilder sb):
 	)+ { sb.append(t.image); }
 }
 
-/** Used in assignment */
+/** default_part for lhs in assignment */
 void default_part_woEquals(StringBuilder sb):
 {
 	Token t;

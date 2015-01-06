@@ -105,8 +105,8 @@ public class HshParserRules {
 		if(DEBUG)
 			System.out.println("applyRule7b to Token, kind="+
 				HshParserConstants.tokenImage[t.kind]+
-				" image="+t.getString());
-		applyRule7b(t, t.getString());
+				" image="+t.image);
+		applyRule7b(t, t.image);
 	}
 
 	public static void applyRule7b(final L2Token t, final String string) {
@@ -123,29 +123,27 @@ public class HshParserRules {
 		if(DEBUG)
 			System.out.println("applyRule7a to Token, kind="+
 				HshParserConstants.tokenImage[token.kind]+
-				" image="+((L2Token)token).getString()+" class="+token.getClass());
+				" image="+token.image+" class="+token.getClass());
 		if(token.kind!=HshParserConstants.WORD)
 			return;
 		final L2Token t=(L2Token)token;
 		if(t instanceof AssignmentL2Token)
 			t.kind=HshParserConstants.ASSIGNMENT_WORD;
 		else
-			applyRule1(t, t.getString());
+			applyRule1(t, t.image);
 	}
 
 	public static void orig_applyRule7a(final Token token) {
 		if(DEBUG)
 			System.out.println("applyRule7a to Token, kind="+
 				HshParserConstants.tokenImage[token.kind]+
-				" image="+((L2Token)token).getString());
+				" image="+token.image);
 		if(token.kind!=HshParserConstants.WORD)
 			return;
 
-		final L2Token t=(L2Token)token;
-		final String image=t.getString();
-		if(image.contains("="))
-			applyRule7b(t, image);
+		if(token.image.contains("="))
+			applyRule7b((L2Token)token, token.image);
 		else
-			applyRule1(t, image);
+			applyRule1((L2Token)token, token.image);
 	}
 }

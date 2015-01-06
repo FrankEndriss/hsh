@@ -8,10 +8,13 @@ import com.happypeople.hsh.HshContext;
  * TODO real implementation.
  * This should base on (extend) ComplexL1Node since there can be infinite nested parts.
  */
-public class BacktickedNode extends SimpleL1Node implements Substitutable {
+public class BacktickedNode extends ComplexL1Node implements Substitutable {
+
+	private final String command;
 
 	public BacktickedNode(final String command) {
-		super(command);
+		add(new SimpleL1Node(command));
+		this.command=command;
 	}
 
 	@Override
@@ -27,7 +30,6 @@ public class BacktickedNode extends SimpleL1Node implements Substitutable {
 		System.out.println(getClass().getName());
 		for(int i=0; i<level+1; i++)
 			System.out.print("\t");
-		System.out.println("command="+getString());
+		System.out.println("command="+command);
 	}
-
 }

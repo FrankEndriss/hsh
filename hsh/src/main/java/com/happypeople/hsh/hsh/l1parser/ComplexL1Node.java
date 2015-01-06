@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/** L1Node with children. Because of the children it is Substitutable, too.
+/** L1Node with children.
  */
 public class ComplexL1Node implements L1Node {
 	private final List<L1Node> children=new ArrayList<L1Node>();
@@ -16,14 +16,6 @@ public class ComplexL1Node implements L1Node {
 
 	public L1Node get(final int idx) {
 		return children.get(idx);
-	}
-
-	@Override
-	public String getString() {
-		final StringBuilder sb=new StringBuilder();
-		for(final L1Node child : children)
-			sb.append(child.getString());
-		return sb.toString();
 	}
 
 	@Override

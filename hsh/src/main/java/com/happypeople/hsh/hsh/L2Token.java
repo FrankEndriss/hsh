@@ -11,9 +11,9 @@ import com.happypeople.hsh.hsh.l1parser.L1Node;
  * -a method getString(...)
  *
  * TODO: The getString()-method cannot be implemented clean, because it is not clear if
- * an L2Token is Stringifiable or not.
- * There should be a subclass implementing the child-stuff, which is not Stringifiable,
- * and this class should be Stringifiable.
+ * an L2Token is StringifiableNode or not.
+ * There should be a subclass implementing the child-stuff, which is not StringifiableNode,
+ * and this class should be StringifiableNode.
  */
 public class L2Token extends Token implements L1Node {
 	private final List<L1Node> parts=new ArrayList<L1Node>();
@@ -59,6 +59,7 @@ public class L2Token extends Token implements L1Node {
 			child.dump(level+1);
 	}
 
+	/*
 	@Override
 	public String getString() {
 		if(parts.size()==0)
@@ -68,4 +69,5 @@ public class L2Token extends Token implements L1Node {
 			sb.append(part.getString());
 		return sb.toString();
 	}
+	*/
 }

@@ -8,15 +8,14 @@ import java.util.Iterator;
  * So, that can be text with really no special meaning, or text which has not special meaning in
  * the context where it is found.
  */
-public class SimpleL1Node implements L1Node {
+public class SimpleL1Node implements L1Node, StringifiableNode {
 	private final String str;
 
 	public SimpleL1Node(final String str) {
 		this.str=str;
 	}
 
-	@Override
-	public String getString() {
+	public String getImage() {
 		return str;
 	}
 
@@ -32,7 +31,12 @@ public class SimpleL1Node implements L1Node {
 		System.out.println(getClass().getName());
 		for(int i=0; i<level+1; i++)
 			System.out.print("\t");
-		System.out.println("value="+getString());
+		System.out.println("value="+str);
+	}
+
+	@Override
+	public void append(final StringBuilder sb) {
+		sb.append(str);
 	}
 
 

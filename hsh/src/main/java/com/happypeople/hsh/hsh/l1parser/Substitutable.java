@@ -1,7 +1,5 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-import java.io.IOException;
-
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.ParseException;
 
@@ -44,8 +42,9 @@ public interface Substitutable {
 	 * This method returns what getString() returns, but with substitutions substituted.
 	 * @param env the environment
 	 * @return the stringified version of this node
+	 * @throws Exception
 	 * @throws ParseException shouldnt happen, but there could be Exceptions while execution of
 	 * substitutions.
 	 */
-	public String getSubstitutedString(HshContext env) throws IOException;
+	public String getSubstitutedString(HshContext env) throws Exception;
 }

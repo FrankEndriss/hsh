@@ -10,6 +10,6 @@ public interface L1Node extends Iterable<L1Node> {
 
 	/**
 	 * @return the String image of this node/token as parsed.
-	 */
 	public String getString();
+	 */
 }

@@ -4,11 +4,11 @@ import java.util.Collections;
 import java.util.Iterator;
 
 
-/** Base class for Token which translate 1:1 from L1 to L2 (Operators, NL, DOLLAR_ONLY, WS and EOF)
+/** Base class for Token which translate 1:1 from L1 to L2 (Operators, NL, WS and EOF)
  * Luckily, all of these are WordSeparators, too.
  *
  */
-public abstract class TokenNode implements L1Node, WordSeparator {
+public abstract class TokenNode implements L1Node, WordSeparator, StringifiableNode {
 
 	private final Token t;
 
@@ -26,8 +26,8 @@ public abstract class TokenNode implements L1Node, WordSeparator {
 	}
 
 	@Override
-	public String getString() {
-		return t.image;
+	public void append(final StringBuilder sb) {
+		sb.append(t.image);
 	}
 
 	@Override

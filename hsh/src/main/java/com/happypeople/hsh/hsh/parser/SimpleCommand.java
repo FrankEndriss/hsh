@@ -1,20 +1,15 @@
 package com.happypeople.hsh.hsh.parser;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
-import com.happypeople.hsh.hsh.NodeTraversal.TraverseListener;
-import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
 import com.happypeople.hsh.hsh.l1parser.AssignmentL2Token;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
-import com.happypeople.hsh.hsh.l1parser.Substitutable;
-import com.happypeople.hsh.hsh.l1parser.TokenNode;
 
 public class SimpleCommand extends L2Node implements Executable {
 	private L2Token cmdName;
@@ -90,7 +85,7 @@ public class SimpleCommand extends L2Node implements Executable {
 			boolean second=true;
 			for(final L1Node child : assiTok) {
 				if(first) {
-					varName=((SimpleL1Node)child).getString();
+					varName=((SimpleL1Node)child).getImage();
 					first=false;
 				} else if(second) {
 					second=false;
@@ -106,6 +101,9 @@ public class SimpleCommand extends L2Node implements Executable {
 
 		if(getCmdName()!=null) { // else SimpleCommand is just a list of assignments, no command
 			final List<String> cmdList=new ArrayList<String>();
+			// TODO cmdName and args can be empty (after substitution), and therefore should be
+			// checked to contain anything else than WS.
+			// Additionally, on cmdList[0] leading and trailing WS should be removed.
 			cmdList.add(NodeTraversal.substituteSubtree(getCmdName(), context));
 			for(final L1Node arg : getArgs())
 				cmdList.add(NodeTraversal.substituteSubtree(arg, context));
@@ -116,27 +114,5 @@ public class SimpleCommand extends L2Node implements Executable {
 		// TODO what to return for assignment only??? try 0
 		return 0;
 
-	}
-
-	private String substituteSubtree(final L1Node subtree, final HshContext context) {
-		final StringBuilder sb=new StringBuilder();
-		NodeTraversal.traverse(subtree, new TraverseListener() {
-			@Override
-			public TraverseListenerResult node(final L1Node node, final int level) {
-				try {
-					if(node instanceof Substitutable) {
-						sb.append(((Substitutable)node).getSubstitutedString(context));
-						return TraverseListenerResult.DONT_CHILDREN;
-					} else // TODO must be on Stringifiable only (or on Leafs only)
-						if(node instanceof SimpleL1Node || node instanceof TokenNode)
-							sb.append(node.getString());
-				} catch (final IOException e) {
-					e.printStackTrace();
-					return TraverseListenerResult.STOP;
-				}
-				return TraverseListenerResult.CONTINUE;
-			}
-		});
-		return sb.toString();
 	}
 }

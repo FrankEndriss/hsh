@@ -1,7 +1,5 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-import java.io.IOException;
-
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.NodeTraversal;
 
@@ -50,7 +48,7 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 	}
 
 	@Override
-	public String getSubstitutedString(final HshContext env) throws IOException {
+	public String getSubstitutedString(final HshContext env) throws Exception {
 		final L1Node variable=getParameter();
 		// if the variable name contains substitutions itself (i.e. "${${x}}"), substitute them now
 		final String varName=NodeTraversal.substituteSubtree(variable, env);

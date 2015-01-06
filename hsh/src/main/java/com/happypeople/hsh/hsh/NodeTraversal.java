@@ -8,9 +8,8 @@ import java.util.LinkedList;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
-import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
+import com.happypeople.hsh.hsh.l1parser.StringifiableNode;
 import com.happypeople.hsh.hsh.l1parser.Substitutable;
-import com.happypeople.hsh.hsh.l1parser.TokenNode;
 
 public class NodeTraversal {
 	/** Parent-first Depth-first traversal of the nodes tree.
@@ -64,10 +63,12 @@ public class NodeTraversal {
 	 * @param subtree the subtree to substitute
 	 * @param context context of substitution
 	 * @return the stringified subtree, substitutions executed
+	 * @throws IOException if one of the getSubstitutedString()-calls throws an Exception the traversal is stopped, and
+	 * that Exception is rethrown
 	 */
-	public static String substituteSubtree(final L1Node subtree, final HshContext context) throws IOException {
+	public static String substituteSubtree(final L1Node subtree, final HshContext context) throws Exception {
 		final StringBuilder sb=new StringBuilder();
-		final IOException[] ex=new IOException[1];
+		final Exception[] ex=new Exception[1];
 
 		traverse(subtree, new TraverseListener() {
 			@Override
@@ -76,10 +77,9 @@ public class NodeTraversal {
 					if(node instanceof Substitutable) {
 						sb.append(((Substitutable)node).getSubstitutedString(context));
 						return TraverseListenerResult.DONT_CHILDREN;
-					} else // TODO must be on Stringifiable only (or on Leafs only)
-						if(node instanceof SimpleL1Node || node instanceof TokenNode)
-							sb.append(node.getString());
-				} catch (final IOException e) {
+					} else if(node instanceof StringifiableNode)
+						((StringifiableNode)node).append(sb);
+				} catch (final Exception e) {
 					ex[0]=e;
 					return TraverseListenerResult.STOP;
 				}
@@ -93,6 +93,18 @@ public class NodeTraversal {
 		return sb.toString();
 	}
 
+	/** Executes a subtree.
+	 * The traversal is implemented in a way that all Executables are searched in subtree, parent-first.
+	 * If one found, thats nodes doExecution() is called, and thats nodes children are not
+	 * traversed any more.
+	 * That means the implementation of doExecution() must take care of childs executions and substitutions for
+	 * itself, i.e. by calling this method with the children as subtree.
+	 * @param subtree the subtree to execute
+	 * @param context context of exectuion
+	 * @return the return status of the last execution
+	 * @throws Exception if one of the doExecution()-calls throws an Exception the traversal is stopped, and
+	 * that Exception is rethrown
+	 */
 	public static int executeSubtree(final L1Node subtree, final HshContext context) throws Exception {
 		final int[] res=new int[1];
 		res[0]=Integer.MIN_VALUE;
