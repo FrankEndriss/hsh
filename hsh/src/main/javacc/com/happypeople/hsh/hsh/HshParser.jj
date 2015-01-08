@@ -3,7 +3,7 @@ options
 	STATIC=false;
 	USER_TOKEN_MANAGER=true;
     FORCE_LA_CHECK=false;
-    DEBUG_PARSER=false;
+    DEBUG_PARSER=true;
     //DEBUG_LOOKAHEAD=true;
     //LOOKAHEAD=2;
 }
@@ -85,6 +85,8 @@ PARSER_END(HshParser)
 */
 //}
 
+////////////////////////////////////// sh-grammar begins
+
 /**
 here_end         : WORD                      // Apply rule 3
                  ;
@@ -159,6 +161,8 @@ cmd_word         : WORD                   // Apply rule 7b
 void cmd_word(SimpleCommand simpleCommand):
 {
 	Token t;}{
+// not an assignment
+// TODO: reserved words
 	t=< WORD > { simpleCommand.setCmdName((L2Token)t); }
 }
 
@@ -169,6 +173,8 @@ cmd_name         : WORD                   // Apply rule 7a
 void cmd_name(SimpleCommand simpleCommand):
 {
 	Token t;}{
+// not an assignment
+// TODO: reserved words
 	t=< WORD > { simpleCommand.setCmdName((L2Token)t); }
 }
 
@@ -182,7 +188,9 @@ cmd_suffix       :            io_redirect
 void cmd_suffix(final SimpleCommand simpleCommand):
 {
 	Token t;}{
-	( io_redirect() { throwNI(); } | t=< WORD > { simpleCommand.addArg((L2Token)t); } )+
+// TODO javacc crash
+	( t=<WORD> { simpleCommand.addArg((L2Token)t); } )+
+//	( LOOKAHEAD(io_redirect()) io_redirect() { throwNI(); } | t=<WORD> { simpleCommand.addArg(t); } )+
 }
 
 /**
@@ -194,11 +202,13 @@ cmd_prefix       :            io_redirect
 */
 void cmd_prefix(SimpleCommand simpleCommand):
 {
+// if cmd_prefix is found, another cmd_prefix can follow, so apply Rule7a again
 	Token t;}{
 	( 
-		( io_redirect() { throwNI(); } | t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); } )
-		{ HshParserRules.applyRule7a(getToken(1)); }
-		)+}
+		( io_redirect() { throwNI(); } | t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); 
+			HshParserRules.applyRule7a(getToken(1));
+		} )
+	)+}
 
 /**
 function_body    : compound_command                // Apply rule 9
@@ -283,7 +293,7 @@ void for_clause():
 }
 {
 //	< FOR > name() linebreak() < IN > ( ( wordlist() )? sequential_sep() )? do_group()
-	< FOR > name() linebreak() < IN > ( (< WORD >)* sequential_sep() )? do_group()
+	< FOR > name() linebreak() < IN > ( (<WORD>)* sequential_sep() )? do_group()
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -309,7 +319,7 @@ void wordlist():
 {
 }
 {
-	( < WORD > )+
+	( <WORD> )+
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -347,7 +357,7 @@ void pattern():
 {
 }
 {
-	< WORD4 > ( < PIPE > < WORD > )*
+	< WORD4 > ( < PIPE > <WORD> )*
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -362,9 +372,7 @@ void case_item_ns():
 {
 }
 {
-// TODO javacc crash
-//	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > ( compound_list() )? linebreak() 
-	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > linebreak() 
+	( LOOKAHEAD(1) < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > ( LOOKAHEAD(compound_list()) compound_list() )? linebreak() 
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -380,9 +388,7 @@ void case_item():
 }
 {
 	/* compound_list() and linebreak() both may start with < NEWLINE > */
-// TODO javacc crash
-//	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > ( LOOKAHEAD(compound_list()) compound_list() | linebreak() ) < DSEMI > linebreak()
-	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > compound_list() < DSEMI > linebreak()
+	( < KLAMMER_AUF > )? pattern() < KLAMMER_ZU > ( LOOKAHEAD(compound_list()) compound_list() | linebreak() ) < DSEMI > linebreak()
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -409,10 +415,7 @@ void case_clause():
 {
 }
 {
-// TODO javacc crash
-//	< CASE > < WORD > linebreak() < IN > linebreak() ( case_list() | case_list_ns() )? < ESAC >
-	< CASE > < WORD > linebreak() < IN > linebreak() ( case_list() )? < ESAC >
-			/* lookahead to case_item works since case_list() is a list of case_item() */
+	< CASE > <WORD> linebreak() < IN > linebreak() ( LOOKAHEAD(case_list()) case_list() | case_list_ns() )? < ESAC >
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -447,12 +450,17 @@ void else_part():
 while_clause     : While compound_list do_group
                  ;
 */
-void while_clause():
+WhileLoop while_clause():
 {
+WhileLoop ret=new WhileLoop();
+TermNode condition;
+TermNode body;
 }
 {
-	< WHILE > compound_list() do_group()
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	< WHILE > 
+	condition=compound_list()	{ ret.addChild(condition); } 
+	body=do_group()				{ ret.addChild(body); }
+	{ return ret; }
 }
 
 /**
@@ -471,12 +479,13 @@ void until_clause():
 do_group         : Do compound_list Done           // Apply rule 6
                  ;
 */
-void do_group():
+TermNode do_group():
 {
+TermNode ret;
 }
 {
-	< DO > compound_list() < DONE >
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	< DO > ret=compound_list() < DONE >
+	{ return ret; }
 }
 
 /**
@@ -486,12 +495,12 @@ compound_list    :              term
                  | newline_list term separator
                  ;
 */
-void compound_list():
+TermNode compound_list():
 {
 	TermNode termN;
 }
 {
-	( newline_list() )? termN=term() ( separator(termN) )?
+	( LOOKAHEAD(1) newline_list() )? termN=term() ( LOOKAHEAD(separator()) separator(termN) )?
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -506,7 +515,10 @@ TermNode term():
 	And_orNode and_orN;
 }
 {
-	and_orN=and_or() { ret.addChild(and_orN); }		( LOOKAHEAD(separator()) separator(and_orN) and_orN=and_or() { ret.addChild(and_orN); }		)*
+	and_orN=and_or() { ret.addChild(and_orN); }
+	(
+		( LOOKAHEAD(separator()) separator(and_orN) and_orN=and_or() { ret.addChild(and_orN); } )*
+	)
 	{ return ret; }
 }
 
@@ -538,9 +550,12 @@ simple_command   : cmd_prefix cmd_word cmd_suffix
 SimpleCommand simple_command():
 {
 	SimpleCommand simpleCommand=new SimpleCommand();
-	HshParserRules.applyRule7a(getToken(1));
+	// No need to apply Rule 7a since ASSIGNMENT_WORD is parsed in L1Parser whenever
+	// an assignment is found.
+	// However, we need to use any_word() instead of <WORD> in the parser rules.
+	//HshParserRules.applyRule7a(getToken(1));
 	// switch jj_ntk as the token switched its type
-	jj_ntk=getToken(1).kind;
+	//jj_ntk=getToken(1).kind;
 }
 {
 (
@@ -567,6 +582,7 @@ pipeline         :      pipe_sequence
 */
 PipeSequence pipeline():
 {
+	// needed before each command
 	HshParserRules.applyRule7a(getToken(1));
 	PipeSequence ret;
 }
@@ -599,7 +615,7 @@ Command command():
 	L2Node simpleCommand;
 }
 {
-	( LOOKAHEAD(2)
+	( //LOOKAHEAD(2)
 	simpleCommand=simple_command() { ret.addChild(simpleCommand); }
 |	compound_command() ( redirect_list() )? { throwNI(); }
 |	function_definition() { throwNI(); } )
@@ -615,7 +631,7 @@ void newline_list():
 {
 }
 {
-	( < NEWLINE > )+
+	( LOOKAHEAD(1) < NEWLINE > )+
 }
 /**
 linebreak        : newline_list
@@ -626,13 +642,15 @@ void linebreak():
 {
 }
 {
-	( newline_list() )?
+	( LOOKAHEAD(1) <NEWLINE> )*
 }
 /**
 and_or           :                         pipeline
                  | and_or AND_IF linebreak pipeline
                  | and_or OR_IF  linebreak pipeline
                  ;
+reads as:
+pipeline ( (AND_IF|OR_IF) linebreak pipeline)*
 */
 And_orNode and_or():
 {

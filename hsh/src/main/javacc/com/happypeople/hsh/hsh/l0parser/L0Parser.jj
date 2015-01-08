@@ -1,4 +1,4 @@
-/** The DefaultParser.jj does kind of L0-Level parsing.
+/** The L0Parser.jj does kind of L0-Level parsing.
 It finds serveral constructs, builds simple Strings of them
 and let other parsers to more detailed parsing of these Strings.
 The found constructs are:
@@ -130,17 +130,17 @@ DLESS  DGREAT  LESSAND  GREATAND  LESSGREAT  DLESSDASH
    '>|'
 */
 
-PARSER_BEGIN(DefaultParser)
-package com.happypeople.hsh.hsh.parsers;
+PARSER_BEGIN(L0Parser)
+package com.happypeople.hsh.hsh.l0parser;
 import java.util.*;
 import com.happypeople.hshutil.util.AsyncIterator;
+import com.happypeople.hsh.hsh.syntaxparser.SyntaxParserConstants;
 
-// TODO implement other packages TokenManager
-public class DefaultParser
+public class L0Parser
 {
 }
 
-PARSER_END(DefaultParser)
+PARSER_END(L0Parser)
 
 /** no escaped chars possible in SQUOTED */
 /*
@@ -180,7 +180,7 @@ void text(DNode parent):
 	TextDNode node=new TextDNode();
 	parent.offer(node);
 	Token t;}{
-	(	t=< TEXT > { node.add(t); }
+	(	t=< TEXT > 		{ node.add(t); }
 	// TODO add the above chars escaped|	t=< WS >		{ node.add(t); }
 |	t=< NEWLINE >	{ node.add(t); }
 	)+
@@ -284,7 +284,7 @@ void any(DNode parent):
 */
 void parseAsync(AsyncIterator<DNode> ret):
 {
-	DNode root=new AbstractDNode();
+	DNode root=new AbstractDNode(SyntaxParserConstants.ROOT);
 	ret.offer(root);
 	ret.close();
 	Token t;}{	any(root) < EOF >

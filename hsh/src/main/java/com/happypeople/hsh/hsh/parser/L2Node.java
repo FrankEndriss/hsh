@@ -16,6 +16,10 @@ public class L2Node extends L2Token {
 		return (L2Token)getPart(idx);
 	}
 
+	public int getChildCount() {
+		return getPartCount();
+	}
+
 	/** Creates a printout of the node-tree
 	 * @param level the level of the tree this node lives in
 	 */

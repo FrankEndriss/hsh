@@ -221,9 +221,9 @@ TOKEN:
 |	< #def_DEFAULT_ANYTHING	: (~["`", "'", "\"", "\\", 
 								" ", "\t", "\r", "\n", 
 								"&", "|", ";", "<", ">", "$", "{", 
-								"}", "=", ":"])+ >
+								"}", "(", ")" ])+ >
 	// chars of DEFAULT_ANYTHING and DO_SPECIAL
-|	< #def_DA_AND_DO_SPECIAL	:  ~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">", "$", "{", "}", "=",
+|	< #def_DA_AND_DO_SPECIAL	:  ~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">", "$", "{", "}", "=", ":", "(", ")",
 									"0"-"9", "@", "*", "#", "?", "_", "$", "!"] >
 |	< #def_DO_SPECIAL			:  ["0"-"9", "@", "*", "#", "?", "_", "$", "!"] >
 }
@@ -271,26 +271,37 @@ TOKEN:
 
 // other special chars
 |	< COLON		: ":" >
+|	< KLAMMER_AUF:	"(" >
+|	< KLAMMER_ZU:	")" >
 }
 
 // reached on "${"
 <DOLLAR_LBRACE> TOKEN:
 {
-	< DOLLAR_LBRACE_END		: "}" >		{ parser.popState(); }
-|	< COLON_OP				: <COLON> ["-", "=", "?", "+"] >
-|	< DS_ESC_BACKSLASH		: < DEF_ESC_BACKSLASH > >
-// TODO do not match colon_op as part of anything
-//|	< DOLLAR_LBRACE_ANYTHING : (~["\\", "}", ":", "{", "$" ])+ >
+	< _RBRACE 	: <RBRACE> >				{ parser.popState(); }
+|	< COLON_OP	: <COLON> ["-", "=", "?", "+"] >
+// TODO how to parse the rest of it???
+// * switchTo(DEFAULT), then parse the word, but how to switch back after the word?
+// ->might call word(after_parse_callback), and in the callback restore the
+//   tokenizer state as pop()ed. This would include
+// * read until "}" as a String and extra-parser parse the word later?
+// * extra State?
 }	
 
 < DEFAULT, BACKTICKED, DOLLAR_LBRACE > TOKEN:
 {
-	< ESC_CHAR			: "\\" < BANYTHING > >
+	< ANY_ESCAPED_CHAR			: "\\" < BANYTHING > >
+}
+
+< DOLLAR_LBRACE_VARNAME > TOKEN:
+{
+	< DS_VARNAME	: (~["%", "#", ":", "}"])+ >		{ parser.popState(); }
 }
 
 < DEFAULT, DQUOTED, DOLLAR_LBRACE > TOKEN:
 {	< BACKTIC_START			: < BACKTIC > > { parser.pushState(BACKTICKED); }
-|	< DOLLAR_LBRACE_START	: "${"	>		{ parser.pushState(DOLLAR_LBRACE); }
+|	< DOLLAR_LBRACE_START	: "${"	>		{ parser.pushState(DOLLAR_LBRACE); 
+											  parser.pushState(DOLLAR_LBRACE_VARNAME); }
 |	< DOLLAR				: "$"	>		{ parser.pushState(DOLLAR_ONLY); }
 }
 
@@ -309,7 +320,7 @@ TOKEN:
 }
 
 
-/** In BACKTICKED we have to find the end of the backtic state. Anything else is one word (which will be
+/** In BACKTICKED we have to find the end of the backtic state. Anything else is one unit (which will be
 	later parsed when substituted).
 */
 <BACKTICKED > TOKEN:
@@ -323,12 +334,11 @@ TOKEN:
 {
 	< SQUOTE_START	: < SQUOTE > > { parser.pushState(SQUOTED); }
 |	< DQUOTE_START	: < DQUOTE > > { parser.pushState(DQUOTED); }
-|	< EQUALS		: "=" >
 |	< WS			: (" "|"\t")+  >
 |	< NEWLINE		: "\n" | "\r\n" >
 }
 
-<DEFAULT, DOLLAR_LBRACE> TOKEN:
+<DEFAULT> TOKEN:
 {
 	< DEFAULT_ANYTHING		: < def_DEFAULT_ANYTHING > >
 }
@@ -351,42 +361,17 @@ $   `   "   \   <newline>
 |	< DANYTHING				: (~["\"", "$", "`", "\\"])+ >
 }
 
-/** default_part for varname in ${varname:.word}
-*/void default_part_woColon(StringBuilder sb):
-{
-	Token t;
-}
-{
-	(	t=< ESC_CHAR >
-|		t=< EQUALS >
-|		t=< DEFAULT_ANYTHING >
-	)+ { sb.append(t.image); }
-}
-
-/** default_part for lhs in assignment */
-void default_part_woEquals(StringBuilder sb):
-{
-	Token t;
-}
-{
-	(	t=< ESC_CHAR >
-|		t=< COLON >
-|		t=< DEFAULT_ANYTHING >
-	)+ { sb.append(t.image); }
-}
-
-/** A part of a word in state DEFAULT, simple text.
-It is constructed as DEFAULT_ANYTHING, or one of the characters in DEFAULT_ANYTHING but with no
-special meaning in state default.
-* @return the part as a SimpleL1Node
-*/
-SimpleL1Node default_part():
+L1Node default_part():
 {
 StringBuilder sb=new StringBuilder();
+Token t;
 }
 {
-	(( default_part_woEquals(sb)
-|	<EQUALS> { sb.append('='); } )+ )
+	( 
+	(	t=< ANY_ESCAPED_CHAR >
+|	 	t=< DEFAULT_ANYTHING > 
+	) { sb.append(t.image); }
+	)+
 	{ return new SimpleL1Node(sb.toString()); }
 }
 
@@ -398,14 +383,11 @@ DollarSubstNode dollar_subst():
 	L1Node varnamePart;
 	Token t;}{
 	(	< DOLLAR_LBRACE_START >
-	(
-		varnamePart=word_part_woDefault_part()	{ ret.setParameter(varnamePart); }
-|		default_part_woColon(sb)				{ ret.setParameter(new SimpleL1Node(sb.toString())); }
-	)
+	t=<DS_VARNAME>					{ ret.setParameter(new SimpleL1Node(t.image)); }
 	(
 		t=< COLON_OP >				{ ret.setOperator(new SimpleL1Node(t.image)); }		wordPartList=word_part_list()	{ ret.setWord(wordPartList); }
 	)?
-	< DOLLAR_LBRACE_END >
+	< _RBRACE >
 	) { return ret; }
 }
 
@@ -439,7 +421,9 @@ DQuotedL1Node dquoted():
 	{ return ret; }
 }
 
-/** creates a BacktickedNode representing what is found between the two backtics */
+/** Creates a BacktickedNode representing what is found between the two backtics.
+This is stored as a String in the node for later parsing.
+*/
 BacktickedNode backticked():
 {
 	final StringBuilder sb=new StringBuilder();
@@ -447,7 +431,7 @@ BacktickedNode backticked():
 }
 {
 	< BACKTIC_START >	(
-		t=< ESC_CHAR > { sb.append(t.image.substring(1, 1)); }	
+		t=< ANY_ESCAPED_CHAR > { sb.append(t.image); }	
 	|	t=< BACKTIC_ANYTHING > { sb.append(t.image); }
 	)*
 	< BACKTIC_END > {
@@ -496,20 +480,6 @@ L2Token separating_part():
 	}
 }
 
-AssignmentL2Token assignment():
-{
-	// Note that the token-kind is switched dynamically while parsing in HshParser
-	// from WORD to ASSIGNMENT_WORD if needed.
-	AssignmentL2Token ret=new AssignmentL2Token();
-	StringBuilder sb=new StringBuilder();
-	Token t;
-	L2Token rhs;	// right hand side of assignment
-}{
-	(	default_part_woEquals(sb)	{ ret.addPart(new SimpleL1Node(sb.toString())); }
-	< EQUALS >					{ ret.addPart(new SimpleL1Node("=")); }
-	( rhs=word_part_list()		{ ret.addPart(rhs); } )?	)	{ return ret; }
-}
-
 /** part of a word or whole word.
 * Result of parsing on L1-Level is a stream of word_part, which are
 * then concatenated to words according to several rules.
@@ -525,18 +495,7 @@ L1Node word_part():
 {
 	(
 	ret=default_part()
-|	ret=word_part_woDefault_part()
-	)
-	{ return ret; }
-}
-
-L1Node word_part_woDefault_part():
-{
-	L1Node ret;
-}
-{
-	(
-	ret=backticked()	
+|	ret=backticked()	
 |	ret=dquoted()		
 |	ret=squoted()
 |	ret=dollar_subst()
@@ -557,8 +516,7 @@ L2Token word():
 {
 	L2Token ret;
 	Token t;}{
-	( LOOKAHEAD(assignment()) // assignment needs lookahead() to find the "="
-			// there is still a warning, but its ok since assingment() includes everything up to the next separator_part()			ret=assignment()
-		|	ret=word_part_list()
-		|	ret=separating_part()		|	t=< EOF >				{ ret=new L2Token(HshParserConstants.EOF, "EOF"); }
-	) { return ret; }}
+	( 
+			ret=word_part_list()
+		|	ret=separating_part()
+		|	t=<EOF> { ret=new L2Token(L1ParserConstants.EOF, "<EOF>"); }	) { return ret; }}

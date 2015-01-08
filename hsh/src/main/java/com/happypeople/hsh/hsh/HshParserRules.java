@@ -3,7 +3,8 @@ package com.happypeople.hsh.hsh;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.happypeople.hsh.hsh.l1parser.AssignmentL2Token;
+import com.happypeople.hsh.hsh.l1parser.L1Node;
+import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
 
 /**
 * 2.10.2 Shell Grammar Rules
@@ -70,7 +71,7 @@ import com.happypeople.hsh.hsh.l1parser.AssignmentL2Token;
 * consisting only of characters that are exactly the token described in Token Recognition.
 */
 public class HshParserRules {
-	private final static boolean DEBUG=false;
+	private final static boolean DEBUG=true;
 
 	// reserved words
 	private static Map<String, Integer> reservedWords=new HashMap<String, Integer>();
@@ -127,10 +128,14 @@ public class HshParserRules {
 		if(token.kind!=HshParserConstants.WORD)
 			return;
 		final L2Token t=(L2Token)token;
-		if(t instanceof AssignmentL2Token)
-			t.kind=HshParserConstants.ASSIGNMENT_WORD;
-		else
-			applyRule1(t, t.image);
+		final L1Node part=t.getPart(0);
+		if(part instanceof SimpleL1Node) {
+			final String s=((SimpleL1Node)part).getImage();
+			if(s.contains("="))
+				applyRule7b(t, s);
+			else
+				applyRule1(t, s);
+		} // else it is not a assignment or reserved word
 	}
 
 	public static void orig_applyRule7a(final Token token) {

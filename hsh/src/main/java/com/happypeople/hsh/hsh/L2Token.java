@@ -42,6 +42,10 @@ public class L2Token extends Token implements L1Node {
 		return parts.get(idx);
 	}
 
+	public int getPartCount() {
+		return parts.size();
+	}
+
 	@Override
 	public Iterator<L1Node> iterator() {
 		return parts.iterator();

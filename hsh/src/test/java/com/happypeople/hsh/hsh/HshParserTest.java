@@ -40,14 +40,12 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_dollar_only2() throws Exception {
-		context.getEnv().setVariableValue("x", "3");
-		context.getEnv().setVariableValue("y", "x");
-		final CompleteCommand cc=doTestCompleteCommand("${$y}");
-		//final DollarVarNode dvn=findFirstNodeOfClass(cc, DollarVarNode.class);
-		final String s=NodeTraversal.substituteSubtree(cc, context);
-		assertEquals("substitution", "3", s);
+	public void testWhile1() throws Exception {
+		//context.getEnv().setVariableValue("x", "3");
+		//context.getEnv().setVariableValue("y", "x");
+		final CompleteCommand cc=doTestCompleteCommand("while true ; do sleep 5 ; done");
 	}
+
 
 	@Test
 	public void testComplete_dollar_only1() throws ParseException, IOException {
@@ -55,6 +53,17 @@ public class HshParserTest {
 		final CompleteCommand cc=doTestCompleteCommand("$x");
 		final DollarVarNode dvn=findFirstNodeOfClass(cc, DollarVarNode.class);
 		assertEquals("substitution", "3", dvn.getSubstitutedString(context));
+	}
+
+	/* this does not parse in bash, too
+	@Test
+	public void testComplete_dollar_only2() throws Exception {
+		context.getEnv().setVariableValue("x", "3");
+		context.getEnv().setVariableValue("y", "x");
+		final CompleteCommand cc=doTestCompleteCommand("${$y}");
+		//final DollarVarNode dvn=findFirstNodeOfClass(cc, DollarVarNode.class);
+		final String s=NodeTraversal.substituteSubtree(cc, context);
+		assertEquals("substitution", "3", s);
 	}
 
 	@Test
@@ -86,6 +95,7 @@ public class HshParserTest {
 		assertNull("no word", dsn.getWord());
 		assertEquals("substitution", "3", dsn.getSubstitutedString(context));
 	}
+	*/
 
 	@Test
 	public void testComplete_dollar2() throws ParseException {

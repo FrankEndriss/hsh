@@ -1,0 +1,42 @@
+options
+{
+	STATIC=false;
+	USER_TOKEN_MANAGER=true;
+//	FORCE_LA_CHECK=true;
+	DEBUG_PARSER=false;
+}
+
+PARSER_BEGIN(SyntaxParser)
+package com.happypeople.hsh.hsh.syntaxparser;
+import java.util.*;
+import com.happypeople.hshutil.util.AsyncIterator;
+
+// TODO implement other packages TokenManager
+public class SyntaxParser
+{
+}
+
+PARSER_END(SyntaxParser)
+
+void any():
+{
+Token t;
+}
+{
+	<ROOT>
+	(
+	t=<TEXT>
+|	t=<WS>
+|	t=<NEWLINE>
+|	t=<SUBSTITUTABLE>
+/*
+|	t=<BACKTICKED>
+|	t=<BRACED>
+|	t=<DOLLARKLAMMERAUF>
+|	t=<DOLLARBRACE>
+|	t=<DQUOTED>
+|	t=<GEKLAMMERT>
+*/
+	)*
+	<EOF>
+}
