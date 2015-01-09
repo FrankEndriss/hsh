@@ -4,19 +4,25 @@ options
 	USER_TOKEN_MANAGER=true;
     FORCE_LA_CHECK=false;
     DEBUG_PARSER=true;
-    //DEBUG_LOOKAHEAD=true;
+    DEBUG_LOOKAHEAD=true;
     //LOOKAHEAD=2;
 }
 PARSER_BEGIN(HshParser)
 package com.happypeople.hsh.hsh;
 import com.happypeople.hsh.hsh.parser.*;
+import com.happypeople.hsh.hsh.l1parser.RuleApplier;
+import com.happypeople.hsh.hsh.l1parser.ParserRule;
 
 public class HshParser
 {
 private ListCallback listCallback;
+private RuleApplier ruleApplier;
 
 	private void throwNI() {		throw new RuntimeException("not implemented");
 	}
+
+	public void setRuleApplier(RuleApplier ruleApplier) {
+		this.ruleApplier=ruleApplier;	}
 	
 	public void setListCallback(ListCallback listCallback) {
 		this.listCallback=listCallback;
@@ -191,6 +197,8 @@ void cmd_suffix(final SimpleCommand simpleCommand):
 // TODO javacc crash
 	( t=<WORD> { simpleCommand.addArg((L2Token)t); } )+
 //	( LOOKAHEAD(io_redirect()) io_redirect() { throwNI(); } | t=<WORD> { simpleCommand.addArg(t); } )+
+	{ // after the suffix the next command will occur		ruleApplier.setRule(HshParserRules.RULE7a);
+	}
 }
 
 /**
@@ -205,10 +213,12 @@ void cmd_prefix(SimpleCommand simpleCommand):
 // if cmd_prefix is found, another cmd_prefix can follow, so apply Rule7a again
 	Token t;}{
 	( 
-		( io_redirect() { throwNI(); } | t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); 
-			HshParserRules.applyRule7a(getToken(1));
-		} )
-	)+}
+		( io_redirect() { throwNI(); } | t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); } )
+	)+
+	{		// after the assignments is the cmd_name(), and after that the args
+		ruleApplier.setRule(null);
+	}
+}
 
 /**
 function_body    : compound_command                // Apply rule 9
@@ -458,7 +468,7 @@ TermNode body;
 }
 {
 	< WHILE > 
-	condition=compound_list()	{ ret.addChild(condition); HshParserRules.applyRule1(getToken(1)); } 
+	condition=compound_list()	{ ret.addChild(condition); } 
 	body=do_group()				{ ret.addChild(body); }
 	{ return ret; }
 }
@@ -500,8 +510,10 @@ TermNode compound_list():
 	TermNode termN;
 }
 {
-	( LOOKAHEAD(1) newline_list() )? termN=term() ( LOOKAHEAD(separator()) separator(termN) )?
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	( LOOKAHEAD(1) newline_list() )?
+	termN=term()
+	( LOOKAHEAD(separator()) separator(termN) )?
+	{ return termN; }
 }
 
 /**
@@ -517,7 +529,9 @@ TermNode term():
 {
 	and_orN=and_or() { ret.addChild(and_orN); }
 	(
-		( LOOKAHEAD(separator()) separator(and_orN) and_orN=and_or() { ret.addChild(and_orN); } )*
+		( LOOKAHEAD(< WORD >)
+			separator(and_orN)		 	and_orN=and_or() { ret.addChild(and_orN); }
+		 )*
 	)
 	{ return ret; }
 }
@@ -532,12 +546,19 @@ compound_command : brace_group
                  | until_clause
                  ;
 */
-void compound_command():
+L2Node compound_command():
 {
+	L2Node compCommand=null;
 }
 {
-	brace_group() | subshell() | for_clause() | case_clause() | if_clause() | while_clause() | until_clause()
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	(	brace_group() { throwNI(); }|	subshell() { throwNI(); }
+|	for_clause() { throwNI(); }
+|	case_clause() { throwNI(); }
+|	if_clause() { throwNI(); }
+|	compCommand=while_clause()
+|	until_clause() { throwNI(); }
+)
+	{ return compCommand; }
 }
 /**
 simple_command   : cmd_prefix cmd_word cmd_suffix
@@ -550,12 +571,6 @@ simple_command   : cmd_prefix cmd_word cmd_suffix
 SimpleCommand simple_command():
 {
 	SimpleCommand simpleCommand=new SimpleCommand();
-	// No need to apply Rule 7a since ASSIGNMENT_WORD is parsed in L1Parser whenever
-	// an assignment is found.
-	// However, we need to use any_word() instead of <WORD> in the parser rules.
-	//HshParserRules.applyRule7a(getToken(1));
-	// switch jj_ntk as the token switched its type
-	//jj_ntk=getToken(1).kind;
 }
 {
 (
@@ -573,6 +588,10 @@ void separator_op(Backgroundable parent):
 {}
 {	(		< UPPERSANT >	{ parent.setBackground(true); }	|	< SEMICOLON >	{ parent.setBackground(false); }
 	)
+	{
+		// After a separator_op there can allways be a compound_command start with a reserved word...
+		ruleApplier.setRule(HshParserRules.RULE7a);
+	}
 }
 
 /**
@@ -583,7 +602,7 @@ pipeline         :      pipe_sequence
 PipeSequence pipeline():
 {
 	// needed before each command
-	HshParserRules.applyRule7a(getToken(1));
+	ruleApplier.setRule(HshParserRules.RULE7a);
 	PipeSequence ret;
 }
 {
@@ -613,12 +632,12 @@ Command command():
 {
 	Command ret=new Command();
 	L2Node simpleCommand;
+	L2Node compCommand;
 }
 {
 	( //LOOKAHEAD(2)
 	simpleCommand=simple_command() { ret.addChild(simpleCommand); }
-|	compound_command() ( redirect_list() )? { throwNI(); }
-|	function_definition() { throwNI(); } )
+|	compCommand=compound_command() ( redirect_list() { throwNI(); })? { ret.addChild(compCommand); }|	function_definition() { throwNI(); } )
 	{ return ret; }
 }
 
@@ -673,6 +692,8 @@ And_orNode and_or():
  */
 void separator(Backgroundable parent):
 {
+	// After a separator there can allways be a compound_command start with a reserved word...
+	ruleApplier.setRule(HshParserRules.RULE7a);
 }
 {
 	(	separator_op(parent) linebreak()

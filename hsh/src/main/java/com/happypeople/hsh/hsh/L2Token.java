@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.happypeople.hsh.hsh.l1parser.L1Node;
+import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
 
 /** A L2Token extends Token to have:
  * -a list of L1Nodes as childs
@@ -19,7 +20,7 @@ public class L2Token extends Token implements L1Node {
 	private final List<L1Node> parts=new ArrayList<L1Node>();
 
 	public L2Token() {
-		this(HshParserConstants.WORD, "L2Token-WORD");
+		this(HshParserConstants.WORD, "");
 	}
 
 	public L2Token(final int kind, final String image) {
@@ -35,6 +36,8 @@ public class L2Token extends Token implements L1Node {
 	 */
 	public int addPart(final L1Node part) {
 		parts.add(part);
+		if(part instanceof SimpleL1Node)
+			image+=((SimpleL1Node)part).getImage();
 		return parts.size()-1;
 	}
 

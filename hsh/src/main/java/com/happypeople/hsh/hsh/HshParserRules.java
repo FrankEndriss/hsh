@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.happypeople.hsh.hsh.l1parser.L1Node;
+import com.happypeople.hsh.hsh.l1parser.ParserRule;
 import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
 
 /**
@@ -94,14 +95,17 @@ public class HshParserRules {
 		reservedWords.put("in", HshParserConstants.IN);
 	}
 
-	public static void applyRule1(final Token token) {
-		final L2Token t=(L2Token)token;
-		final L1Node part=t.getPart(0);
-		if(part instanceof SimpleL1Node)
-			applyRule1(t, ((SimpleL1Node)part).getImage());
-	}
+	public static ParserRule RULE1=new ParserRule() {
+		@Override
+		public void apply(final Token token) {
+			final L2Token t=(L2Token)token;
+			final L1Node part=t.getPart(0);
+			if(part instanceof SimpleL1Node)
+				applyRule1(t, ((SimpleL1Node)part).getImage());
+		}
+	};
 
-	public static void applyRule1(final L2Token t, final String str) {
+	private static void applyRule1(final L2Token t, final String str) {
 		final Integer reservedKind=reservedWords.get(str);
 		if(DEBUG)
 			System.out.println("applyRule1 to str: "+str+", new kind="+reservedKind);
@@ -129,37 +133,26 @@ public class HshParserRules {
 	/** Reworked. Now it tests if subnode is AssignmentL2Token.
 	 * @param t the Token to test
 	 */
-	public static void applyRule7a(final Token token) {
-		if(DEBUG)
-			System.out.println("applyRule7a to Token, kind="+
-				HshParserConstants.tokenImage[token.kind]+
-				" image="+token.image+" class="+token.getClass());
-		if(token.kind!=HshParserConstants.WORD)
-			return;
-		final L2Token t=(L2Token)token;
-		final L1Node part=t.getPart(0);
-		if(part instanceof SimpleL1Node) {
-			final String s=((SimpleL1Node)part).getImage();
+	public static ParserRule RULE7a=new ParserRule() {
+		@Override
+		public void apply(final Token token) {
 			if(DEBUG)
-				System.out.println("applyRule7a, str="+s);
-			if(s.contains("="))
-				applyRule7b(t, s);
-			else
-				applyRule1(t, s);
-		} // else it is not a assignment or reserved word
-	}
-
-	public static void orig_applyRule7a(final Token token) {
-		if(DEBUG)
-			System.out.println("applyRule7a to Token, kind="+
-				HshParserConstants.tokenImage[token.kind]+
-				" image="+token.image);
-		if(token.kind!=HshParserConstants.WORD)
-			return;
-
-		if(token.image.contains("="))
-			applyRule7b((L2Token)token, token.image);
-		else
-			applyRule1((L2Token)token, token.image);
-	}
+				System.out.println("applyRule7a to Token, kind="+
+					HshParserConstants.tokenImage[token.kind]+
+					" image="+token.image+" class="+token.getClass());
+			if(token.kind!=HshParserConstants.WORD)
+				return;
+			final L2Token t=(L2Token)token;
+			final L1Node part=t.getPart(0);
+			if(part instanceof SimpleL1Node) {
+				final String s=((SimpleL1Node)part).getImage();
+				if(DEBUG)
+					System.out.println("applyRule7a, str="+s);
+				if(s.contains("="))
+					applyRule7b(t, s);
+				else
+					applyRule1(t, s);
+			} // else it is not a assignment or reserved word
+		}
+	};
 }

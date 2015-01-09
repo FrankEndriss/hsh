@@ -8,7 +8,9 @@ import com.happypeople.hsh.hsh.TokenManager;
 /** This class is the Adapter between L1- and L2-Parser.
  * It translates a stream of L1-Nodes into a Stream of L2-Token.
  */
-public class L2TokenManager implements TokenManager {
+public class L2TokenManager implements TokenManager, RuleApplier {
+	private final static boolean DEBUG=true;
+
 	private final L1Parser l1Parser;
 
 	public L2TokenManager(final L1Parser l1Parser) {
@@ -18,13 +20,25 @@ public class L2TokenManager implements TokenManager {
 	private L2Token cachedL2Token=null;
 	private boolean cachedL2TokenIsAppendable=false;
 
+	private ParserRule rule;
+
 	@Override
 	public Token getNextToken() {
 		try {
-			return l1Parser.nextL1Node();
+			final Token t=l1Parser.nextL1Node();
+			if(DEBUG)
+				System.out.println("L2TokenManager.getNextToken(): "+HshParserConstants.tokenImage[t.kind]+":"+t.image);
+			if(rule!=null)
+				rule.apply(t);
+			return t;
 		} catch (final ParseException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public void setRule(final ParserRule rule) {
+		this.rule=rule;
 	}
 
 	/* (non-Javadoc)

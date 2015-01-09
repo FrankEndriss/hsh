@@ -36,7 +36,10 @@ public class HshParserTest {
 		context=new HshChildContext(null);
 	}
 	public HshParser setup(final String input) {
-		return new HshParser(new L2TokenManager(new L1Parser(new StringReader(input))));
+		final L2TokenManager tokMgr=new L2TokenManager(new L1Parser(new StringReader(input)));
+		final HshParser parser=new HshParser(tokMgr);
+		parser.setRuleApplier(tokMgr);
+		return parser;
 	}
 
 	@Test

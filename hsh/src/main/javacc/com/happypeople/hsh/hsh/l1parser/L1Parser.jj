@@ -165,7 +165,10 @@ public class L1Parser // implements TokenManager
 	*/
 	public L2Token nextL1Node() throws ParseException {
 		L2Token t;
-		while((t=word()).kind==WS_KIND); // skip WS
+		do {			t=word();
+			if(DEBUG)
+				System.out.println("nextL1Node: "+t.kind+" "+t.image);
+		} while(t.kind==WS_KIND); // skip WS
 		return t;
 	}
 
@@ -263,11 +266,11 @@ TOKEN:
 |	< ELSE 		: "else" >  
 |	< ELIF 		: "elif" >  
 |	< FI  		: "fi" >  
-|	< DO  		: "do" >  
-|	< DONE 		: "done" >  
+//|	< DO  		: "do" >  
+//|	< DONE 		: "done" >  
 |	< CASE 		: "case" >  
 |	< ESAC 		: "esac" >  
-|	< WHILE		: "while" >  
+//|	< WHILE		: "while" >  
 |	< UNTIL		: "until" >  
 |	< FOR		: "for" >  
 
@@ -374,8 +377,6 @@ Token t;
 	( 
 	(	t=< ANY_ESCAPED_CHAR >
 |	 	t=< DEFAULT_ANYTHING > 
-|	 	t=< WHILE > 
-|	 	t=< DO > 
 	) { sb.append(t.image); }
 	)+
 	{ return new SimpleL1Node(sb.toString()); }
