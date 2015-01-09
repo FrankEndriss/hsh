@@ -458,7 +458,7 @@ TermNode body;
 }
 {
 	< WHILE > 
-	condition=compound_list()	{ ret.addChild(condition); } 
+	condition=compound_list()	{ ret.addChild(condition); HshParserRules.applyRule1(getToken(1)); } 
 	body=do_group()				{ ret.addChild(body); }
 	{ return ret; }
 }

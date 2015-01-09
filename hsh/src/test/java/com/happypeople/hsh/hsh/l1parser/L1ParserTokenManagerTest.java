@@ -75,7 +75,7 @@ public class L1ParserTokenManagerTest {
 				new TTest(L1ParserConstants.DEFAULT, "${x:+hallo}", 5),
 				new TTest(L1ParserConstants.DEFAULT, "${x:?hallo}", 5),
 				new TTest(L1ParserConstants.DEFAULT, "${x:=hallo}", 5),
-				new TTest(L1ParserConstants.DEFAULT, "${x\\=hallo}", 5),
+				new TTest(L1ParserConstants.DEFAULT, "${x\\=hallo}", 3),
 		};
 		int i=0;
 		for(final TTest ttest : tests)

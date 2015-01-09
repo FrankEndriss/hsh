@@ -5,7 +5,7 @@ options
 	FORCE_LA_CHECK=true;
 	TOKEN_MANAGER_USES_PARSER=true;
 	DEBUG_PARSER=false;
-	DEBUG_TOKEN_MANAGER=true;
+	DEBUG_TOKEN_MANAGER=false;
 }
 PARSER_BEGIN(L1Parser)
 /** http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_02
@@ -140,19 +140,25 @@ import com.happypeople.hsh.hsh.HshParserConstants;
 
 public class L1Parser // implements TokenManager
 {
+	final boolean DEBUG=true;
+	
 	/** Stack of states. Usefull to switch to "previous" state. Initialized to DEFAULT. */
 	private LinkedList<Integer> stateStack=new LinkedList<Integer>(Arrays.asList(DEFAULT));
 
 	/** Called by TokenManager */
 	void pushState(int state) {
+		if(DEBUG)
+			System.out.println("pushState: "+state);
 		stateStack.push(state);
 		token_source.SwitchTo(state);
 	}
 
 	/** Called by TokenManager */
 	void popState() {
-		stateStack.pop();
-		token_source.SwitchTo(stateStack.peek());
+		final int oldstate=stateStack.pop();
+		final int state=stateStack.peek();
+		System.out.println("popState, from:"+oldstate+" to:"+state);
+		token_source.SwitchTo(state);
 	}
 
 	/** Interface for token-translation between L1Parser and L2Parser
@@ -206,6 +212,10 @@ public class L1Parser // implements TokenManager
 		return l2kind;
 	}
 
+	/** Interface for dynamic extra actions. */
+	interface Action {
+		public void after();
+	}
 }
 
 PARSER_END(L1Parser)
@@ -278,14 +288,8 @@ TOKEN:
 // reached on "${"
 <DOLLAR_LBRACE> TOKEN:
 {
-	< _RBRACE 	: <RBRACE> >				{ parser.popState(); }
-|	< COLON_OP	: <COLON> ["-", "=", "?", "+"] >
-// TODO how to parse the rest of it???
-// * switchTo(DEFAULT), then parse the word, but how to switch back after the word?
-// ->might call word(after_parse_callback), and in the callback restore the
-//   tokenizer state as pop()ed. This would include
-// * read until "}" as a String and extra-parser parse the word later?
-// * extra State?
+	< _RBRACE 	: <RBRACE> >						{ parser.popState(); }
+|	< COLON_OP	: <COLON> ["-", "=", "?", "+"] > { parser.pushState(DEFAULT); }
 }	
 
 < DEFAULT, BACKTICKED, DOLLAR_LBRACE > TOKEN:
@@ -295,10 +299,10 @@ TOKEN:
 
 < DOLLAR_LBRACE_VARNAME > TOKEN:
 {
-	< DS_VARNAME	: (~["%", "#", ":", "}"])+ >		{ parser.popState(); }
+	< DS_VARNAME	: (~[" ", "\t", "%", "#", ":", "}"])+ >		{ parser.popState(); }
 }
 
-< DEFAULT, DQUOTED, DOLLAR_LBRACE > TOKEN:
+< DEFAULT, DQUOTED > TOKEN:
 {	< BACKTIC_START			: < BACKTIC > > { parser.pushState(BACKTICKED); }
 |	< DOLLAR_LBRACE_START	: "${"	>		{ parser.pushState(DOLLAR_LBRACE); 
 											  parser.pushState(DOLLAR_LBRACE_VARNAME); }
@@ -370,6 +374,8 @@ Token t;
 	( 
 	(	t=< ANY_ESCAPED_CHAR >
 |	 	t=< DEFAULT_ANYTHING > 
+|	 	t=< WHILE > 
+|	 	t=< DO > 
 	) { sb.append(t.image); }
 	)+
 	{ return new SimpleL1Node(sb.toString()); }
@@ -381,11 +387,28 @@ DollarSubstNode dollar_subst():
 	StringBuilder sb=new StringBuilder();
 	L1Node wordPartList;
 	L1Node varnamePart;
-	Token t;}{
+	Token t;
+	
+	/** Extra action after finished parsing the word_part_list. */
+	final Action action=new Action() {
+		public void after() {
+		}
+	};}{
 	(	< DOLLAR_LBRACE_START >
 	t=<DS_VARNAME>					{ ret.setParameter(new SimpleL1Node(t.image)); }
 	(
-		t=< COLON_OP >				{ ret.setOperator(new SimpleL1Node(t.image)); }		wordPartList=word_part_list()	{ ret.setWord(wordPartList); }
+		t=< COLON_OP >				{ ret.setOperator(new SimpleL1Node(t.image)); }		wordPartList=word_part_list(action)	{ 
+			ret.setWord(wordPartList);
+
+			popState();
+			// switch the currents token kind to _RBRACE
+			Token token=getToken(1);
+			if(token.kind==RBRACE) {
+				System.out.println("switching token kind from RBRACE to _RBRACE");
+				token.kind=_RBRACE;
+			} else 
+				throw new RuntimeException("did not work, kind="+jj_ntk);
+		}
 	)?
 	< _RBRACE >
 	) { return ret; }
@@ -475,6 +498,8 @@ L2Token separating_part():
 // these are no operators, but separate words, too
 |	t=< WS > // Note: WS is not sent to HshParser, but separates words.
 |	t=< NEWLINE >
+|	t=< LBRACE >
+|	t=<	RBRACE >
 	) {
 		return new L2Token(translateL1KindToL2Kind(t.kind), t.image);
 	}
@@ -504,11 +529,13 @@ L1Node word_part():
 	{ return ret; }
 }
 
-L2Token word_part_list():
+L2Token word_part_list(Action action):
 {	L2Token ret=new L2Token();
 	L1Node part;
 }{		(	part=word_part()	{ ret.addPart(part); }	)+
-		{ return ret; }}
+		{ if(action!=null)
+			action.after(); 
+			return ret; }}
 
 /** A word is a separating_part() or a concatenation of word_part() or <EOF>
 */
@@ -517,6 +544,6 @@ L2Token word():
 	L2Token ret;
 	Token t;}{
 	( 
-			ret=word_part_list()
+			ret=word_part_list(null)
 		|	ret=separating_part()
 		|	t=<EOF> { ret=new L2Token(L1ParserConstants.EOF, "<EOF>"); }	) { return ret; }}

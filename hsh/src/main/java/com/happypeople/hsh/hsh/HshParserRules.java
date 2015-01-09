@@ -94,8 +94,17 @@ public class HshParserRules {
 		reservedWords.put("in", HshParserConstants.IN);
 	}
 
+	public static void applyRule1(final Token token) {
+		final L2Token t=(L2Token)token;
+		final L1Node part=t.getPart(0);
+		if(part instanceof SimpleL1Node)
+			applyRule1(t, ((SimpleL1Node)part).getImage());
+	}
+
 	public static void applyRule1(final L2Token t, final String str) {
 		final Integer reservedKind=reservedWords.get(str);
+		if(DEBUG)
+			System.out.println("applyRule1 to str: "+str+", new kind="+reservedKind);
 		if(reservedKind==null)
 			t.kind=HshParserConstants.WORD;
 		else
@@ -131,6 +140,8 @@ public class HshParserRules {
 		final L1Node part=t.getPart(0);
 		if(part instanceof SimpleL1Node) {
 			final String s=((SimpleL1Node)part).getImage();
+			if(DEBUG)
+				System.out.println("applyRule7a, str="+s);
 			if(s.contains("="))
 				applyRule7b(t, s);
 			else
