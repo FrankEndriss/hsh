@@ -44,17 +44,20 @@ public class HshParserTest {
 
 	@Test
 	public void testWhile3() throws Exception {
-		final CompleteCommand cc=doTestCompleteCommand("while false; true; do sleep 5; done");
+		doTestCompleteCommand("while false; true; do sleep 5; done");
+		doTestCompleteCommand("until false; true; do sleep 5; done");
 	}
 
 	@Test
 	public void testWhile2() throws Exception {
-		final CompleteCommand cc=doTestCompleteCommand("while ! false; do sleep 5 ; done");
+		doTestCompleteCommand("while ! false; do sleep 5 ; done");
+		doTestCompleteCommand("until ! false; do sleep 5 ; done");
 	}
 
 	@Test
 	public void testWhile1() throws Exception {
-		final CompleteCommand cc=doTestCompleteCommand("while true; do sleep 5 ; done");
+		doTestCompleteCommand("while true; do sleep 5 ; done");
+		doTestCompleteCommand("until true; do sleep 5 ; done");
 	}
 
 

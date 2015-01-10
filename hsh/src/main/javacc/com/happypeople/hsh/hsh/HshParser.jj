@@ -468,22 +468,10 @@ TermNode condition;
 TermNode body;
 }
 {
-	< WHILE > 
+	( < WHILE >  | ( < UNTIL >	{ ret.setUntil(); } ) )
 	condition=compound_list()	{ ret.addChild(condition); } 
 	body=do_group()				{ ret.addChild(body); }
 	{ return ret; }
-}
-
-/**
-until_clause     : Until compound_list do_group
-                 ;
-*/
-void until_clause():
-{
-}
-{
-	< UNTIL > compound_list() do_group()
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
 /**
@@ -561,9 +549,8 @@ L2Node compound_command():
 |	for_clause() { throwNI(); }
 |	case_clause() { throwNI(); }
 |	if_clause() { throwNI(); }
-|	compCommand=while_clause()
-|	until_clause() { throwNI(); }
-)
+|	compCommand=while_clause()	// parses while and until
+	)
 	{ return compCommand; }
 }
 /**

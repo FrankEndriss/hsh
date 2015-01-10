@@ -271,7 +271,7 @@ TOKEN:
 |	< CASE 		: "case" >  
 |	< ESAC 		: "esac" >  
 //|	< WHILE		: "while" >  
-|	< UNTIL		: "until" >  
+//|	< UNTIL		: "until" >  
 |	< FOR		: "for" >  
 
 // other reserved words
