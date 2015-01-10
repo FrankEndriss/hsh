@@ -6,12 +6,12 @@ import java.io.PrintStream;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 
-class HshChildContext implements HshContext {
+public class HshChildContext implements HshContext {
 	private final HshContext parent;
 	private final HshEnvironment env;
 	private final HshExecutorImpl executor;
 
-	HshChildContext(final HshContext parent) {
+	public HshChildContext(final HshContext parent) {
 		this.parent=parent;
 		this.env=new HshEnvironmentImpl(parent!=null?parent.getEnv():null);
 		this.executor=new HshExecutorImpl(this);

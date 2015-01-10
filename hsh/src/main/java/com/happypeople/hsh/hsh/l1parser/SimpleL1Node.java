@@ -39,5 +39,9 @@ public class SimpleL1Node implements L1Node, StringifiableNode {
 		sb.append(str);
 	}
 
+	@Override
+	public String toString() {
+		return "SimpleL1Node: "+str;
+	}
 
 }

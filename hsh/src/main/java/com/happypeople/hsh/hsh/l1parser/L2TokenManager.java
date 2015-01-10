@@ -142,6 +142,7 @@ public class L2TokenManager implements TokenManager, RuleApplier {
 		kindMap[L1ParserConstants.NEWLINE]=HshParserConstants.NEWLINE;
 		kindMap[L1ParserConstants.SEMICOLON]=HshParserConstants.SEMICOLON;
 		kindMap[L1ParserConstants.UPPERSANT]=HshParserConstants.UPPERSANT;
+		kindMap[L1ParserConstants.BANG]=HshParserConstants.BANG;
 		// TODO others
 	}
 

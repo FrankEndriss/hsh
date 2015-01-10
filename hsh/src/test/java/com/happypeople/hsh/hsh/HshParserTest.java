@@ -43,10 +43,18 @@ public class HshParserTest {
 	}
 
 	@Test
+	public void testWhile3() throws Exception {
+		final CompleteCommand cc=doTestCompleteCommand("while false; true; do sleep 5; done");
+	}
+
+	@Test
+	public void testWhile2() throws Exception {
+		final CompleteCommand cc=doTestCompleteCommand("while ! false; do sleep 5 ; done");
+	}
+
+	@Test
 	public void testWhile1() throws Exception {
-		//context.getEnv().setVariableValue("x", "3");
-		//context.getEnv().setVariableValue("y", "x");
-		final CompleteCommand cc=doTestCompleteCommand("while true ; do sleep 5 ; done");
+		final CompleteCommand cc=doTestCompleteCommand("while true; do sleep 5 ; done");
 	}
 
 
@@ -87,18 +95,18 @@ public class HshParserTest {
 		assertNull("no word", dsn.getWord());
 	}
 
+	*/
 	@Test
 	public void testComplete_dollar3() throws ParseException, Exception {
 		context.getEnv().setVariableValue("x", "3");
 		context.getEnv().setVariableValue("y", "x");
-		final CompleteCommand cc=doTestCompleteCommand("${${y}}");
+		final CompleteCommand cc=doTestCompleteCommand("${x:-${y}}");
 		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
 		assertNotNull("# parameter", dsn.getParameter());
-		assertNull("no operator", dsn.getOperator());
-		assertNull("no word", dsn.getWord());
+		assertNotNull("operator", dsn.getOperator());
+		assertNotNull("no word", dsn.getWord());
 		assertEquals("substitution", "3", dsn.getSubstitutedString(context));
 	}
-	*/
 
 	@Test
 	public void testComplete_dollar2() throws ParseException {

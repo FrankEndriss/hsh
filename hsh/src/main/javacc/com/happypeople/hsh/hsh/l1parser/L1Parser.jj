@@ -291,8 +291,8 @@ TOKEN:
 // reached on "${"
 <DOLLAR_LBRACE> TOKEN:
 {
-	< _RBRACE 	: <RBRACE> >						{ parser.popState(); }
-|	< COLON_OP	: <COLON> ["-", "=", "?", "+"] > { parser.pushState(DEFAULT); }
+	< _RBRACE 	: <RBRACE> >								{ parser.popState(); }
+|	< COLON_OP	: ":-"|"-"|":="|"="|":?"|"?"|":+"|"+"|"#"|"##"|"%"|"%%" >	{ parser.pushState(DEFAULT); }
 }	
 
 < DEFAULT, BACKTICKED, DOLLAR_LBRACE > TOKEN:
@@ -377,6 +377,7 @@ Token t;
 	( 
 	(	t=< ANY_ESCAPED_CHAR >
 |	 	t=< DEFAULT_ANYTHING > 
+|	 	t=< BANG > 
 	) { sb.append(t.image); }
 	)+
 	{ return new SimpleL1Node(sb.toString()); }
@@ -389,16 +390,11 @@ DollarSubstNode dollar_subst():
 	L1Node wordPartList;
 	L1Node varnamePart;
 	Token t;
-	
-	/** Extra action after finished parsing the word_part_list. */
-	final Action action=new Action() {
-		public void after() {
-		}
-	};}{
+}{
 	(	< DOLLAR_LBRACE_START >
 	t=<DS_VARNAME>					{ ret.setParameter(new SimpleL1Node(t.image)); }
 	(
-		t=< COLON_OP >				{ ret.setOperator(new SimpleL1Node(t.image)); }		wordPartList=word_part_list(action)	{ 
+		t=< COLON_OP >				{ ret.setOperator(new SimpleL1Node(t.image)); }		wordPartList=word_part_list()	{ 
 			ret.setWord(wordPartList);
 
 			popState();
@@ -530,13 +526,11 @@ L1Node word_part():
 	{ return ret; }
 }
 
-L2Token word_part_list(Action action):
+L2Token word_part_list():
 {	L2Token ret=new L2Token();
 	L1Node part;
 }{		(	part=word_part()	{ ret.addPart(part); }	)+
-		{ if(action!=null)
-			action.after(); 
-			return ret; }}
+		{ return ret; }}
 
 /** A word is a separating_part() or a concatenation of word_part() or <EOF>
 */
@@ -545,6 +539,6 @@ L2Token word():
 	L2Token ret;
 	Token t;}{
 	( 
-			ret=word_part_list(null)
+			ret=word_part_list()
 		|	ret=separating_part()
 		|	t=<EOF> { ret=new L2Token(L1ParserConstants.EOF, "<EOF>"); }	) { return ret; }}
