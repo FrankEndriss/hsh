@@ -9,7 +9,7 @@ import com.happypeople.hsh.hsh.TokenManager;
  * It translates a stream of L1-Nodes into a Stream of L2-Token.
  */
 public class L2TokenManager implements TokenManager, RuleApplier {
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	private final L1Parser l1Parser;
 

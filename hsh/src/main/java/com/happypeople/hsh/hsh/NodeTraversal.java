@@ -55,7 +55,7 @@ public class NodeTraversal {
 	}
 
 	/** Executes substitution on a subtree.
-	 * The traversal is implemented in a way that all Substitutable are search in subtree, parent-first.
+	 * The traversal is implemented in a way that all Substitutable are searched in subtree, parent-first.
 	 * If one found, thats nodes getSubstitutedString() is called, and thats nodes children are not
 	 * traversed any more.
 	 * That means the implementation of getSubstitutedString() must take care of childs substitutions for

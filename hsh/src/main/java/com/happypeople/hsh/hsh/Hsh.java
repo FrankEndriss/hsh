@@ -30,7 +30,7 @@ public class Hsh implements HshContext {
 	private static PrintWriter log;
 	private ConsoleReader console;
 	private final HshEnvironment env=new HshEnvironmentImpl(null);
-	private final HshExecutorImpl executor=new HshExecutorImpl(this);
+	private final HshExecutorImpl executor=new HshExecutorImpl(this, new HshRedirectionsImpl());
 	private final HshParser parser;
 
 	/** Reader with input */
@@ -82,7 +82,9 @@ public class Hsh implements HshContext {
 	 */
 	private Hsh(final Reader in) {
 		this.in=in;
-		this.parser=new HshParser(new L2TokenManager(new L1Parser(in)));
+		final L2TokenManager l2tm=new L2TokenManager(new L1Parser(in));
+		this.parser=new HshParser(l2tm);
+		this.parser.setRuleApplier(l2tm);
 	}
 
 	private void run() {
@@ -96,15 +98,12 @@ public class Hsh implements HshContext {
 		parser.setListCallback(new HshParser.ListCallback() {
 			@Override
 			public void listParsed(final ListNode listNode) {
-				// TODO set status to denote something gets executed
 				try {
 					setStatus(listNode.doExecution(Hsh.this));
 				} catch (final Exception e) {
 					e.printStackTrace();
 					// TODO maybe reInit parser???
 				}
-				// TODO set status to denote something was executed
-				// TODO restore prompt here
 			}
 		});
 
@@ -147,33 +146,6 @@ public class Hsh implements HshContext {
 		this.status=status;
 	}
 
-	/** This method parses, substitutes and splits the command line line.
-	 * @param line cmd-line as typed by the user
-	 * @return tokenized line
-	 */
-	private String[] parse_and_substitution(String line) {
-		// TODO addhere connection to HshParser
-		// -handle splitted lines, which end with \
-		// -handle cmd separations like ";"
-		// -handle explicit separated tokens like "foo bar" and "foo""bar"
-		// -handle variable asignments like "x=foo"
-		// -substitute variables like $x
-		// -handle hsh invocations like "hsh -c "x=foo ; cat $(x)"
-		// -handle hsh invocations like "( x=foo ; cat $(x) )"
-		// -substitute executions like $(x)
-		// -handle pipes like "ls|grep foo"
-		// -parse for loop
-		// -parse while loop
-		// -handle redirections like "grep foo <bar"
-		// -run cmds in background
-
-		// simple implementation
-		line=line.trim();
-		if(line.length()<1)
-			return new String[0];
-		return line.split("\\s"); // split by whitespace
-	}
-
 	@Override
 	public PrintStream getStdOut() {
 		return System.out;
@@ -200,11 +172,6 @@ public class Hsh implements HshContext {
 	}
 
 	@Override
-	public HshContext createChildContext() {
-		return new HshChildContext(this);
-	}
-
-	@Override
 	public HshEnvironment getEnv() {
 		return env;
 	}
@@ -212,5 +179,10 @@ public class Hsh implements HshContext {
 	@Override
 	public HshExecutor getExecutor() {
 		return executor;
+	}
+
+	@Override
+	public HshContext createChildContext(final HshEnvironment env, final HshExecutor executor) {
+		return new HshChildContext(this, env, executor);
 	}
 }

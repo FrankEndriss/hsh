@@ -30,9 +30,11 @@ public interface HshContext {
 	public void finish();
 
 	/** Creates a new HshContext with this context as parent.
+	 * @param env null to use parents environment
+	 * @param executor null to use parents executor
 	 * @return the new created context
 	 */
-	public HshContext createChildContext();
+	public HshContext createChildContext(HshEnvironment env, HshExecutor executor);
 
 	/**
 	 * @return the environment of this context

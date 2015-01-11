@@ -34,11 +34,11 @@ public class ListNode extends L2Node implements Executable, Backgroundable {
 	 */
 	@Override
 	public void setBackground(final boolean background) {
-		And_orNode lastChild=null;
-		for(final L1Node node : this) {
-			lastChild=(And_orNode)node;
-		}
-		if(lastChild!=null)
-			lastChild.setBackground(background);
+		((Backgroundable)getChild(getChildCount()-1)).setBackground(background);
+	}
+
+	@Override
+	public boolean isBackground() {
+		return ((Backgroundable)getChild(getChildCount()-1)).isBackground();
 	}
 }

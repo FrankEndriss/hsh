@@ -140,7 +140,7 @@ import com.happypeople.hsh.hsh.HshParserConstants;
 
 public class L1Parser // implements TokenManager
 {
-	final boolean DEBUG=true;
+	final boolean DEBUG=false;
 	
 	/** Stack of states. Usefull to switch to "previous" state. Initialized to DEFAULT. */
 	private LinkedList<Integer> stateStack=new LinkedList<Integer>(Arrays.asList(DEFAULT));
@@ -157,7 +157,8 @@ public class L1Parser // implements TokenManager
 	void popState() {
 		final int oldstate=stateStack.pop();
 		final int state=stateStack.peek();
-		System.out.println("popState, from:"+oldstate+" to:"+state);
+		if(DEBUG)
+			System.out.println("popState, from:"+oldstate+" to:"+state);
 		token_source.SwitchTo(state);
 	}
 
@@ -401,7 +402,8 @@ DollarSubstNode dollar_subst():
 			// switch the currents token kind to _RBRACE
 			Token token=getToken(1);
 			if(token.kind==RBRACE) {
-				System.out.println("switching token kind from RBRACE to _RBRACE");
+				if(DEBUG)
+					System.out.println("switching token kind from RBRACE to _RBRACE");
 				token.kind=_RBRACE;
 			} else 
 				throw new RuntimeException("did not work, kind="+jj_ntk);

@@ -5,5 +5,6 @@ package com.happypeople.hsh.hsh.parser;
  */
 public interface Backgroundable {
 	public void setBackground(boolean background);
+	public boolean isBackground();
 
 }

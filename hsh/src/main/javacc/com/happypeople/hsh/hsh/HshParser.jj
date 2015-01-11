@@ -3,8 +3,8 @@ options
 	STATIC=false;
 	USER_TOKEN_MANAGER=true;
     FORCE_LA_CHECK=false;
-    DEBUG_PARSER=true;
-    DEBUG_LOOKAHEAD=true;
+    DEBUG_PARSER=false;
+    DEBUG_LOOKAHEAD=false;
     //LOOKAHEAD=2;
 }
 PARSER_BEGIN(HshParser)
@@ -15,7 +15,7 @@ import com.happypeople.hsh.hsh.l1parser.ParserRule;
 
 public class HshParser
 {
-private final static boolean DEBUG=true;
+private final static boolean DEBUG=false;
 private ListCallback listCallback;
 private RuleApplier ruleApplier;
 
@@ -168,8 +168,6 @@ cmd_word         : WORD                   // Apply rule 7b
 void cmd_word(SimpleCommand simpleCommand):
 {
 	Token t;}{
-// not an assignment
-// TODO: reserved words
 	t=< WORD > { simpleCommand.setCmdName((L2Token)t); }
 }
 
@@ -180,8 +178,6 @@ cmd_name         : WORD                   // Apply rule 7a
 void cmd_name(SimpleCommand simpleCommand):
 {
 	Token t;}{
-// not an assignment
-// TODO: reserved words
 	t=< WORD > { simpleCommand.setCmdName((L2Token)t); }
 }
 
@@ -722,7 +718,8 @@ CompleteCommand complete_command():
 	Backgroundable bg=new Backgroundable() {
 		public void setBackground(boolean bg) {
 			listN[0].setBackground(bg);   			fireListParsed(listN[0]);
-		}	};
+		}
+		public boolean isBackground() { return true; }	};
 }
 {
     (	listN[0]=list()

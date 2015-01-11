@@ -12,7 +12,7 @@ import com.happypeople.hsh.hsh.l1parser.ParseException;
 
 public class L1ParserTest {
 
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	@Test
 	public void test_simple_quoting() throws ParseException {

@@ -21,9 +21,11 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	private final static Map<String, String> predefs=init_predefines();
 	private List<File> path=new ArrayList<File>();
 	private final HshContext hshContext;
+	private final HshRedirections hshRedirections;
 
-	public HshExecutorImpl(final HshContext hshContext) {
-		this.hshContext=hshContext;
+	public HshExecutorImpl(final HshContext context, final HshRedirections redirections) {
+		this.hshContext=context;
+		this.hshRedirections=redirections;
 	}
 
 	@Override
@@ -38,11 +40,12 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 			return exec_extern_synchron(command);
 	}
 
-	/** Executes the cmd line given in args.
+	/** Executes the cmd line given in args and waits for it to finish execution.
 	 * args[0] is the command to execute.
 	 * $PATH is resolved to find that program.
-	 * @param args
-	 * @return
+	 * @param args the arg vector
+	 * @param redirections the redirections to apply to the ProcessBuilder
+	 * @return exit status of the created process
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
@@ -52,11 +55,23 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 			final ProcessBuilder builder=new ProcessBuilder();
 			args[0]=resolveCmd(args[0]);
 			builder.command(Arrays.asList(args));
-			builder.redirectError(Redirect.INHERIT);
-			builder.redirectOutput(Redirect.INHERIT);
-			builder.redirectInput(Redirect.INHERIT);
+
+			final HshRedirection stderrRedir=hshRedirections.getStderrRedirection();
+			builder.redirectError(stderrRedir.getType());
+			final HshRedirection stdoutRedir=hshRedirections.getStdoutRedirection();
+			builder.redirectOutput(stdoutRedir.getType());
+			final HshRedirection stdinRedir=hshRedirections.getStdinRedirection();
+			builder.redirectInput(stdinRedir.getType());
 
 			final Process p=builder.start();
+
+			if(stderrRedir.getType()==Redirect.PIPE)
+				stderrRedir.setIn(p.getErrorStream());
+			if(stdoutRedir.getType()==Redirect.PIPE)
+				stdoutRedir.setOut(p.getOutputStream());
+			if(stdinRedir.getType()==Redirect.PIPE)
+				stdinRedir.setIn(p.getInputStream());
+
 			p.waitFor();
 			return p.exitValue();
 		}catch(final Exception e) {

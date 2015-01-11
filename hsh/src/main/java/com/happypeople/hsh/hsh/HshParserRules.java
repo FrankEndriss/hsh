@@ -72,7 +72,7 @@ import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
 * consisting only of characters that are exactly the token described in Token Recognition.
 */
 public class HshParserRules {
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	// reserved words
 	private static Map<String, Integer> reservedWords=new HashMap<String, Integer>();

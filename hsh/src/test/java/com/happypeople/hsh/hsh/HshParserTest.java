@@ -27,13 +27,13 @@ import com.happypeople.hsh.hsh.parser.SimpleCommand;
 
 public class HshParserTest {
 
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	private HshContext context;
 
 	@Before
 	public void init_setup() {
-		context=new HshChildContext(null);
+		context=new HshChildContext(null, null, null);
 	}
 	public HshParser setup(final String input) {
 		final L2TokenManager tokMgr=new L2TokenManager(new L1Parser(new StringReader(input)));
@@ -273,7 +273,8 @@ public class HshParserTest {
 	@Test
 	public void testComplete_command1() throws ParseException {
 		final CompleteCommand cc=doTestCompleteCommand("x");
-		classTreeTraversal(cc);
+		if(DEBUG)
+			classTreeTraversal(cc);
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("cmd", "x", node2String(sc.getCmdName()));
 		assertEquals("# assignments", 0, sc.getAssignments().size());

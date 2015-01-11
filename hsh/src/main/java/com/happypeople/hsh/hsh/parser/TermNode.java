@@ -1,7 +1,9 @@
 package com.happypeople.hsh.hsh.parser;
 
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.l1parser.Executable;
+import com.happypeople.hsh.hsh.l1parser.L1Node;
 
 /** TermNode is a list of And_orNode
  * Execution is from first to last.
@@ -20,7 +22,13 @@ public class TermNode extends L2Node implements Backgroundable, Executable {
 
 	@Override
 	public int doExecution(final HshContext context) throws Exception {
-		throw new RuntimeException("term execution still not implemented");
-		//return 0;
+		int result=-1;
+		for(final L1Node child : this) {
+			if(((Backgroundable)child).isBackground())
+			throw new RuntimeException("background execution still not implemented");
+
+			result=NodeTraversal.executeSubtree(child, context);
+		}
+		return result;
 	}
 }

@@ -23,7 +23,7 @@ public class DollarSubstNodeTest {
 
 	@Before
 	public void setup() {
-		context=new HshChildContext(null);
+		context=new HshChildContext(null, null, null);
 		out=new DollarSubstNode();
 		context.getEnv().setVariableValue("x", valueOfVariableSet);
 		context.getEnv().setVariableValue("z", null);

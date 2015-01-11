@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class L1ParserTokenManagerTest {
 
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	private class TTest {
 		TTest(final int parserState, final String s, final int c) {

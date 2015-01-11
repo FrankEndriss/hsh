@@ -5,17 +5,18 @@ import java.io.PrintStream;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
+import com.happypeople.hsh.HshExecutor;
 
 public class HshChildContext implements HshContext {
 	private final HshContext parent;
 	private final HshEnvironment env;
-	private final HshExecutorImpl executor;
+	private final HshExecutor executor;
 
-	public HshChildContext(final HshContext parent) {
+	public HshChildContext(final HshContext parent, final HshEnvironment env, final HshExecutor executor) {
 		this.parent=parent;
-		this.env=new HshEnvironmentImpl(parent!=null?parent.getEnv():null);
-		this.executor=new HshExecutorImpl(this);
-		((HshEnvironmentImpl)env).addListener(executor);
+		this.env=env;
+		this.executor=executor;
+		//((HshEnvironmentImpl)env).addListener(executor);
 	}
 
 
@@ -51,8 +52,8 @@ public class HshChildContext implements HshContext {
 	}
 
 	@Override
-	public HshContext createChildContext() {
-		return new HshChildContext(this);
+	public HshContext createChildContext(final HshEnvironment newEnv, final HshExecutor newExcecutor) {
+		return new HshChildContext(this, newEnv==null?this.getEnv():newEnv, newExcecutor==null?this.getExecutor():newExcecutor);
 	}
 
 
@@ -62,7 +63,7 @@ public class HshChildContext implements HshContext {
 	}
 
 	@Override
-	public HshExecutorImpl getExecutor() {
+	public HshExecutor getExecutor() {
 		return executor;
 	}
 
