@@ -15,6 +15,7 @@ public class SimpleCommand extends L2Node implements Executable {
 	private L2Token cmdName;
 	private final List<L2Token> args=new ArrayList<L2Token>();
 	private final List<L2Token> assignments=new ArrayList<L2Token>();
+	private final List<L2Token> redirects=new ArrayList<L2Token>();
 
 	public void setCmdName(final L2Token cmdName) {
 		if(this.cmdName!=null)
@@ -45,6 +46,15 @@ public class SimpleCommand extends L2Node implements Executable {
 		return assignments;
 	}
 
+	public void addRedirect(final RedirNode node) {
+		redirects.add(node);
+		addChild(node);
+	}
+
+	public List<L2Token> getRedirects() {
+		return redirects;
+	}
+
 	/** Creates a printout of the node-tree
 	 * @param level the level of the tree this node lives in
 	 */
@@ -55,9 +65,15 @@ public class SimpleCommand extends L2Node implements Executable {
 			sb.append("\t");
 		final String t=sb.toString();
 		System.out.println(t+getClass().getName());
+
+		System.out.println(t+"redirects");
+		for(final L2Token redir : redirects)
+			redir.dump(level+1);
+
 		System.out.println(t+"assignments");
 		for(final L2Token ass : assignments)
 			ass.dump(level+1);
+
 		if(cmdName!=null) {
 			System.out.println(t+"cmdName");
 			cmdName.dump(level+1);

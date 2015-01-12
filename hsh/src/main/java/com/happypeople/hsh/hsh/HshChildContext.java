@@ -12,16 +12,32 @@ public class HshChildContext implements HshContext {
 	private final HshEnvironment env;
 	private final HshExecutor executor;
 
-	public HshChildContext(final HshContext parent, final HshEnvironment env, final HshExecutor executor) {
+	public HshChildContext(final HshContext parent) {
 		this.parent=parent;
-		this.env=env;
-		this.executor=executor;
+		this.env=parent!=null?parent.getEnv():new HshEnvironmentImpl(null);
+		this.executor=parent!=null?parent.getExecutor():new HshExecutorImpl(this, null);
+	}
+
+	/** Initializes a new HshContext.
+	 * @param parent if parent is not null the new Context is a child of parent
+	 * @param env if env is not null env is the env of this context. if env is null, parent.getEnv() is used.
+	 * @param executor if executor is not null executor is the executor of this context. if executor is null, parent.getExecutor() is used.
+	 */
+	public HshChildContext(final HshContext parent, final HshEnvironment env, final HshExecutor executor) {
+		if(parent==null)
+			throw new IllegalArgumentException("parent must not be null with this constructor");
+		this.parent=parent;
+
+		this.env= env==null?parent.getEnv():env;
+		this.executor= executor==null?parent.getExecutor():executor;
+
 		//((HshEnvironmentImpl)env).addListener(executor);
 	}
 
 
 	@Override
 	public PrintStream getStdOut() {
+		// TODO replace by getExecutor().getRedirections().getOutRedirection().getPrintStream()
 		return parent.getStdOut();
 	}
 

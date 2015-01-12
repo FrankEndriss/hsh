@@ -27,19 +27,34 @@ import com.happypeople.hsh.hsh.parser.SimpleCommand;
 
 public class HshParserTest {
 
-	private final static boolean DEBUG=false;
+	private final static boolean DEBUG=true;
 
 	private HshContext context;
 
 	@Before
 	public void init_setup() {
-		context=new HshChildContext(null, null, null);
+		context=new HshChildContext(null);
 	}
 	public HshParser setup(final String input) {
 		final L2TokenManager tokMgr=new L2TokenManager(new L1Parser(new StringReader(input)));
 		final HshParser parser=new HshParser(tokMgr);
 		parser.setRuleApplier(tokMgr);
 		return parser;
+	}
+
+	@Test
+	public void testIORedirect3() throws Exception {
+		doTestCompleteCommand("<infile.txt >outfile.txt 2>errfile.txt cat");
+	}
+
+	@Test
+	public void testIORedirect2() throws Exception {
+		doTestCompleteCommand("<file.txt cat");
+	}
+
+	@Test
+	public void testIORedirect1() throws Exception {
+		doTestCompleteCommand("cat <file.txt");
 	}
 
 	@Test

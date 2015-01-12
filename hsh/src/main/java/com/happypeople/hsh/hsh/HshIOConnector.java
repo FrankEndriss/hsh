@@ -143,10 +143,29 @@ public class HshIOConnector {
 		}.start();
 	}
 
-	private static int read(final HshInput in, final byte[] buf) {
+	private static int read(final HshInput in, final byte[] buf) throws IOException {
+		if(in.getStream()!=null)
+			return in.getStream().read(buf);
+		else {
+			// TODO in.getChannel does not block
+			final ByteBuffer bb=ByteBuffer.allocate(buf.length);
+			final int c=((ReadableByteChannel)in.getChannel()).read(bb);
+			bb.get(buf, 0, c);
+			return c;
+		}
 	}
 
-	private static int write(final HshOutput out, final byte[] buf, final int len) {
+	private static void write(final HshOutput out, final byte[] buf, final int len) throws IOException {
+		if(out.getStream()!=null)
+			out.getStream().write(buf, 0, len);
+		else {
+			final ByteBuffer bb=ByteBuffer.allocate(len);
+			bb.put(buf, 0, len);
+			bb.flip();
+			int c=0;
+			// TODO out.getChannel does not block, need to selectNow()
+			while((c+=((WritableByteChannel)out.getChannel()).write(bb))<len);
+		}
 	}
 
 }

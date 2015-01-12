@@ -121,12 +121,14 @@ void io_here():
 filename         : WORD                      // Apply rule 2
                  ;
 */
-void filename():
+String filename():
 {
+// TODO Apply rule 2
+Token t;
 }
 {
-	( < WORD_2 > )
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	t=< WORD >
+	{ return t.image; }
 }
 /*
 io_file          : '<'       filename
@@ -138,12 +140,17 @@ io_file          : '<'       filename
                  | CLOBBER   filename
                  ;
 */
-void io_file():
+void io_file(RedirNode redirNode):
 {
+String fname;
+Token t;
 }
 {
-	( < LESS > | < LESSAND > | < GREAT > | < GREATAND > | < DGREAT > | < LESSGREAT > | < CLOBBER > ) filename()
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	( t=< LESS > | t=< LESSAND > | t=< GREAT > | t=< GREATAND > | t=< DGREAT > | t=< LESSGREAT > | t=< CLOBBER > ) 
+		fname=filename()
+	{	redirNode.setOperator((L2Token)t);
+		redirNode.setFilename(fname);
+	}
 }
 
 /**
@@ -153,12 +160,14 @@ io_redirect      :           io_file
                  | IO_NUMBER io_here
                  ;
 */
-void io_redirect():
+RedirNode io_redirect():
 {
+RedirNode redirNode=new RedirNode();
+Token ioNum;
 }
 {
-	( < IO_NUMBER > )? ( io_file() | io_here() )
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	( ioNum=< IO_NUMBER > { redirNode.setIoNumber(ioNum.image); } )? ( io_file(redirNode) | io_here() )
+	{ return redirNode; }
 }
 
 /**
@@ -208,9 +217,10 @@ cmd_prefix       :            io_redirect
 void cmd_prefix(SimpleCommand simpleCommand):
 {
 // if cmd_prefix is found, another cmd_prefix can follow, so apply Rule7a again
-	Token t;}{
+	Token t;
+	RedirNode redirNode;}{
 	( 
-		( io_redirect() { throwNI(); } | t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); } )
+		( redirNode=io_redirect() { simpleCommand.addRedirect(redirNode); } | t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); } )
 	)+
 	{		// after the assignments is the cmd_name(), and after that the args
 		ruleApplier.setRule(null);

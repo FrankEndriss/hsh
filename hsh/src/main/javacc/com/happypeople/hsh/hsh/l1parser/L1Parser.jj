@@ -193,8 +193,10 @@ public class L1Parser // implements TokenManager
 		kindMap[L1ParserConstants.DSEMI]=HshParserConstants.DSEMI;
 		kindMap[L1ParserConstants.DLESS]=HshParserConstants.DLESS;
 		kindMap[L1ParserConstants.DGREAT]=HshParserConstants.DGREAT;
-		kindMap[L1ParserConstants.LESSAND]=HshParserConstants.LESSAND;
+		kindMap[L1ParserConstants.GREAT]=HshParserConstants.GREAT;
 		kindMap[L1ParserConstants.GREATAND]=HshParserConstants.GREATAND;
+		kindMap[L1ParserConstants.LESSAND]=HshParserConstants.LESSAND;
+		kindMap[L1ParserConstants.LESS]=HshParserConstants.LESS;
 		kindMap[L1ParserConstants.LESSGREAT]=HshParserConstants.LESSGREAT;
 		kindMap[L1ParserConstants.DLESSDASH]=HshParserConstants.DLESSDASH;
 		kindMap[L1ParserConstants.CLOBBER]=HshParserConstants.CLOBBER;

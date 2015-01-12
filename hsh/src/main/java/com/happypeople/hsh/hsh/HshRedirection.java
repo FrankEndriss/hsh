@@ -1,7 +1,9 @@
 package com.happypeople.hsh.hsh;
 
 
-/** Objects of this class combines a ProcessBuilder.Redirect with an optional Stream.
+/** Objects of this class combines a ProcessBuilder.Redirect with an optional Stream or Channel.
+ * For HshRedirection of type Redirect.PIPE an HshInput and and HshOutput can (and should) be
+ * set once.
  */
 public interface HshRedirection {
 	ProcessBuilder.Redirect getType();

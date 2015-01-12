@@ -66,11 +66,11 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 			final Process p=builder.start();
 
 			if(stderrRedir.getType()==Redirect.PIPE)
-				stderrRedir.setIn(p.getErrorStream());
+				stderrRedir.setIn(new HshInput(p.getErrorStream()));
 			if(stdoutRedir.getType()==Redirect.PIPE)
-				stdoutRedir.setOut(p.getOutputStream());
+				stdoutRedir.setOut(new HshOutput(p.getOutputStream()));
 			if(stdinRedir.getType()==Redirect.PIPE)
-				stdinRedir.setIn(p.getInputStream());
+				stdinRedir.setIn(new HshInput(p.getInputStream()));
 
 			p.waitFor();
 			return p.exitValue();
