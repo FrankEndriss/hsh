@@ -45,8 +45,12 @@ private HshLookaheadHelper helper=new HshLookaheadHelper(this);
 	private boolean lookahead_isCmdPrefix() {
 		return helper.lookahead_isCmdPrefix();
 	}
-	
 
+	private boolean lookahead_isIoRedir() {		return helper.lookahead_isIoRedir();
+	}
+
+	private boolean lookahead_reserved(int kind) {		return helper.lookahead_reserved(kind);
+	}
 }
 PARSER_END(HshParser)
 
@@ -209,11 +213,13 @@ cmd_suffix       :            io_redirect
 */
 void cmd_suffix(final SimpleCommand simpleCommand):
 {
-	Token t;}{
+	Token t;
+	RedirNode redirNode;}{
 // TODO javacc crash
-	( t=<WORD> { simpleCommand.addArg((L2Token)t); } )+
-//	( LOOKAHEAD(io_redirect()) io_redirect() { throwNI(); } | t=<WORD> { simpleCommand.addArg(t); } )+
-	{ // after the suffix the next command will occur		ruleApplier.setRule(HshParserRules.RULE7a);
+//	( t=<WORD> { simpleCommand.addArg((L2Token)t); } )+
+	( LOOKAHEAD( { lookahead_isIoRedir() }) redirNode=io_redirect() { simpleCommand.addRedirect(redirNode); }
+		| t=<WORD> { simpleCommand.addArg((L2Token)t); } )+
+	{ // after the suffix the next command will occur		//ruleApplier.setRule(HshParserRules.RULE7a);
 	}
 }
 
@@ -229,11 +235,12 @@ void cmd_prefix(SimpleCommand simpleCommand):
 // if cmd_prefix is found, another cmd_prefix can follow, so apply Rule7a again
 	Token t;
 	RedirNode redirNode;}{
-	( 
-		( redirNode=io_redirect() { simpleCommand.addRedirect(redirNode); } | t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); } )
+	(
+		LOOKAHEAD( { lookahead_isCmdPrefix() } ) // this lookahead will change the nodes kinds 		( redirNode=io_redirect() { simpleCommand.addRedirect(redirNode); }
+	| t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); } )
 	)+
 	{		// after the assignments is the cmd_name(), and after that the args
-		ruleApplier.setRule(null);
+		//ruleApplier.setRule(null);
 	}
 }
 
@@ -281,7 +288,7 @@ redirect_list    :               io_redirect
 */
 void redirect_list():
 {}{
-	( io_redirect() )+
+	( LOOKAHEAD( { lookahead_isIoRedir() } ) io_redirect() )+
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -600,7 +607,7 @@ void separator_op(Backgroundable parent):
 	)
 	{
 		// After a separator_op there can allways be a compound_command start with a reserved word...
-		ruleApplier.setRule(HshParserRules.RULE7a);
+		//ruleApplier.setRule(HshParserRules.RULE7a);
 	}
 }
 
@@ -612,7 +619,7 @@ pipeline         :      pipe_sequence
 PipeSequence pipeline():
 {
 	// needed before each command
-	ruleApplier.setRule(HshParserRules.RULE7a);
+	//ruleApplier.setRule(HshParserRules.RULE7a);
 	PipeSequence ret;
 }
 {
@@ -645,7 +652,7 @@ Command command():
 	L2Node compCommand;
 }
 {
-	( //LOOKAHEAD(2)
+	( 
 	simpleCommand=simple_command() { ret.addChild(simpleCommand); }
 |	compCommand=compound_command() ( redirect_list() { throwNI(); })? { ret.addChild(compCommand); }|	function_definition() { throwNI(); } )
 	{ return ret; }
@@ -703,7 +710,7 @@ And_orNode and_or():
 void separator(Backgroundable parent):
 {
 	// After a separator there can allways be a compound_command start with a reserved word...
-	ruleApplier.setRule(HshParserRules.RULE7a);
+	//ruleApplier.setRule(HshParserRules.RULE7a);
 }
 {
 	(	separator_op(parent) linebreak()

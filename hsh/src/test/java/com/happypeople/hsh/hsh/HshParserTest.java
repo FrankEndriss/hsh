@@ -180,6 +180,16 @@ public class HshParserTest {
 	}
 
 	@Test
+	public void testComplete_command_Assignment7() throws ParseException {
+		final CompleteCommand cc=doTestCompleteCommand("x=1 y=2 2>file.txt echo bla y=2<input.txt <input.txt laber\nx=1 y=2 echo bla y=2 laber <input.txt");
+		final SimpleCommand sc=findSimpleCommand(cc);
+		assertEquals("# assignments", 2, sc.getAssignments().size());
+		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
+		assertEquals("# args", 3, sc.getArgs().size());
+	}
+
+
+	@Test
 	public void testComplete_command_Assignment6() throws ParseException {
 		final CompleteCommand cc=doTestCompleteCommand("x=1 y=2 echo bla y=2 laber\nx=1 y=2 echo bla y=2 laber");
 		final SimpleCommand sc=findSimpleCommand(cc);

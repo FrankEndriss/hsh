@@ -7,14 +7,35 @@ public class HshLookaheadHelper {
 		this.parser=parser;
 	}
 
+	/** If next token is of kind==WORD it is checked if the image.equals() the image
+	 * of the reserved word with that kind.
+	 * If yes, the tokens kind is set to that kind.
+	 * @param kind
+	 * @return true if the tokens image equals the reserved word of kind kind.
+	 */
+	public boolean lookahead_reserved(final int kind) {
+		final L2Token t=getToken(1);
+		if(t.kind==HshParserConstants.WORD && HshParserConstants.tokenImage[kind].equals(t.image)) {
+			t.kind=kind;
+			return true;
+		}
+		return false;
+	}
+
 	public boolean lookahead_isCmdPrefix() {
-		return lookahead_isRedir() || lookahead_isAssignment();
+		return lookahead_isIoRedir() || lookahead_isAssignment();
 	}
 
 	public boolean lookahead_isAssignment() {
-		if(getToken(1).image.indexOf('=')>0)
+		final L2Token t=getToken(1);
+		if(t.kind!=HshParserConstants.WORD)
+			return t.kind==HshParserConstants.ASSIGNMENT_WORD;
+
+		if(getToken(1).image.indexOf('=')>0) {
 			getToken(1).kind=HshParserConstants.ASSIGNMENT_WORD;
-		return true;
+			return true;
+		}
+		return false;
 	}
 
 	/** Format of a redir is:
@@ -27,8 +48,21 @@ public class HshLookaheadHelper {
 	 * case2: In the case of the other operators, it is three words.
 	 * @return
 	 */
-	public boolean lookahead_isRedir() {
+	public boolean lookahead_isIoRedir() {
 		final L2Token t1=getToken(1);
+
+		if(t1.kind!=HshParserConstants.WORD)	// if not WORD dont change
+			return t1.kind==HshParserConstants.IO_NUMBER
+				|| t1.kind==HshParserConstants.DLESS
+				|| t1.kind==HshParserConstants.DGREAT
+				|| t1.kind==HshParserConstants.LESSAND
+				|| t1.kind==HshParserConstants.GREATAND
+				|| t1.kind==HshParserConstants.LESSGREAT
+				|| t1.kind==HshParserConstants.DLESSDASH
+				|| t1.kind==HshParserConstants.CLOBBER
+				|| t1.kind==HshParserConstants.LESS
+				|| t1.kind==HshParserConstants.GREAT;
+
 
 		// case1: optional digits followed by "<" or ">" followed by at least one char
 		final char[] chars=t1.image.toCharArray();
@@ -58,7 +92,7 @@ public class HshLookaheadHelper {
 					connectTokens(t1, t2);
 					final L2Token t3=new L2Token();
 					t3.kind=HshParserConstants.WORD;	// filename
-					t3.image=new String(chars, i+1, chars.length-i);
+					t3.image=new String(chars, i+1, chars.length-i-1);
 					connectTokens(t2, t3);
 					return true;
 				} // else non-digit before operator, does not match

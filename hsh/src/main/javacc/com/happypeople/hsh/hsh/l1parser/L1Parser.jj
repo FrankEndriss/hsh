@@ -196,13 +196,12 @@ public class L1Parser // implements TokenManager
 		kindMap[L1ParserConstants.GREAT]=HshParserConstants.GREAT;
 		kindMap[L1ParserConstants.GREATAND]=HshParserConstants.GREATAND;
 		kindMap[L1ParserConstants.LESSAND]=HshParserConstants.LESSAND;
-		kindMap[L1ParserConstants.LESS]=HshParserConstants.LESS;
+//		kindMap[L1ParserConstants.LESS]=HshParserConstants.LESS;
 		kindMap[L1ParserConstants.LESSGREAT]=HshParserConstants.LESSGREAT;
 		kindMap[L1ParserConstants.DLESSDASH]=HshParserConstants.DLESSDASH;
 		kindMap[L1ParserConstants.CLOBBER]=HshParserConstants.CLOBBER;
 		kindMap[L1ParserConstants.NEWLINE]=HshParserConstants.NEWLINE;
 		kindMap[L1ParserConstants.SEMICOLON]=HshParserConstants.SEMICOLON;
-		kindMap[L1ParserConstants.UPPERSANT]=HshParserConstants.UPPERSANT;
 		kindMap[L1ParserConstants.WS]=WS_KIND;
 		// TODO others ???
 	}
@@ -236,10 +235,10 @@ TOKEN:
 |	< #DEF_ESC_BACKSLASH	: "\\\\" >
 |	< #def_DEFAULT_ANYTHING	: (~["`", "'", "\"", "\\", 
 								" ", "\t", "\r", "\n", 
-								"&", "|", ";", "<", ">", "$", "{", 
+								"&", "|", ";", "$", "{", 
 								"}", "(", ")" ])+ >
 	// chars of DEFAULT_ANYTHING and DO_SPECIAL
-|	< #def_DA_AND_DO_SPECIAL	:  ~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "<", ">", "$", "{", "}", "=", ":", "(", ")",
+|	< #def_DA_AND_DO_SPECIAL	:  ~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "$", "{", "}", "=", ":", "(", ")",
 									"0"-"9", "@", "*", "#", "?", "_", "$", "!"] >
 |	< #def_DO_SPECIAL			:  ["0"-"9", "@", "*", "#", "?", "_", "$", "!"] >
 }
@@ -494,13 +493,13 @@ L2Token separating_part():
 |	t=< UPPERSANT >
 |	t=< PIPE >
 |	t=< SEMICOLON >
-|	t=< LESS >
-|	t=< GREAT >
+//|	t=< LESS >
+//|	t=< GREAT >
 // these are no operators, but separate words, too
 |	t=< WS > // Note: WS is not sent to HshParser, but separates words.
 |	t=< NEWLINE >
-|	t=< LBRACE >
-|	t=<	RBRACE >
+//|	t=< LBRACE >
+//|	t=<	RBRACE >
 	) {
 		return new L2Token(translateL1KindToL2Kind(t.kind), t.image);
 	}
