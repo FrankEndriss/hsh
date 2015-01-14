@@ -13,11 +13,11 @@ import com.happypeople.hsh.hsh.parser.*;
 import com.happypeople.hsh.hsh.l1parser.RuleApplier;
 import com.happypeople.hsh.hsh.l1parser.ParserRule;
 
-public class HshParser
-{
+public class HshParser {
 private final static boolean DEBUG=false;
 private ListCallback listCallback;
 private RuleApplier ruleApplier;
+private HshLookaheadHelper helper=new HshLookaheadHelper(this);
 
 	private void throwNI() {		throw new RuntimeException("not implemented");
 	}
@@ -38,32 +38,15 @@ private RuleApplier ruleApplier;
 		public void listParsed(ListNode list);
 	}
 	
-	/** Returns true if the next Token is one of the cmd_prefix(), io_redirect or assignment
+	/** Returns true if the next Token is one of the cmd_prefix(): io_redirect or assignment
 	* If true, the kind of the tokens are set accordingly.
-	* <IO_NUMBER><redir_operator><FILENAME> vs < ASSIGNMENT_WORD >
+	* [<IO_NUMBER>]<redir_operator><FILENAME> vs < ASSIGNMENT_WORD >
 	*/
 	private boolean lookahead_isCmdPrefix() {
-		L2Token t1=(L2Token)getToken(1);
-		if(isDigits(t1.image) && is_redir_operator(getToken(2))) {
-			t1.kind=HshParserConstants.IO_NUMBER;
-			return true;
-		} else if(is_redir_operator(getToken(1))) // redir without IO_NUMBER
-			return true;
-		else if(getToken(1).image.indexOf('=')>0) {
-			getToken(1).kind=ASSIGNMENT_WORD;
-			return true;
-		} else
-			return false;
+		return helper.lookahead_isCmdPrefix();
 	}
 	
-	private boolean isDigits(String s) {
-		return true;
-	}
-	
-	private boolean is_redir_operator(Token t) {
-		return true;
-	}
-	
+
 }
 PARSER_END(HshParser)
 

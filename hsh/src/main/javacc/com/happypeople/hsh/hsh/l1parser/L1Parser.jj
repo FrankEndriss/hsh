@@ -110,7 +110,7 @@ AND_IF    OR_IF    DSEMI
  '&&'      '||'     ';;'    
 
 
-DLESS  DGREAT  LESSAND  GREATAND  LESSGREAT  DLESSDASH
+DLESS  DGREAT  LESSAHND  GREATAND  LESSGREAT  DLESSDAS
  '<<'   '>>'    '<&'     '>&'      '<>'       '<<-'   
 
 
