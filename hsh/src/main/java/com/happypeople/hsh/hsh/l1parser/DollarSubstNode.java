@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
 
 
@@ -12,6 +13,10 @@ import com.happypeople.hsh.hsh.NodeTraversal;
  *
  */
 public class DollarSubstNode extends ComplexL1Node implements Substitutable {
+	public DollarSubstNode(final L2Token tok, final int off, final int len) {
+		super(tok, off, len);
+	}
+
 	int parameterIdx=-1;
 	int operatorIdx=-1;
 	int wordIdx=-1;
@@ -73,13 +78,9 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 			return env.getEnv().getVariableValue(varName);
 	}
 
+	/** Maps operator image to operator algorithm
+	 */
 	private static Map<String, Operator> operatorMap=new HashMap<String, Operator>();
-
-	private enum Case {
-		SET_AND_NOT_NULL,
-		SET_BUT_NULL,
-		UNSET
-	};
 
 	private static abstract class Operator {
 		abstract String doSubst(String variable, L1Node word, HshContext context) throws Exception;
@@ -196,7 +197,7 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 					return null;
 			}
 		});
-		// TODO Since patterns are not implemented it does not make a difference if shortes or longtest prefix is matched
+		// TODO Since patterns are not implemented it does not make a difference if shortest or longtest prefix is matched
 		operatorMap.put("#", operatorMap.get("##"));
 
 		operatorMap.put("%%", new Operator() { // "Remove Largest Postfix Pattern" - operator
@@ -222,7 +223,7 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 					return null;
 			}
 		});
-		// TODO Since patterns are not implemented it does not make a difference if shortes or longtest postfix is matched
+		// TODO Since patterns are not implemented it does not make a difference if shortest or longtest postfix is matched
 		operatorMap.put("%", operatorMap.get("%%"));
 
 	}

@@ -9,64 +9,71 @@ import org.junit.Test;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.HshChildContext;
+import com.happypeople.hsh.hsh.L2Token;
 
 public class DollarSubstNodeTest {
 
 	private DollarSubstNode out;
 	private HshContext context;
-	private final L1Node variableSet=new SimpleL1Node("x");
+	private final L1Node variableSet=createSimpleL1Node("x");
 	private final String valueOfVariableSet="hallo";
-	private final L1Node variableUnset=new SimpleL1Node("y");
-	private final L1Node variableSetButNull=new SimpleL1Node("z");
+	private final L1Node variableUnset=createSimpleL1Node("y");
+	private final L1Node variableSetButNull=createSimpleL1Node("z");
 	private final String valueOfSimpleWord="word";
-	private final L1Node simpleWord=new SimpleL1Node(valueOfSimpleWord);
+	private final L1Node simpleWord=createSimpleL1Node(valueOfSimpleWord);
 
 	@Before
 	public void setup() {
 		context=new HshChildContext(null, null, null);
-		out=new DollarSubstNode();
+		out=new DollarSubstNode(null, 0, 0);
 		context.getEnv().setVariableValue("x", valueOfVariableSet);
 		context.getEnv().setVariableValue("z", null);
 	}
 
+	private SimpleL1Node createSimpleL1Node(final String image) {
+		final L2Token t=new L2Token();
+		t.image=image;
+		return new SimpleL1Node(t, 0, image.length());
+	}
+
 	@Test
 	public void testOperators() throws Exception {
-		final L1Node expVar=new SimpleL1Node(valueOfVariableSet);
-		final L1Node expWord=new SimpleL1Node(valueOfSimpleWord);
-		final L1Node expNull=new SimpleL1Node(null);
+		final L1Node expVar=createSimpleL1Node(valueOfVariableSet);
+		final L1Node expWord=createSimpleL1Node(valueOfSimpleWord);
+		final L1Node expNull=createSimpleL1Node(null);
 
 		final L1Node[][] testCases={
-			new L1Node[] { variableSet,			new SimpleL1Node(":-"), expVar },
-			new L1Node[] { variableUnset,		new SimpleL1Node(":-"), expWord },
-			new L1Node[] { variableSetButNull,	new SimpleL1Node(":-"), expWord },
-			new L1Node[] { variableSet,			new SimpleL1Node("-"), expVar },
-			new L1Node[] { variableUnset,		new SimpleL1Node("-"), expWord },
-			new L1Node[] { variableSetButNull,	new SimpleL1Node("-"), expNull },
+			new L1Node[] { variableSet,			createSimpleL1Node(":-"), expVar },
+			new L1Node[] { variableUnset,		createSimpleL1Node(":-"), expWord },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node(":-"), expWord },
+			new L1Node[] { variableSet,			createSimpleL1Node("-"), expVar },
+			new L1Node[] { variableUnset,		createSimpleL1Node("-"), expWord },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node("-"), expNull },
 
-			new L1Node[] { variableSet,			new SimpleL1Node(":+"), expWord },
-			new L1Node[] { variableUnset,		new SimpleL1Node(":+"), expNull },
-			new L1Node[] { variableSetButNull,	new SimpleL1Node(":+"), expNull },
-			new L1Node[] { variableSet,			new SimpleL1Node("+"), expWord },
-			new L1Node[] { variableUnset,		new SimpleL1Node("+"), expNull },
-			new L1Node[] { variableSetButNull,	new SimpleL1Node("+"), expWord },
+			new L1Node[] { variableSet,			createSimpleL1Node(":+"), expWord },
+			new L1Node[] { variableUnset,		createSimpleL1Node(":+"), expNull },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node(":+"), expNull },
+			new L1Node[] { variableSet,			createSimpleL1Node("+"), expWord },
+			new L1Node[] { variableUnset,		createSimpleL1Node("+"), expNull },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node("+"), expWord },
 
-			new L1Node[] { variableSet,			new SimpleL1Node(":="),	expVar, expVar },
-			new L1Node[] { variableUnset,		new SimpleL1Node(":="),	expWord, expWord },
-			new L1Node[] { variableSetButNull,	new SimpleL1Node(":="),	expWord, expWord },
-			new L1Node[] { variableSet,			new SimpleL1Node("="),	expVar, expVar },
-			new L1Node[] { variableUnset,		new SimpleL1Node("="),	expWord, expWord },
-			new L1Node[] { variableSetButNull,	new SimpleL1Node("="),	expNull, expNull }
+			new L1Node[] { variableSet,			createSimpleL1Node(":="),	expVar, expVar },
+			new L1Node[] { variableUnset,		createSimpleL1Node(":="),	expWord, expWord },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node(":="),	expWord, expWord },
+			new L1Node[] { variableSet,			createSimpleL1Node("="),	expVar, expVar },
+			new L1Node[] { variableUnset,		createSimpleL1Node("="),	expWord, expWord },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node("="),	expNull, expNull }
 		};
 		for(final L1Node[] testData : testCases)
 			doOperatorTest(testData);
 
 		final L1Node[][] testCasesErrorCond={
-			new L1Node[] { variableSet,			new SimpleL1Node(":?"), null },
-			new L1Node[] { variableUnset,		new SimpleL1Node(":?"), null },
-			new L1Node[] { variableSetButNull,	new SimpleL1Node(":?"), expVar },
-			new L1Node[] { variableSet,			new SimpleL1Node("?"), expVar },
-			new L1Node[] { variableUnset,		new SimpleL1Node("?"), expWord },
-			new L1Node[] { variableSetButNull,	new SimpleL1Node("?"), expNull },
+			new L1Node[] { variableSet,			createSimpleL1Node(":?"), null },
+			new L1Node[] { variableUnset,		createSimpleL1Node(":?"), null },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node(":?"), expVar },
+			new L1Node[] { variableSet,			createSimpleL1Node("?"), expVar },
+			new L1Node[] { variableUnset,		createSimpleL1Node("?"), expWord },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node("?"), expNull },
 		};
 		for(final L1Node[] testData : testCases)
 			doOperatorErrorTest(testData);

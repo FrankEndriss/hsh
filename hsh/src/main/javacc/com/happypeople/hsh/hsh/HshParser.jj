@@ -51,6 +51,12 @@ private HshLookaheadHelper helper=new HshLookaheadHelper(this);
 
 	private boolean lookahead_reserved(int kind) {		return helper.lookahead_reserved(kind);
 	}
+
+	private boolean lookahead_functionDef() {		return helper.lookahead_functionDef();
+	}
+
+	private boolean lookahead_isAssignment() {		return helper.lookahead_isAssignment();
+	}
 }
 PARSER_END(HshParser)
 
@@ -145,9 +151,9 @@ Token t;
 	{ return t.image; }
 }
 /*
-io_file          : '<'       filename
+io_file          : LESS      filename
                  | LESSAND   filename
-                 | '>'       filename
+                 | GREAT     filename
                  | GREATAND  filename
                  | DGREAT    filename
                  | LESSGREAT filename
@@ -185,16 +191,6 @@ Token ioNum;
 }
 
 /**
-cmd_word         : WORD                   // Apply rule 7b
-                 ;
-*/
-void cmd_word(SimpleCommand simpleCommand):
-{
-	Token t;}{
-	t=< WORD > { simpleCommand.setCmdName((L2Token)t); }
-}
-
-/**
 cmd_name         : WORD                   // Apply rule 7a
                  ;
 */
@@ -215,13 +211,18 @@ void cmd_suffix(final SimpleCommand simpleCommand):
 {
 	Token t;
 	RedirNode redirNode;}{
-// TODO javacc crash
-//	( t=<WORD> { simpleCommand.addArg((L2Token)t); } )+
-	( LOOKAHEAD( { lookahead_isIoRedir() }) redirNode=io_redirect() { simpleCommand.addRedirect(redirNode); }
-		| t=<WORD> { simpleCommand.addArg((L2Token)t); } )+
-	{ // after the suffix the next command will occur		//ruleApplier.setRule(HshParserRules.RULE7a);
-	}
+	( LOOKAHEAD( { lookahead_isIoRedir() } )
+		redirNode=io_redirect() { simpleCommand.addRedirect(redirNode); }
+|		t=<WORD> { simpleCommand.addArg((L2Token)t); } )+
 }
+
+void assignment(SimpleCommand simpleCommand):
+{
+Token ass;
+}{
+	( ass=< ASSIGNMENT_WORD > )
+	{
+		simpleCommand.addAssignment((L2Token)ass);	}}
 
 /**
 cmd_prefix       :            io_redirect
@@ -232,16 +233,14 @@ cmd_prefix       :            io_redirect
 */
 void cmd_prefix(SimpleCommand simpleCommand):
 {
-// if cmd_prefix is found, another cmd_prefix can follow, so apply Rule7a again
 	Token t;
-	RedirNode redirNode;}{
+	RedirNode redirNode;
+}{
 	(
-		LOOKAHEAD( { lookahead_isCmdPrefix() } ) // this lookahead will change the nodes kinds 		( redirNode=io_redirect() { simpleCommand.addRedirect(redirNode); }
-	| t=< ASSIGNMENT_WORD > { simpleCommand.addAssignment((L2Token)t); } )
+		LOOKAHEAD( { lookahead_isIoRedir() } )		redirNode=io_redirect() { simpleCommand.addRedirect(redirNode); }
+	| 	LOOKAHEAD( { lookahead_isAssignment() } )
+		assignment(simpleCommand) 
 	)+
-	{		// after the assignments is the cmd_name(), and after that the args
-		//ruleApplier.setRule(null);
-	}
 }
 
 /**
@@ -265,7 +264,7 @@ void fname():
 {
 }
 {
-	< WORD_8 >
+	< FNAME >
 	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
 }
 
@@ -591,7 +590,7 @@ SimpleCommand simple_command():
 {
 (
 	LOOKAHEAD( { lookahead_isCmdPrefix() } )
-	 	cmd_prefix(simpleCommand)	( cmd_word(simpleCommand) ( cmd_suffix(simpleCommand))? )?
+	 	cmd_prefix(simpleCommand)	( cmd_name(simpleCommand) ( cmd_suffix(simpleCommand))? )?
 	|	cmd_name(simpleCommand)		( cmd_suffix(simpleCommand) )? 
 )	{
 	 	return simpleCommand;
@@ -652,9 +651,9 @@ Command command():
 	L2Node compCommand;
 }
 {
-	( 
-	simpleCommand=simple_command() { ret.addChild(simpleCommand); }
-|	compCommand=compound_command() ( redirect_list() { throwNI(); })? { ret.addChild(compCommand); }|	function_definition() { throwNI(); } )
+	LOOKAHEAD( { lookahead_functionDef() } ) function_definition() { throwNI(); }
+|	compCommand=compound_command() ( redirect_list() { throwNI(); })? { ret.addChild(compCommand); }
+|	simpleCommand=simple_command() { ret.addChild(simpleCommand); }
 	{ return ret; }
 }
 

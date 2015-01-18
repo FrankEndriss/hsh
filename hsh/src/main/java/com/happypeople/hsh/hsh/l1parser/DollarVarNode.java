@@ -6,14 +6,16 @@ import java.util.Iterator;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
+import com.happypeople.hsh.hsh.L2Token;
 
 /** The Token contained in a DollarVarNode is $<token>
  * if token.kind==DO_SPECIAL it is one of the single-character defined in "special parameters".
  * Else token.image is simply the variable name.
  */
-public class DollarVarNode implements L1Node, Substitutable {
+public class DollarVarNode extends AbstractL1Node implements Substitutable {
 	private final Token t;
-	DollarVarNode(final Token t) {
+	DollarVarNode(final L2Token tok, final int off, final int len, final Token t) {
+		super(tok, off, len);
 		this.t=t;
 	}
 

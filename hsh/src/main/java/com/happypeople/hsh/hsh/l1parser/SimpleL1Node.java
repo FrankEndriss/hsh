@@ -3,20 +3,24 @@ package com.happypeople.hsh.hsh.l1parser;
 import java.util.Collections;
 import java.util.Iterator;
 
+import com.happypeople.hsh.hsh.L2Token;
+
 
 /** SimpleL1Node is a node with simple text. The text is interpreted to have no special meaning.
  * So, that can be text with really no special meaning, or text which has not special meaning in
  * the context where it is found.
  */
-public class SimpleL1Node implements L1Node, StringifiableNode {
-	private final String str;
+public class SimpleL1Node extends AbstractL1Node implements L1Node, StringifiableNode {
 
-	public SimpleL1Node(final String str) {
-		this.str=str;
+	private final int l1Kind;
+
+	public SimpleL1Node(final L2Token tok, final int off, final int len) {
+		this(tok, off, len, -1);
 	}
 
-	public String getImage() {
-		return str;
+	public SimpleL1Node(final L2Token tok, final int off, final int len, final int l1Kind) {
+		super(tok, off, len);
+		this.l1Kind=l1Kind;
 	}
 
 	@Override
@@ -25,23 +29,15 @@ public class SimpleL1Node implements L1Node, StringifiableNode {
 	}
 
 	@Override
-	public void dump(final int level) {
-		for(int i=0; i<level; i++)
-			System.out.print("\t");
-		System.out.println(getClass().getName());
-		for(int i=0; i<level+1; i++)
-			System.out.print("\t");
-		System.out.println("value="+str);
-	}
-
-	@Override
 	public void append(final StringBuilder sb) {
-		sb.append(str);
+		sb.append(getImage());
 	}
 
-	@Override
-	public String toString() {
-		return "SimpleL1Node: "+str;
+	/**
+	 * @return the L1 token.kind of this word part
+	 */
+	public int getL1Kind() {
+		return l1Kind;
 	}
 
 }

@@ -6,10 +6,8 @@ import java.util.List;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
-import com.happypeople.hsh.hsh.l1parser.AssignmentL2Token;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
-import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
 
 public class SimpleCommand extends L2Node implements Executable {
 	private L2Token cmdName;
@@ -88,27 +86,19 @@ public class SimpleCommand extends L2Node implements Executable {
 
 		// execute assignments
 		for(final L2Token assi : getAssignments()) {
-			// assignment should allways be AssignmentL2Token
-			// fail fast if not
-			final AssignmentL2Token assiTok=(AssignmentL2Token)assi;
-			// AssignmentL2Token (kind=ASSIGNMENT_WORD) are structured:
+			// Assignment-L2Token (kind=ASSIGNMENT_WORD) are structured:
 			// First child SimpleNode(varName)
 			// Second is SimpleNode("=")
-			// Third is optional L2Token, the rhs of the assignment
-			String varName=null;
+			// Other parts: the value
+			final String varName=assi.getPart(0).getImage();
 			L2Token rhs=null;
-			boolean first=true;
-			boolean second=true;
-			for(final L1Node child : assiTok) {
-				if(first) {
-					varName=((SimpleL1Node)child).getImage();
-					first=false;
-				} else if(second) {
-					second=false;
-					// ignore
-				} else {
-					rhs=(L2Token)child;
-				}
+			final boolean first=true;
+			final boolean second=true;
+
+			if(assi.getPartCount()>2) {
+				rhs=new L2Token();
+				for(int i=2; i<assi.getPartCount(); i++)
+					rhs.addPart(assi.getPart(i));
 			}
 
 			final String value=rhs!=null?NodeTraversal.substituteSubtree(rhs, context):null;

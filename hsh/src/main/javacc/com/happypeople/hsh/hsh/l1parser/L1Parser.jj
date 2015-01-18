@@ -235,12 +235,13 @@ TOKEN:
 |	< #DEF_ESC_BACKSLASH	: "\\\\" >
 |	< #def_DEFAULT_ANYTHING	: (~["`", "'", "\"", "\\", 
 								" ", "\t", "\r", "\n", 
-								"&", "|", ";", "$", "{", 
-								"}", "(", ")" ])+ >
+								"&", "|", ";", "$", "{", "}", "(", ")", "<", ">", "=" ])+ >
 	// chars of DEFAULT_ANYTHING and DO_SPECIAL
-|	< #def_DA_AND_DO_SPECIAL	:  ~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "$", "{", "}", "=", ":", "(", ")",
+|	< #def_DA_AND_DO_SPECIAL	:  ~["`", "'", "\"", "\\", " ", "\t", "\n", "&", "|", ";", "$", "{", "}", "=", ":",
 									"0"-"9", "@", "*", "#", "?", "_", "$", "!"] >
 |	< #def_DO_SPECIAL			:  ["0"-"9", "@", "*", "#", "?", "_", "$", "!"] >
+|	< #def_NUMBER				: (["0"-"9"])+ >
+|	< #def_NAME					: ["_", "a"-"z", "A"-"Z"](["_", "a"-"z", "A"-"Z", "0"-"9"])* >
 }
 
 TOKEN:
@@ -263,18 +264,18 @@ TOKEN:
 |	< GREAT  	: ">" >  
 
 // reserved words
-|	< IF  		: "if" >  
-|	< THEN 		: "then" >  
-|	< ELSE 		: "else" >  
-|	< ELIF 		: "elif" >  
-|	< FI  		: "fi" >  
+//|	< IF  		: "if" >  
+//|	< THEN 		: "then" >  
+//|	< ELSE 		: "else" >  
+//|	< ELIF 		: "elif" >  
+//|	< FI  		: "fi" >  
 //|	< DO  		: "do" >  
 //|	< DONE 		: "done" >  
-|	< CASE 		: "case" >  
-|	< ESAC 		: "esac" >  
+//|	< CASE 		: "case" >  
+//|	< ESAC 		: "esac" >  
 //|	< WHILE		: "while" >  
 //|	< UNTIL		: "until" >  
-|	< FOR		: "for" >  
+//|	< FOR		: "for" >  
 
 // other reserved words
 // These are reserved words, not operator tokens, and are
@@ -282,12 +283,13 @@ TOKEN:
 |	< LBRACE	: "{" >  
 |	< RBRACE	: "}" >  
 |	< BANG		: "!" >  
-|	< IN		: "in" >  
+//|	< IN		: "in" >  
 
 // other special chars
-|	< COLON		: ":" >
-|	< KLAMMER_AUF:	"(" >
-|	< KLAMMER_ZU:	")" >
+|	< COLON			: ":" >
+|	< KLAMMER_AUF	: "(" >
+|	< KLAMMER_ZU	: ")" >
+|	< EQUALS		: "=" >
 }
 
 // reached on "${"
@@ -349,7 +351,9 @@ TOKEN:
 
 <DEFAULT> TOKEN:
 {
-	< DEFAULT_ANYTHING		: < def_DEFAULT_ANYTHING > >
+	< NAME					: < def_NAME > >
+|	< NUMBER				: < def_NUMBER > >
+|	< DEFAULT_ANYTHING		: < def_DEFAULT_ANYTHING > >
 }
 
 /** According to 2.2.3
@@ -370,35 +374,45 @@ $   `   "   \   <newline>
 |	< DANYTHING				: (~["\"", "$", "`", "\\"])+ >
 }
 
-L1Node default_part():
+L1Node default_part(L2Token l2token):
 {
-StringBuilder sb=new StringBuilder();
+L1Node node=null;
 Token t;
+int off=l2token.getLen();
 }
 {
-	( 
-	(	t=< ANY_ESCAPED_CHAR >
+	(	t=< ANY_ESCAPED_CHAR > { node=new BackslashQuotedL1Node(l2token, off, t.image.length()); }|	 	t=< NUMBER > 
+|	 	t=< NAME > 
 |	 	t=< DEFAULT_ANYTHING > 
 |	 	t=< BANG > 
-	) { sb.append(t.image); }
-	)+
-	{ return new SimpleL1Node(sb.toString()); }
+|	 	t=< KLAMMER_AUF > 
+|	 	t=< KLAMMER_ZU > 
+|	 	t=< LESS > 
+|	 	t=< GREAT >
+|		t=< EQUALS >
+	)
+	{ 
+		l2token.append(t.image);
+		if(node==null)
+			return new SimpleL1Node(l2token, off, l2token.getLen()-off, t.kind);
+		return node;
+	}
 }
 
-DollarSubstNode dollar_subst():
+L1Node dollar_subst(L2Token l2Token):
 {
-	DollarSubstNode ret=new DollarSubstNode();
-	StringBuilder sb=new StringBuilder();
-	L1Node wordPartList;
-	L1Node varnamePart;
+	L1Node word=null;
+	L1Node parameter=null;
+	L1Node operator=null;
 	Token t;
+	int off=l2Token.getLen();
 }{
-	(	< DOLLAR_LBRACE_START >
-	t=<DS_VARNAME>					{ ret.setParameter(new SimpleL1Node(t.image)); }
+	(	t=< DOLLAR_LBRACE_START >		{ l2Token.append(t.image); }
+	t=<DS_VARNAME>					{ parameter=new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length());
+										l2Token.append(t.image); }
 	(
-		t=< COLON_OP >				{ ret.setOperator(new SimpleL1Node(t.image)); }		wordPartList=word_part_list()	{ 
-			ret.setWord(wordPartList);
-
+		t=< COLON_OP >				{ operator=new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length());
+										l2Token.append(t.image); }		word=word_part_list(l2Token)	{ 
 			popState();
 			// switch the currents token kind to _RBRACE
 			Token token=getToken(1);
@@ -410,70 +424,95 @@ DollarSubstNode dollar_subst():
 				throw new RuntimeException("did not work, kind="+jj_ntk);
 		}
 	)?
-	< _RBRACE >
-	) { return ret; }
+	t=< _RBRACE >	{ l2Token.append(t.image); }
+	) { 
+		DollarSubstNode ret=new DollarSubstNode(l2Token, off, l2Token.getLen()-off);
+		if(parameter!=null)
+			ret.setParameter(parameter);
+		if(operator!=null)
+			ret.setOperator(operator);
+		if(word!=null)
+			ret.setWord(word);
+		return ret;
+	}
 }
 
-DollarVarNode dollar_var():
+L1Node dollar_var(L2Token l2token):
 {
-	Token t;}{
+	Token t;
+}{
 	< DOLLAR >
 	( t=< DO_SPECIAL >
 |	  t=< DO_MULTI > )
-	{ return new DollarVarNode(t); }}
+	{ L1Node ret=new DollarVarNode(l2token, l2token.getLen(), t.image.length()+1, t);
+		l2token.append("$").append(t.image);
+		return ret;
+	}}
 
-/** Creates a List of L1Node, types are SimpleL1Node or Backticked. */
-// TODO change to DQuoteNode, because one must know for all subnodes that these are part of a DQuoted,
-// and an empty List makes problems.
-DQuotedL1Node dquoted():
+/** A double quoted part. There can be backticked and dollar- subparts. */
+L1Node dquoted(L2Token l2Token):
 {
-	DQuotedL1Node ret=new DQuotedL1Node();
-	Token t;
-	BacktickedNode bn;
+	List<L1Node> childs=new ArrayList<L1Node>();
+	Token t=null;
+	L1Node childNode=null;
+	final int off=l2Token.getLen();
 }
 {
-	< DQUOTE_START >
+	< DQUOTE_START > { l2Token.append("\""); }
 	(
-		  t=< ESC_DQUOTE >		{ ret.add(new SimpleL1Node("\"")); }		| t=< ESC_DOLLAR >		{ ret.add(new SimpleL1Node("$")); }
-		| t=< ESC_BACKTIC >		{ ret.add(new SimpleL1Node("`")); }
-		| t=< ESC_BACKSLASH >	{ ret.add(new SimpleL1Node("\\")); }
-		| t=< CHAR_BACKSLASH >	{ ret.add(new SimpleL1Node("\\")); }
-		| t=< DANYTHING >		{ ret.add(new SimpleL1Node(t.image)); }
-		| bn=backticked()		{ ret.add(bn); }	)*
+		(		  t=< ESC_DQUOTE >		{ childs.add(new BackslashQuotedL1Node(l2Token, l2Token.getLen(), t.image.length())); }		| t=< ESC_DOLLAR >		{ childs.add(new BackslashQuotedL1Node(l2Token, l2Token.getLen(), t.image.length())); }
+		| t=< ESC_BACKTIC >		{ childs.add(new BackslashQuotedL1Node(l2Token, l2Token.getLen(), t.image.length())); }
+		| t=< ESC_BACKSLASH >	{ childs.add(new BackslashQuotedL1Node(l2Token, l2Token.getLen(), t.image.length())); }
+		| t=< CHAR_BACKSLASH >	{ childs.add(new SimpleL1Node(l2Token, l2Token.getLen(), 1)); }
+		| t=< DANYTHING >		{ childs.add(new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length())); }
+		| childNode=backticked(l2Token)
+		| childNode=dollar_var(l2Token)
+		| childNode=dollar_subst(l2Token)
+		)
+		{
+			if(t!=null) {
+				l2Token.append(t.image);
+			} else // childNode!=null
+				childs.add(childNode);		}	)*
 	< DQUOTE_END >
-	{ return ret; }
+	{ 	l2Token.append("\"");
+		DQuotedL1Node ret=new DQuotedL1Node(l2Token, off, l2Token.getLen()-off);
+		for(L1Node l1Node : childs)
+			ret.add(l1Node);
+		return ret;
+	}
 }
 
 /** Creates a BacktickedNode representing what is found between the two backtics.
 This is stored as a String in the node for later parsing.
 */
-BacktickedNode backticked():
+L1Node backticked(L2Token l2token):
 {
-	final StringBuilder sb=new StringBuilder();
-	Token t;
+Token t;
+int off=l2token.getLen();
 }
 {
-	< BACKTIC_START >	(
-		t=< ANY_ESCAPED_CHAR > { sb.append(t.image); }	
-	|	t=< BACKTIC_ANYTHING > { sb.append(t.image); }
+	< BACKTIC_START >	{ l2token.append("`"); }		(
+		t=< ANY_ESCAPED_CHAR > { l2token.append(t.image); }	
+	|	t=< BACKTIC_ANYTHING > { l2token.append(t.image); }
 	)*
-	< BACKTIC_END > {
+	< BACKTIC_END >		{ l2token.append('`');
 			// TODO could check if number of ", ' and ` are even and/or nested wrong
 			// But the subsequent parsing of the backticked command will do this either
-			return new BacktickedNode(sb.toString());
+			BacktickedNode ret=new BacktickedNode(l2token, off, l2token.getLen()-off);
+			return ret;
 		}}
 
-/** creates a String representing what is found between the two single-quotes */
-SQuotedL1Node squoted():
-{	final StringBuilder sb=new StringBuilder();
-	Token t;
-}{	<SQUOTE_START>
-	( t=<SANYTHING> { sb.append(t.image); } )?
-	<SQUOTE_END> {
-		return new SQuotedL1Node(sb.toString());
+/** Single quoted part of a word */
+L1Node squoted(L2Token l2Token):
+{Token t;
+int off=l2Token.getLen();
+}{	<SQUOTE_START>	{ l2Token.append("'"); }	( t=<SANYTHING>	{ l2Token.append(t.image); } )?
+	<SQUOTE_END>	{ l2Token.append("'");
+		return new SQuotedL1Node(l2Token, off, l2Token.getLen()-off);
 	}}
 
-L2Token separating_part():
+void separating_part(L2Token l2Token):
 {
 	Token t;}{
 	(	t=< AND_IF >
@@ -501,11 +540,13 @@ L2Token separating_part():
 //|	t=< LBRACE >
 //|	t=<	RBRACE >
 	) {
-		return new L2Token(translateL1KindToL2Kind(t.kind), t.image);
+		l2Token.kind=translateL1KindToL2Kind(t.kind);
+		l2Token.append(t.image);
+		l2Token.addPart(new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length(), t.kind));
 	}
 }
 
-/** part of a word or whole word.
+/** part of a word 
 * Result of parsing on L1-Level is a stream of word_part, which are
 * then concatenated to words according to several rules.
 * These words are the tokens for parsing on L2-Level.
@@ -513,35 +554,55 @@ L2Token separating_part():
 * Which word_parts are concatenated to form complete words, and which ones act as
 * word separators is implemented in L2TokenManager.
 */
-L1Node word_part():
+L1Node word_part(L2Token l2token):
 {
-	L1Node ret;
+	L1Node child;
 }
 {
 	(
-	ret=default_part()
-|	ret=backticked()	
-|	ret=dquoted()		
-|	ret=squoted()
-|	ret=dollar_subst()
-|	ret=dollar_var()
+	child=backticked(l2token)	
+|	child=dquoted(l2token)		
+|	child=squoted(l2token)
+|	child=dollar_subst(l2token)
+|	child=dollar_var(l2token)
+|	child=default_part(l2token)
 	)
-	{ return ret; }
+	{ return child; }
 }
 
-L2Token word_part_list():
-{	L2Token ret=new L2Token();
-	L1Node part;
-}{		(	part=word_part()	{ ret.addPart(part); }	)+
-		{ return ret; }}
+/** A word_part_list is a L2Token
+*/
+L1Node word_part_list(L2Token l2token):
+{
+List<L1Node> children=new ArrayList<L1Node>();
+L1Node node;
+int off=l2token.getLen();}{		( node=word_part(l2token) { children.add(node); } )+
+		{
+			ComplexL1Node ret=new ComplexL1Node(l2token, off, l2token.getLen()-off);
+			for(L1Node child : children)
+				ret.add(child);
+			return ret;		}
+}
 
 /** A word is a separating_part() or a concatenation of word_part() or <EOF>
 */
 L2Token word():
 {
-	L2Token ret;
-	Token t;}{
+	L2Token ret=new L2Token();
+	Token t;
+	L1Node list=null;
+	L1Node part;
+}{
 	( 
-			ret=word_part_list()
-		|	ret=separating_part()
-		|	t=<EOF> { ret=new L2Token(L1ParserConstants.EOF, "<EOF>"); }	) { return ret; }}
+			list=word_part_list(ret)
+		|	separating_part(ret)
+		|	t=<EOF> {
+						ret.kind=HshParserConstants.EOF;
+						// empty image
+					}	)
+	{	if(list!=null)
+			for(L1Node child : list)
+				ret.addPart(child);
+		ret.finishImage();
+		return ret;
+	}}
