@@ -5,7 +5,6 @@ options
     FORCE_LA_CHECK=false;
     DEBUG_PARSER=false;
     DEBUG_LOOKAHEAD=false;
-    //LOOKAHEAD=2;
 }
 PARSER_BEGIN(HshParser)
 package com.happypeople.hsh.hsh;
@@ -62,12 +61,8 @@ private HshLookaheadHelper helper=new HshLookaheadHelper(this);
 		return helper.lookahead_isCompoundCommand();
 	}
 		
-	private boolean lookahead_DONE() {
-		return helper.lookahead_DONE();
-	}
-		
-	private boolean lookahead_DO() {
-		return helper.lookahead_DO();
+	private boolean lookahead_DO_Group() {
+		return helper.lookahead_DO_Group();
 	}
 		
 	/** Needed if getToken(1).kind is set from HshLookaheadHelper (in some cases)
@@ -518,7 +513,7 @@ TermNode condition;
 TermNode body;
 }
 {
-	( < WHILE >  | ( < UNTIL >	{ ret.setUntil(); } ) )
+	( < WHILE >  | ( < UNTIL >	{ ret.setUntil(); } ) )  { lookahead_DO_Group(); }
 	condition=compound_list()	{ ret.addChild(condition); } 
 	body=do_group()				{ ret.addChild(body); }
 	{ return ret; }
@@ -531,10 +526,9 @@ do_group         : Do compound_list Done           // Apply rule 6
 TermNode do_group():
 {
 TermNode ret;
-lookahead_DO();
 }
 {
-	< DO > ret=compound_list() { lookahead_DONE(); } < DONE >
+	< DO > ret=compound_list() < DONE >
 	{ return ret; }
 }
 
@@ -569,7 +563,7 @@ TermNode term():
 {
 	and_orN=and_or() { ret.addChild(and_orN); }
 	( // This must lookahead for and_or. Since if not, the separator must not be consumed.
-		( LOOKAHEAD(separator() and_or())
+		( LOOKAHEAD(separator() and_or() )
 			separator(and_orN)		 	and_orN=and_or() { ret.addChild(and_orN);
 		 		if(DEBUG) { 
 		 			System.out.println("parsed another and_orN in term()");

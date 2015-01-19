@@ -30,23 +30,39 @@ public class HshLookaheadHelper {
 		return false;
 	}
 
-	/** Looks ahead for the token DO
+	/** Looks ahead for DO-Group
 	 * @return
 	 */
-	public boolean lookahead_DO() {
-		final L2Token tok=getToken(1);
-		if(tok.kind==HshParserConstants.DO)
-			return true;
-
-		if(tok.getPartCount()>1)
-			return false;
-
-		if("do".equals(tok.image)) {
-			tok.kind=HshParserConstants.DO;
-			parser.reloadJJNTK();
-			return true;
+	public boolean lookahead_DO_Group() {
+		final int doIdx=search_DO_DONE(1, "do");
+		if(doIdx>0) {
+			final int doneIdx=search_DO_DONE(doIdx+1, "done");
+			if(doneIdx>0) {
+				getToken(doIdx).kind=HshParser.DO;
+				getToken(doneIdx).kind=HshParser.DONE;
+				return true;
+			}
 		}
 		return false;
+	}
+
+	/** Searches for the next occurrence of separator_op()<img>
+	 * @return
+	 */
+	private int search_DO_DONE(final int startAt, final String img) {
+		// TODO optimize for speed, tokens are a LinkedList :/
+		int i=startAt;
+		L2Token pT=getToken(i++);
+		L2Token t=getToken(i++);
+		do {
+			if((pT.kind==HshParser.UPPERSANT || pT.kind==HshParser.SEMICOLON || pT.kind==HshParser.NEWLINE) &&
+				t.kind==HshParser.WORD && img.equals(t.image)) {
+					return i-1;
+			}
+			pT=t;
+		}while((t=getToken(i++)).kind!=HshParser.EOF);
+
+		return -1;
 	}
 
 	private final static int[] wordStarts={

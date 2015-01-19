@@ -27,7 +27,7 @@ import com.happypeople.hsh.hsh.parser.SimpleCommand;
 
 public class HshParserTest {
 
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	private HshContext context;
 
@@ -192,34 +192,36 @@ public class HshParserTest {
 
 	@Test
 	public void testComplete_command_Assignment7() throws ParseException {
-		final CompleteCommand cc=doTestCompleteCommand(
-				"x=1 y=2 2>file.txt echo bla y=2<input.txt <input.txt laber\nx=1 y=2 echo2 bla y=2 laber <input.txt");
-		final SimpleCommand[] sc=findSimpleCommands(cc, 2);
+		final CompleteCommand[] res=doTestCompleteCommand2(
+				"x=1 y=2 2>file.txt echo bla y=2<input.txt <input.txt laber\nx=1 y=2 echo2 bla y=2 laber <input.txt", 2);
+		final SimpleCommand sc=findSimpleCommand(res[0]);
 
-		assertEquals("# assignments", 2, sc[0].getAssignments().size());
-		assertEquals("cmd", "echo", node2String(sc[0].getCmdName()));
-		assertEquals("# args", 3, sc[0].getArgs().size());
-		assertEquals("# redir", 2, sc[0].getRedirects().size());
+		assertEquals("# assignments", 2, sc.getAssignments().size());
+		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
+		assertEquals("# args", 3, sc.getArgs().size());
+		assertEquals("# redir", 2, sc.getRedirects().size());
 
-		assertEquals("2.# assignments", 2, sc[1].getAssignments().size());
-		assertEquals("2.cmd", "echo2", node2String(sc[1].getCmdName()));
-		assertEquals("2.# args", 3, sc[1].getArgs().size());
-		assertEquals("# redir", 1, sc[1].getRedirects().size());
+		final SimpleCommand sc2=findSimpleCommand(res[1]);
+		assertEquals("2.# assignments", 2, sc2.getAssignments().size());
+		assertEquals("2.cmd", "echo2", node2String(sc2.getCmdName()));
+		assertEquals("2.# args", 3, sc2.getArgs().size());
+		assertEquals("# redir", 1, sc2.getRedirects().size());
 	}
 
 
 	@Test
 	public void testComplete_command_Assignment6() throws ParseException {
-		final CompleteCommand cc=doTestCompleteCommand("x=1 y=2 echo bla y=2 laber\nx=1 y=2 echo2 bla y=2 laber");
-		final SimpleCommand[] sc=findSimpleCommands(cc, 2);
+		final CompleteCommand[] cc=doTestCompleteCommand2("x=1 y=2 echo bla y=2 laber\nx=1 y=2 echo2 bla y=2 laber", 2);
+		final SimpleCommand sc1=findSimpleCommand(cc[0]);
 
-		assertEquals("# assignments", 2, sc[0].getAssignments().size());
-		assertEquals("cmd", "echo", node2String(sc[0].getCmdName()));
-		assertEquals("# args", 3, sc[0].getArgs().size());
+		assertEquals("# assignments", 2, sc1.getAssignments().size());
+		assertEquals("cmd", "echo", node2String(sc1.getCmdName()));
+		assertEquals("# args", 3, sc1.getArgs().size());
 
-		assertEquals("2.# assignments", 2, sc[1].getAssignments().size());
-		assertEquals("2.cmd", "echo2", node2String(sc[1].getCmdName()));
-		assertEquals("2.# args", 3, sc[1].getArgs().size());
+		final SimpleCommand sc2=findSimpleCommand(cc[1]);
+		assertEquals("2.# assignments", 2, sc2.getAssignments().size());
+		assertEquals("2.cmd", "echo2", node2String(sc2.getCmdName()));
+		assertEquals("2.# args", 3, sc2.getArgs().size());
 	}
 
 	@Test
@@ -328,6 +330,20 @@ public class HshParserTest {
 		assertEquals("cmd", "x", node2String(sc.getCmdName()));
 		assertEquals("# assignments", 0, sc.getAssignments().size());
 		assertEquals("# args", 0, sc.getArgs().size());
+	}
+
+	private CompleteCommand[] doTestCompleteCommand2(final String input, final int count) throws ParseException {
+		final CompleteCommand[] res=new CompleteCommand[2];
+		final HshParser p=setup(input);
+		if(DEBUG)
+			System.out.println("Test input: "+input);
+		for(int i=0; i<count; i++)
+			res[i]=p.complete_command();
+		if(DEBUG)
+			for(int i=0; i<count; i++)
+				if(res[i]!=null)
+					res[i].dump(0);
+		return res;
 	}
 
 	private CompleteCommand doTestCompleteCommand(final String input) throws ParseException {
