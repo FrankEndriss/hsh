@@ -11,6 +11,105 @@ public class HshLookaheadHelper {
 		this.parser=parser;
 	}
 
+	/** Looks ahead for the token DONE
+	 * @return
+	 */
+	public boolean lookahead_DONE() {
+		final L2Token tok=getToken(1);
+		if(tok.kind==HshParserConstants.DONE)
+			return true;
+
+		if(tok.getPartCount()>1)
+			return false;
+
+		if("done".equals(tok.image)) {
+			tok.kind=HshParserConstants.DONE;
+			parser.reloadJJNTK();
+			return true;
+		}
+		return false;
+	}
+
+	/** Looks ahead for the token DO
+	 * @return
+	 */
+	public boolean lookahead_DO() {
+		final L2Token tok=getToken(1);
+		if(tok.kind==HshParserConstants.DO)
+			return true;
+
+		if(tok.getPartCount()>1)
+			return false;
+
+		if("do".equals(tok.image)) {
+			tok.kind=HshParserConstants.DO;
+			parser.reloadJJNTK();
+			return true;
+		}
+		return false;
+	}
+
+	private final static int[] wordStarts={
+			HshParserConstants.WHILE,
+			HshParserConstants.UNTIL,
+			HshParserConstants.FOR,
+			HshParserConstants.CASE,
+			HshParserConstants.IF
+	};
+	private final static String[] wordStartsImages={
+		"while",
+		"until",
+		"for",
+		"case",
+		"if"
+	};
+
+	/** Searches for a compound_command()
+	 * @return
+	 */
+	public boolean lookahead_isCompoundCommand() {
+		final L2Token tok=getToken(1);
+
+		// check if previous call of this method dedected a compound_command()
+		switch(tok.kind) {
+		case HshParserConstants.WHILE:
+		case HshParserConstants.UNTIL:
+		case HshParserConstants.FOR:
+		case HshParserConstants.CASE:
+		case HshParserConstants.IF:
+		case HshParserConstants.LBRACE:
+		case HshParserConstants.KLAMMER_AUF:
+			return true;
+		default:
+			// fall trou
+		}
+
+		if(tok.getPartCount()==1 && tok.getPart(0) instanceof SimpleL1Node)
+			for(int i=0; i<wordStartsImages.length; i++) {
+				if(wordStartsImages[i].equals(tok.image)) {
+					tok.kind=wordStarts[i];
+					parser.reloadJJNTK();
+					return true;
+				}
+			}
+
+		final L1Node part=getPart(0);
+		if(part instanceof SimpleL1Node) {
+			final int l1Kind=((SimpleL1Node)part).getL1Kind();
+			if(l1Kind==L1ParserConstants.LBRACE) {
+				tok.kind=HshParserConstants.LBRACE;
+				parser.reloadJJNTK();
+				return true;
+			} else if(l1Kind==L1ParserConstants.KLAMMER_AUF) {
+				tok.kind=HshParserConstants.KLAMMER_AUF;
+				parser.reloadJJNTK();
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	/** Checks if the next chars form the pattern <func_name>()
 	 * L1Parser parses them as NAME, KLAMMER_AUF, KLAMMER_ZU, but
 	 * since there can be WS in between them, that could be
@@ -181,12 +280,13 @@ public class HshLookaheadHelper {
 			return false;
 
 		final L2Token filenameToken;
-		if((isNUMBER(p1) && is_redir_operator(p2)) && isWORD(getTokenOfPart(3)) ||
-			is_redir_operator(p1) && isWORD(getTokenOfPart(2))) {
+		if((isNUMBER(p1) && is_redir_operator(p2)) && isWORD(getTokenOfPart(2)) ||
+			is_redir_operator(p1) && isWORD(getTokenOfPart(1))) {
 			// match, do split
 			if(isNUMBER(p1)) {
 				getToken(1).splitFirstPart();
 				getToken(1).kind=HshParserConstants.IO_NUMBER;
+				parser.reloadJJNTK();
 				final L2Token t2=getToken(2);
 				t2.splitFirstPart();
 				// if splitted io-operator is "<" or ">" we must set/translate the kind
@@ -203,6 +303,7 @@ public class HshLookaheadHelper {
 					t1.kind=HshParserConstants.LESS;
 				else if(l1Kind==L1ParserConstants.GREAT)
 					t1.kind=HshParserConstants.GREAT;
+				parser.reloadJJNTK();
 			}
 
 			return true;
@@ -261,6 +362,6 @@ public class HshLookaheadHelper {
 	}
 
 	private L2Token getToken(final int i) {
-		return (L2Token)parser.getToken(i);
+		return (L2Token)parser.getTokenWO_jjscan(i);
 	}
 }

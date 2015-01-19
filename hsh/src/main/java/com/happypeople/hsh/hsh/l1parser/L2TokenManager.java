@@ -1,6 +1,7 @@
 package com.happypeople.hsh.hsh.l1parser;
 
 import com.happypeople.hsh.hsh.HshParserConstants;
+import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.Token;
 import com.happypeople.hsh.hsh.TokenManager;
 
@@ -8,7 +9,7 @@ import com.happypeople.hsh.hsh.TokenManager;
  * It translates a stream of L1-Nodes into a Stream of L2-Token.
  */
 public class L2TokenManager implements TokenManager, RuleApplier {
-	private final static boolean DEBUG=false;
+	private final static boolean DEBUG=true;
 
 	private final L1Parser l1Parser;
 
@@ -21,12 +22,10 @@ public class L2TokenManager implements TokenManager, RuleApplier {
 	@Override
 	public Token getNextToken() {
 		try {
-			final Token t=l1Parser.nextL1Node();
+			final L2Token t=l1Parser.nextL1Node();
 			t.kind=translateL1KindToL2Kind(t.kind);
 			if(DEBUG)
 				System.out.println("L2TokenManager.getNextToken(): "+HshParserConstants.tokenImage[t.kind]+":"+t.image);
-			//if(rule!=null)
-			//	rule.apply(t);
 			return t;
 		} catch (final ParseException e) {
 			throw new RuntimeException(e);
@@ -61,6 +60,7 @@ public class L2TokenManager implements TokenManager, RuleApplier {
 		case L1ParserConstants.SEMICOLON: return HshParserConstants.SEMICOLON;
 		case L1ParserConstants.UPPERSANT: return HshParserConstants.UPPERSANT;
 		case L1ParserConstants.BANG:	return HshParserConstants.BANG;
+		case L1ParserConstants.WS:	return -42;
 		default:
 			return HshParserConstants.WORD;
 		}

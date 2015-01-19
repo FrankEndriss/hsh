@@ -41,10 +41,10 @@ private HshLookaheadHelper helper=new HshLookaheadHelper(this);
 	/** Returns true if the next Token is one of the cmd_prefix(): io_redirect or assignment
 	* If true, the kind of the tokens are set accordingly.
 	* [<IO_NUMBER>]<redir_operator><FILENAME> vs < ASSIGNMENT_WORD >
-	*/
 	private boolean lookahead_isCmdPrefix() {
 		return helper.lookahead_isCmdPrefix();
 	}
+	*/
 
 	private boolean lookahead_isIoRedir() {		return helper.lookahead_isIoRedir();
 	}
@@ -57,6 +57,33 @@ private HshLookaheadHelper helper=new HshLookaheadHelper(this);
 
 	private boolean lookahead_isAssignment() {		return helper.lookahead_isAssignment();
 	}
+	
+	private boolean lookahead_isCompoundCommand() {
+		return helper.lookahead_isCompoundCommand();
+	}
+		
+	private boolean lookahead_DONE() {
+		return helper.lookahead_DONE();
+	}
+		
+	private boolean lookahead_DO() {
+		return helper.lookahead_DO();
+	}
+		
+	/** Needed if getToken(1).kind is set from HshLookaheadHelper (in some cases)
+	*/
+	public void reloadJJNTK() {
+		jj_ntk=getToken(1).kind;
+	}
+	
+	public Token getTokenWO_jjscan(int idx) {
+		boolean old=jj_lookingAhead;
+		jj_lookingAhead=false;
+		Token ret=getToken(idx);
+		jj_lookingAhead=old;
+		return ret;
+	}
+	
 }
 PARSER_END(HshParser)
 
@@ -213,7 +240,8 @@ void cmd_suffix(final SimpleCommand simpleCommand):
 	RedirNode redirNode;}{
 	( LOOKAHEAD( { lookahead_isIoRedir() } )
 		redirNode=io_redirect() { simpleCommand.addRedirect(redirNode); }
-|		t=<WORD> { simpleCommand.addArg((L2Token)t); } )+
+|		t=<WORD> 				{ simpleCommand.addArg((L2Token)t); }
+	)+
 }
 
 void assignment(SimpleCommand simpleCommand):
@@ -503,9 +531,10 @@ do_group         : Do compound_list Done           // Apply rule 6
 TermNode do_group():
 {
 TermNode ret;
+lookahead_DO();
 }
 {
-	< DO > ret=compound_list() < DONE >
+	< DO > ret=compound_list() { lookahead_DONE(); } < DONE >
 	{ return ret; }
 }
 
@@ -589,7 +618,6 @@ SimpleCommand simple_command():
 }
 {
 (
-	LOOKAHEAD( { lookahead_isCmdPrefix() } )
 	 	cmd_prefix(simpleCommand)	( cmd_name(simpleCommand) ( cmd_suffix(simpleCommand))? )?
 	|	cmd_name(simpleCommand)		( cmd_suffix(simpleCommand) )? 
 )	{
@@ -604,10 +632,6 @@ void separator_op(Backgroundable parent):
 {}
 {	(		< UPPERSANT >	{ parent.setBackground(true); }	|	< SEMICOLON >	{ parent.setBackground(false); }
 	)
-	{
-		// After a separator_op there can allways be a compound_command start with a reserved word...
-		//ruleApplier.setRule(HshParserRules.RULE7a);
-	}
 }
 
 /**
@@ -622,8 +646,10 @@ PipeSequence pipeline():
 	PipeSequence ret;
 }
 {
-	( ret=pipe_sequence()
-|	< BANG > ret=pipe_sequence() { ret.setBanged(true); } )	{ return ret; }
+	( 
+	< BANG > ret=pipe_sequence() { ret.setBanged(true); } |	ret=pipe_sequence()
+	)
+	{ return ret; }
 }
 /**
 pipe_sequence    :                             command
@@ -651,9 +677,13 @@ Command command():
 	L2Node compCommand;
 }
 {
-	LOOKAHEAD( { lookahead_functionDef() } ) function_definition() { throwNI(); }
-|	compCommand=compound_command() ( redirect_list() { throwNI(); })? { ret.addChild(compCommand); }
+	(
+	LOOKAHEAD( { lookahead_functionDef() } )
+	function_definition() { throwNI(); }
+|	LOOKAHEAD( { lookahead_isCompoundCommand() } )
+	compCommand=compound_command() ( redirect_list() { throwNI(); } )? { ret.addChild(compCommand); }
 |	simpleCommand=simple_command() { ret.addChild(simpleCommand); }
+	)
 	{ return ret; }
 }
 

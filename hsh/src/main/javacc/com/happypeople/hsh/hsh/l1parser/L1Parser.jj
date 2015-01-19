@@ -166,10 +166,10 @@ public class L1Parser // implements TokenManager
 	*/
 	public L2Token nextL1Node() throws ParseException {
 		L2Token t;
-		do {			t=word();
+		do {			word(t=new L2Token());
 			if(DEBUG)
 				System.out.println("nextL1Node: "+t.kind+" "+t.image);
-		} while(t.kind==WS_KIND); // skip WS
+		} while(t.kind==WS); // skip WS
 		return t;
 	}
 
@@ -401,18 +401,18 @@ int off=l2token.getLen();
 
 L1Node dollar_subst(L2Token l2Token):
 {
-	L1Node word=null;
 	L1Node parameter=null;
 	L1Node operator=null;
 	Token t;
 	int off=l2Token.getLen();
+	ComplexL1Node wplParent=null;
 }{
 	(	t=< DOLLAR_LBRACE_START >		{ l2Token.append(t.image); }
 	t=<DS_VARNAME>					{ parameter=new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length());
 										l2Token.append(t.image); }
 	(
 		t=< COLON_OP >				{ operator=new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length());
-										l2Token.append(t.image); }		word=word_part_list(l2Token)	{ 
+										l2Token.append(t.image); }		word_part_list(l2Token, wplParent=new ComplexL1Node(l2Token, l2Token.getLen(), 0))	{ 
 			popState();
 			// switch the currents token kind to _RBRACE
 			Token token=getToken(1);
@@ -422,6 +422,8 @@ L1Node dollar_subst(L2Token l2Token):
 				token.kind=_RBRACE;
 			} else 
 				throw new RuntimeException("did not work, kind="+jj_ntk);
+				
+			wplParent.addLen(l2Token.getLen()-wplParent.getOff());
 		}
 	)?
 	t=< _RBRACE >	{ l2Token.append(t.image); }
@@ -431,8 +433,9 @@ L1Node dollar_subst(L2Token l2Token):
 			ret.setParameter(parameter);
 		if(operator!=null)
 			ret.setOperator(operator);
-		if(word!=null)
-			ret.setWord(word);
+		if(wplParent!=null) {
+			ret.setWord(wplParent);
+		}
 		return ret;
 	}
 }
@@ -528,19 +531,14 @@ void separating_part(L2Token l2Token):
 // Not sure what to do with these.
 // They must be parsed, they separate words.
 // But they are no Operators. ???
-// However, since OperatorL1Node simple acts as a word separator its ok to add them here.
 |	t=< UPPERSANT >
 |	t=< PIPE >
 |	t=< SEMICOLON >
-//|	t=< LESS >
-//|	t=< GREAT >
 // these are no operators, but separate words, too
 |	t=< WS > // Note: WS is not sent to HshParser, but separates words.
 |	t=< NEWLINE >
-//|	t=< LBRACE >
-//|	t=<	RBRACE >
 	) {
-		l2Token.kind=translateL1KindToL2Kind(t.kind);
+		l2Token.kind=t.kind;
 		l2Token.append(t.image);
 		l2Token.addPart(new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length(), t.kind));
 	}
@@ -572,37 +570,33 @@ L1Node word_part(L2Token l2token):
 
 /** A word_part_list is a L2Token
 */
-L1Node word_part_list(L2Token l2token):
+void word_part_list(L2Token l2token, ComplexL1Node parent):
 {
-List<L1Node> children=new ArrayList<L1Node>();
 L1Node node;
-int off=l2token.getLen();}{		( node=word_part(l2token) { children.add(node); } )+
-		{
-			ComplexL1Node ret=new ComplexL1Node(l2token, off, l2token.getLen()-off);
-			for(L1Node child : children)
-				ret.add(child);
-			return ret;		}
+}
+{		( node=word_part(l2token) { parent.add(node); } )+
+		{ l2token.kind=HshParserConstants.WORD; }
 }
 
 /** A word is a separating_part() or a concatenation of word_part() or <EOF>
 */
-L2Token word():
+void word(L2Token ret):
 {
-	L2Token ret=new L2Token();
 	Token t;
 	L1Node list=null;
 	L1Node part;
+	ComplexL1Node wplParent=null;
 }{
 	( 
-			list=word_part_list(ret)
+			word_part_list(ret, wplParent=new ComplexL1Node(ret, ret.getLen(), 0)) {
+				for(L1Node node : wplParent)
+					ret.addPart(node);
+			}
 		|	separating_part(ret)
 		|	t=<EOF> {
 						ret.kind=HshParserConstants.EOF;
 						// empty image
 					}	)
-	{	if(list!=null)
-			for(L1Node child : list)
-				ret.addPart(child);
+	{
 		ret.finishImage();
-		return ret;
 	}}

@@ -187,7 +187,7 @@ public class HshParserTest {
 		assertEquals("# assignments", 0, sc.getAssignments().size());
 		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
 		assertEquals("# args", 0, sc.getArgs().size());
-		assertEquals("# redir", 0, sc.getRedirects().size());
+		assertEquals("# redir", 1, sc.getRedirects().size());
 	}
 
 	@Test
