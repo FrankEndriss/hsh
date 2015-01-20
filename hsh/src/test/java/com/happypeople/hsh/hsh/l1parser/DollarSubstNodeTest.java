@@ -24,7 +24,7 @@ public class DollarSubstNodeTest {
 
 	@Before
 	public void setup() {
-		context=new HshChildContext(null, null, null);
+		context=new HshChildContext(null);
 		out=new DollarSubstNode(null, 0, 0);
 		context.getEnv().setVariableValue("x", valueOfVariableSet);
 		context.getEnv().setVariableValue("z", null);
@@ -40,7 +40,10 @@ public class DollarSubstNodeTest {
 	public void testOperators() throws Exception {
 		final L1Node expVar=createSimpleL1Node(valueOfVariableSet);
 		final L1Node expWord=createSimpleL1Node(valueOfSimpleWord);
-		final L1Node expNull=createSimpleL1Node(null);
+//		final L1Node expNull=createSimpleL1Node("");
+		final L1Node expNull=null;
+		final L1Node expExit=createSimpleL1Node("EXIT");
+		final L1Node expNULL_SET=createSimpleL1Node("NULL");
 
 		final L1Node[][] testCases={
 			new L1Node[] { variableSet,			createSimpleL1Node(":-"), expVar },
@@ -68,14 +71,14 @@ public class DollarSubstNodeTest {
 			doOperatorTest(testData);
 
 		final L1Node[][] testCasesErrorCond={
-			new L1Node[] { variableSet,			createSimpleL1Node(":?"), null },
-			new L1Node[] { variableUnset,		createSimpleL1Node(":?"), null },
-			new L1Node[] { variableSetButNull,	createSimpleL1Node(":?"), expVar },
+			new L1Node[] { variableSet,			createSimpleL1Node(":?"), expVar },
+			new L1Node[] { variableUnset,		createSimpleL1Node(":?"), expExit },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node(":?"), expExit },
 			new L1Node[] { variableSet,			createSimpleL1Node("?"), expVar },
-			new L1Node[] { variableUnset,		createSimpleL1Node("?"), expWord },
-			new L1Node[] { variableSetButNull,	createSimpleL1Node("?"), expNull },
+			new L1Node[] { variableUnset,		createSimpleL1Node("?"), expExit },
+			new L1Node[] { variableSetButNull,	createSimpleL1Node("?"), expNULL_SET },
 		};
-		for(final L1Node[] testData : testCases)
+		for(final L1Node[] testData : testCasesErrorCond)
 			doOperatorErrorTest(testData);
 	}
 
@@ -83,17 +86,19 @@ public class DollarSubstNodeTest {
 		out.setParameter(testData[0]);
 		out.setOperator(testData[1]);
 		out.setWord(simpleWord);
-		if(testData[2]==null) {	// indicates error should be thrown
+		if(testData[2].getImage().equals("EXIT")) {	// indicates error should be thrown
 			try {
 				out.getSubstitutedString(context);
-				fail("sould have thrown HshExit");
+				fail("should have thrown HshExit");
 			}catch(final HshExit hshEx) {
 				// ok
+				setup();
 				return;
 			}
 		}
 
-		final String exp=((SimpleL1Node)testData[2]).getImage();
+		String exp=((SimpleL1Node)testData[2]).getImage();
+		exp="NULL".equals(exp)?null:exp;
 		final String result=out.getSubstitutedString(context);
 
 		String dbg1=null;
@@ -112,7 +117,7 @@ public class DollarSubstNodeTest {
 		out.setParameter(testData[0]);
 		out.setOperator(testData[1]);
 		out.setWord(simpleWord);
-		final String exp=((SimpleL1Node)testData[2]).getImage();
+		final String exp=testData[2]==null?null:((SimpleL1Node)testData[2]).getImage();
 		final String result=out.getSubstitutedString(context);
 
 		String dbg1=null;
