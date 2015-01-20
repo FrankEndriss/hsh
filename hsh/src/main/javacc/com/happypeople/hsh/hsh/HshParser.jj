@@ -163,14 +163,14 @@ void io_here():
 filename         : WORD                      // Apply rule 2
                  ;
 */
-String filename():
+L2Token filename():
 {
 // TODO Apply rule 2
 Token t;
 }
 {
 	t=< WORD >
-	{ return t.image; }
+	{ return (L2Token)t; }
 }
 /*
 io_file          : LESS      filename
@@ -184,7 +184,7 @@ io_file          : LESS      filename
 */
 void io_file(RedirNode redirNode):
 {
-String fname;
+L2Token fname;
 Token t;
 }
 {

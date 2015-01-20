@@ -1,56 +1,61 @@
 package com.happypeople.hsh.hsh.parser;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hsh.hsh.HshEnvironmentImpl;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 
 public class SimpleCommand extends L2Node implements Executable {
-	private L2Token cmdName;
-	private final List<L2Token> args=new ArrayList<L2Token>();
-	private final List<L2Token> assignments=new ArrayList<L2Token>();
-	private final List<L2Token> redirects=new ArrayList<L2Token>();
+	private int cmdName=-1;
+	private final List<Integer> args=new ArrayList<Integer>();
+	private final List<Integer> assignments=new ArrayList<Integer>();
+	private final List<Integer> redirects=new ArrayList<Integer>();
 
 	public void setCmdName(final L2Token cmdName) {
-		if(this.cmdName!=null)
+		if(this.cmdName>-1)
 			throw new RuntimeException("cannot set cmdName twice on SimpleCommand, old="+this.cmdName+" new="+cmdName);
-		this.cmdName=cmdName;
-		addChild(cmdName);
+		this.cmdName=addChild(cmdName);
 	}
 
 	public L2Token getCmdName() {
-		return cmdName;
+		return cmdName<0?null:getChild(cmdName);
 	}
 
 	public void addArg(final L2Token t) {
-		args.add(t);
-		addChild(t);
+		args.add(addChild(t));
 	}
 
 	public List<L2Token> getArgs() {
-		return args;
+		return createChildList(args);
+	}
+
+	private List<L2Token> createChildList(final List<Integer> idx) {
+		final List<L2Token> ret=new ArrayList<L2Token>();
+		for(final int i : idx)
+			ret.add(getChild(i));
+		return ret;
 	}
 
 	public void addAssignment(final L2Token t) {
-		assignments.add(t);
-		addChild(t);
+		assignments.add(addChild(t));
 	}
 
 	public List<L2Token> getAssignments() {
-		return assignments;
+		return createChildList(assignments);
 	}
 
 	public void addRedirect(final RedirNode node) {
-		redirects.add(node);
-		addChild(node);
+		redirects.add(addChild(node));
 	}
 
 	public List<L2Token> getRedirects() {
-		return redirects;
+		return createChildList(redirects);
 	}
 
 	/** Creates a printout of the node-tree
@@ -65,44 +70,62 @@ public class SimpleCommand extends L2Node implements Executable {
 		System.out.println(t+getClass().getName());
 
 		System.out.println(t+"redirects");
-		for(final L2Token redir : redirects)
+		for(final L2Token redir : getRedirects())
 			redir.dump(level+1);
 
 		System.out.println(t+"assignments");
-		for(final L2Token ass : assignments)
+		for(final L2Token ass : getAssignments())
 			ass.dump(level+1);
 
-		if(cmdName!=null) {
+		if(getCmdName()!=null) {
 			System.out.println(t+"cmdName");
-			cmdName.dump(level+1);
+			getCmdName().dump(level+1);
 		}
 		System.out.println(t+"args");
-		for(final L2Token arg : args)
+		for(final L2Token arg : getArgs())
 			arg.dump(level+1);
 	}
 
 	@Override
 	public int doExecution(final HshContext context) throws Exception {
 
-		// execute assignments
-		for(final L2Token assi : getAssignments()) {
-			// Assignment-L2Token (kind=ASSIGNMENT_WORD) are structured:
-			// First child SimpleNode(varName)
-			// Second is SimpleNode("=")
-			// Other parts: the value
-			final String varName=assi.getPart(0).getImage();
-			L2Token rhs=null;
-			final boolean first=true;
-			final boolean second=true;
+		final HshContext lContext=context.createChildContext(new HshEnvironmentImpl(context.getEnv()), null);
+		// Note: the HshExecutor must be set up step by step, since there are possibly assignments
+		// exectuted in between the io-redirects.
+		// Furthermore, parts of the assignments could reference the executor...
+		// Bsp.: "x=input.txt <$x x=output.txt >$x cmd"
+		// Should read from input.txt and write to output.txt.
+		// Note also that bash does not work this way. (refuses while parsing)
 
-			if(assi.getPartCount()>2) {
-				rhs=new L2Token();
-				for(int i=2; i<assi.getPartCount(); i++)
-					rhs.addPart(assi.getPart(i));
+		final List<Integer> assAndRedirs=new ArrayList<Integer>();
+		assAndRedirs.addAll(assignments);
+		assAndRedirs.addAll(redirects);
+		Collections.sort(assAndRedirs); // sort by index, ie process left to right
+
+		for(final Integer idx : assAndRedirs) {
+			final L2Token tok=getChild(idx);
+			if(tok instanceof RedirNode) {	// its an redirection
+				final RedirNode redir=(RedirNode)tok;
+				// TODO
+
+			} else {	// its an assignment
+				final L2Token assi=tok;
+				// Assignment-L2Token (kind=ASSIGNMENT_WORD) are structured:
+				// First child SimpleNode(varName)
+				// Second is SimpleNode("=")
+				// Other parts: the value
+				final String varName=assi.getPart(0).getImage();
+				L2Token rhs=null;
+
+				if(assi.getPartCount()>2) {
+					rhs=new L2Token();
+					for(int i=2; i<assi.getPartCount(); i++)
+						rhs.addPart(assi.getPart(i));
+				}
+
+				final String value=rhs!=null?NodeTraversal.substituteSubtree(rhs, lContext):null;
+				lContext.getEnv().setVariableValue(varName, value);
 			}
-
-			final String value=rhs!=null?NodeTraversal.substituteSubtree(rhs, context):null;
-			context.getEnv().setVariableValue(varName, value);
 		}
 
 		if(getCmdName()!=null) { // else SimpleCommand is just a list of assignments, no command
@@ -110,12 +133,12 @@ public class SimpleCommand extends L2Node implements Executable {
 			// TODO cmdName and args can be empty (after substitution), and therefore should be
 			// checked to contain anything else than WS.
 			// Additionally, on cmdList[0] leading and trailing WS should be removed.
-			cmdList.add(NodeTraversal.substituteSubtree(getCmdName(), context));
+			cmdList.add(NodeTraversal.substituteSubtree(getCmdName(), lContext));
 			for(final L1Node arg : getArgs())
-				cmdList.add(NodeTraversal.substituteSubtree(arg, context));
+				cmdList.add(NodeTraversal.substituteSubtree(arg, lContext));
 
 			// and finally execute the command
-			return context.getExecutor().execute(cmdList.toArray(new String[0]));
+			return lContext.getExecutor().execute(cmdList.toArray(new String[0]));
 		}
 		// TODO what to return for assignment only??? try 0
 		return 0;

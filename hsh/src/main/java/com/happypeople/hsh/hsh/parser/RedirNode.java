@@ -5,19 +5,31 @@ import com.happypeople.hsh.hsh.L2Token;
 public class RedirNode extends L2Node {
 
 	private L2Token operator;
-	private String filename;
+	private L2Token filename;
 	private String ioNumber;
 
 	public void setOperator(final L2Token operator) {
 		this.operator=operator;
 	}
 
-	public void setFilename(final String filename) {
+	public L2Token getOperator() {
+		return operator;
+	}
+
+	public void setFilename(final L2Token filename) {
 		this.filename=filename;
+	}
+
+	public L2Token getFilename() {
+		return filename;
 	}
 
 	public void setIoNumber(final String ioNumber) {
 		this.ioNumber=ioNumber;
+	}
+
+	public String getIoNumber() {
+		return ioNumber;
 	}
 
 	@Override
