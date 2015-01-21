@@ -1,6 +1,10 @@
 package com.happypeople.hsh.hsh.l1parser;
 
+import java.util.List;
+
+import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.L2Token;
+import com.happypeople.hsh.hsh.Portion;
 
 public abstract class AbstractL1Node implements L1Node {
 	private final L2Token tok;
@@ -61,4 +65,15 @@ public abstract class AbstractL1Node implements L1Node {
 		return tok;
 	}
 
+	@Override
+	public String substituteAndSplit(final HshContext context, final List<Portion> ret) throws Exception {
+		String s;
+		if(this instanceof Substitutable)
+			s=((Substitutable)this).getSubstitutedString(context);
+		else
+			s=getImage();
+
+		// TODO split
+		return s;
+	}
 }

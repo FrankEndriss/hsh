@@ -225,6 +225,5 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 		});
 		// TODO Since patterns are not implemented it does not make a difference if shortest or longtest postfix is matched
 		operatorMap.put("%", operatorMap.get("%%"));
-
 	}
 }

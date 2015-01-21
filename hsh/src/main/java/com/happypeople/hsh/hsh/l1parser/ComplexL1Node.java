@@ -37,5 +37,4 @@ public class ComplexL1Node extends AbstractL1Node {
 		for(final L1Node child : children)
 			child.dump(level+1);
 	}
-
 }

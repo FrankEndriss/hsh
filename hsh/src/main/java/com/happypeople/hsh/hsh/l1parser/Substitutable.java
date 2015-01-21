@@ -39,12 +39,10 @@ public interface Substitutable {
 	 * @throws com.happypeople.hsh.hsh.l1parser.ParseException if any subcommand cannot be parsed, or
 	 * @throws ParseException if any subcommand cannot be parsed if any subcommand cannot be parsed.
 	 * ***********************************************************************************************
-	 * This method returns what getString() returns, but with substitutions substituted.
+	 * This method returns what getImage() returns, but with substitutions substituted.
 	 * @param env the environment
-	 * @return the stringified version of this node
-	 * @throws Exception
-	 * @throws ParseException shouldnt happen, but there could be Exceptions while execution of
-	 * substitutions.
+	 * @return the substituted version of this node
+	 * @throws Exception shouldnt happen, but there could be Exceptions while execution of substitutions.
 	 */
 	public String getSubstitutedString(HshContext env) throws Exception;
 }
