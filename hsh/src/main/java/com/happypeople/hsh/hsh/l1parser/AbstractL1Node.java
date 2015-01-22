@@ -73,7 +73,7 @@ public abstract class AbstractL1Node implements L1Node {
 		else
 			s=getImage();
 
-		// TODO split
+		// TODO split according to IFS
 		return s;
 	}
 }

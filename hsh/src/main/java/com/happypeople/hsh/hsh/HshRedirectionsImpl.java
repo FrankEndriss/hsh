@@ -35,4 +35,11 @@ public class HshRedirectionsImpl implements HshRedirections {
 		return redirIn;
 	}
 
+	@Override
+	public HshRedirections createChild(final HshRedirection stdin, final HshRedirection stdout, final HshRedirection stderr) {
+		return new HshRedirectionsImpl(stdin==null?this.redirIn:stdin,
+				stdout==null?this.redirOut:stdout,
+				stderr==null?this.redirErr:stderr);
+	}
+
 }

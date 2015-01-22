@@ -214,8 +214,8 @@ public class L2Token extends Token implements L1Node {
 
 	private Collection<String> pathnameExpand(final HshContext context, final String s) {
 		// TODO implement Parser to parse pathname Expansions, and execute them
-		// The parser must parse double quotes, single quotes, backslash escapes and
-		// all pathname patterns (/, *, ? and [...]).
+		// The parser need only implement all pathname patterns (/, *, ? and [...]).
+		// Since the String s contains all characters
 		return Arrays.asList(s);
 	}
 

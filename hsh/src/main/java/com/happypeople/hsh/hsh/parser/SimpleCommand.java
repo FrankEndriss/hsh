@@ -1,11 +1,16 @@
 package com.happypeople.hsh.hsh.parser;
 
+import java.io.File;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.HshEnvironmentImpl;
+import com.happypeople.hsh.hsh.HshParserConstants;
+import com.happypeople.hsh.hsh.HshRedirection;
+import com.happypeople.hsh.hsh.HshRedirectionImpl;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.l1parser.Executable;
@@ -58,38 +63,14 @@ public class SimpleCommand extends L2Node implements Executable {
 		return createChildList(redirects);
 	}
 
-	/** Creates a printout of the node-tree
-	 * @param level the level of the tree this node lives in
-	 */
-	@Override
-	public void dump(final int level) {
-		final StringBuilder sb=new StringBuilder();
-		for(int i=0; i<level; i++)
-			sb.append("\t");
-		final String t=sb.toString();
-		System.out.println(t+getClass().getName());
-
-		System.out.println(t+"redirects");
-		for(final L2Token redir : getRedirects())
-			redir.dump(level+1);
-
-		System.out.println(t+"assignments");
-		for(final L2Token ass : getAssignments())
-			ass.dump(level+1);
-
-		if(getCmdName()!=null) {
-			System.out.println(t+"cmdName");
-			getCmdName().dump(level+1);
-		}
-		System.out.println(t+"args");
-		for(final L2Token arg : getArgs())
-			arg.dump(level+1);
-	}
-
 	@Override
 	public int doExecution(final HshContext context) throws Exception {
 
 		final HshContext lContext=context.createChildContext(new HshEnvironmentImpl(context.getEnv()), null);
+
+		//HshRedirections hshRedirections=lContext.getExecutor().
+		final HshRedirection[] redirections=new HshRedirection[3];
+
 		// Note: the HshExecutor must be set up step by step, since there are possibly assignments
 		// exectuted in between the io-redirects.
 		// Furthermore, parts of the assignments could reference the executor...
@@ -105,8 +86,36 @@ public class SimpleCommand extends L2Node implements Executable {
 		for(final Integer idx : assAndRedirs) {
 			final L2Token tok=getChild(idx);
 			if(tok instanceof RedirNode) {	// its an redirection
-				final RedirNode redir=(RedirNode)tok;
-				// TODO
+				final RedirNode redirNode=(RedirNode)tok;
+				Redirect redirect=null;
+
+				final String filename=NodeTraversal.substituteSubtree(redirNode.getFilename(), lContext);
+				final String ioNumberString=redirNode.getIoNumber();
+				int ioNumber=ioNumberString==null?-1:Integer.parseInt(ioNumberString);
+				int redirIdx=-1;
+
+				switch(redirNode.getOperator().kind) {
+					case HshParserConstants.CLOBBER:
+					case HshParserConstants.LESS:
+						redirect=Redirect.from(new File(filename));
+						if(ioNumber<0)
+							ioNumber=0;
+						break;
+					case HshParserConstants.LESSAND:
+						redirect=Redirect.PIPE;
+						redirIdx=0;
+						break;
+					case HshParserConstants.GREAT:
+						redirect=Redirect.to(new File(filename));
+						redirIdx=1;
+					case HshParserConstants.GREATAND:
+					case HshParserConstants.DGREAT:
+						redirect=Redirect.appendTo(new File(filename));
+					case HshParserConstants.LESSGREAT:
+				default:
+					throw new RuntimeException("bad operator type in RedirNode :/");
+				}
+				final HshRedirection hshRedir=new HshRedirectionImpl(redirect);
 
 			} else {	// its an assignment
 				final L2Token assi=tok;
@@ -144,4 +153,34 @@ public class SimpleCommand extends L2Node implements Executable {
 		return 0;
 
 	}
+
+	/** Creates a printout of the node-tree
+	 * @param level the level of the tree this node lives in
+	 */
+	@Override
+	public void dump(final int level) {
+		final StringBuilder sb=new StringBuilder();
+		for(int i=0; i<level; i++)
+			sb.append("\t");
+		final String t=sb.toString();
+		System.out.println(t+getClass().getName());
+
+		System.out.println(t+"redirects");
+		for(final L2Token redir : getRedirects())
+			redir.dump(level+1);
+
+		System.out.println(t+"assignments");
+		for(final L2Token ass : getAssignments())
+			ass.dump(level+1);
+
+		if(getCmdName()!=null) {
+			System.out.println(t+"cmdName");
+			getCmdName().dump(level+1);
+		}
+		System.out.println(t+"args");
+		for(final L2Token arg : getArgs())
+			arg.dump(level+1);
+	}
+
+
 }
