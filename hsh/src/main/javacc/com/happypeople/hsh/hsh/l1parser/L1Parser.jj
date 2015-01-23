@@ -340,7 +340,6 @@ TOKEN:
 |	< BACKTIC_END 		: < BACKTIC > >	{ parser.popState(); }
 }
 
-// TODO: find a way to parse "=" in Assignment
 <DEFAULT> TOKEN:
 {
 	< SQUOTE_START	: < SQUOTE > > { parser.pushState(SQUOTED); }
@@ -412,7 +411,7 @@ L1Node dollar_subst(L2Token l2Token):
 										l2Token.append(t.image); }
 	(
 		t=< COLON_OP >				{ operator=new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length());
-										l2Token.append(t.image); }		word_part_list(l2Token, wplParent=new ComplexL1Node(l2Token, l2Token.getLen(), 0))	{ 
+										l2Token.append(t.image); }		word_part_list(l2Token, wplParent=new GenericComplexL1Node(l2Token, l2Token.getLen(), 0))	{ 
 			popState();
 			// switch the currents token kind to _RBRACE
 			Token token=getToken(1);
@@ -588,7 +587,7 @@ void word(L2Token ret):
 	ComplexL1Node wplParent=null;
 }{
 	( 
-			word_part_list(ret, wplParent=new ComplexL1Node(ret, ret.getLen(), 0)) {
+			word_part_list(ret, wplParent=new GenericComplexL1Node(ret, ret.getLen(), 0)) {
 				for(L1Node node : wplParent)
 					ret.addPart(node);
 			}

@@ -14,7 +14,6 @@ import com.happypeople.hsh.hsh.HshRedirectionImpl;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.l1parser.Executable;
-import com.happypeople.hsh.hsh.l1parser.L1Node;
 
 public class SimpleCommand extends L2Node implements Executable {
 	private int cmdName=-1;
@@ -142,12 +141,16 @@ public class SimpleCommand extends L2Node implements Executable {
 			// TODO cmdName and args can be empty (after substitution), and therefore should be
 			// checked to contain anything else than WS.
 			// Additionally, on cmdList[0] leading and trailing WS should be removed.
-			cmdList.add(NodeTraversal.substituteSubtree(getCmdName(), lContext));
-			for(final L1Node arg : getArgs())
-				cmdList.add(NodeTraversal.substituteSubtree(arg, lContext));
+			cmdList.addAll(getCmdName().doExpansion(lContext));
+			for(final L2Token arg : getArgs())
+				cmdList.addAll(arg.doExpansion(lContext));
+
+			// TODO make sure cmdList does not contain empty strings in previous steps
+			while(cmdList.remove(""));
 
 			// and finally execute the command
-			return lContext.getExecutor().execute(cmdList.toArray(new String[0]));
+			if(!cmdList.isEmpty())
+				return lContext.getExecutor().execute(cmdList.toArray(new String[0]));
 		}
 		// TODO what to return for assignment only??? try 0
 		return 0;

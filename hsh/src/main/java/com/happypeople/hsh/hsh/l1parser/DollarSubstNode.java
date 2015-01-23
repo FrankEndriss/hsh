@@ -1,5 +1,6 @@
 package com.happypeople.hsh.hsh.l1parser;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,22 +61,36 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 	}
 
 	@Override
-	public String getSubstitutedString(final HshContext env) throws Exception {
+	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+		final String s=getSubstitutedString(context);
+		final SimpleL1Node node=new SimpleL1Node(imageHolder, imageHolder.getLen(), s.length());
+		imageHolder.append(s);
+		return node;
+	}
+
+	@Override
+	public String getSubstitutedString(final HshContext context) throws Exception {
 		final L1Node variable=getParameter();
 		// if the variable name contains substitutions itself (i.e. "${${x}}"), substitute them now
 		// Note that this is not Posix, (and also per 2015-01-10 this does not parse)
-		final String varName=NodeTraversal.substituteSubtree(variable, env);
+		final L2Token varNameToken=new L2Token();
+		variable.transformSubstitution(varNameToken, context);
+		//final String varName=NodeTraversal.substituteSubtree(variable, env);
+		final String varName=varNameToken.image;
+
 		final L1Node operatorNode=getOperator();
 		if(operatorNode!=null) {
 			// if the operator contains substitutions itself (i.e. "${x${op}hello}"), substitute them now
 			// Note that this is not Posix, (and also per 2015-01-10 this does not parse)
-			final Operator operator=operatorMap.get(NodeTraversal.substituteSubtree(operatorNode, env));
+			final L2Token operatorToken=new L2Token();
+			operatorNode.transformSubstitution(operatorToken, context);
+			final Operator operator=operatorMap.get(operatorNode.getImage());
 			if(operator==null)
 				throw new RuntimeException("operator in DollarSubstNode unknown: "+operatorNode);
 			else
-				return operator.doSubst(varName, getWord(), env);
+				return operator.doSubst(varName, getWord(), context);
 		} else
-			return env.getEnv().getVariableValue(varName);
+			return context.getEnv().getVariableValue(varName);
 	}
 
 	/** Maps operator image to operator algorithm
@@ -226,4 +241,15 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 		// TODO Since patterns are not implemented it does not make a difference if shortest or longtest postfix is matched
 		operatorMap.put("%", operatorMap.get("%%"));
 	}
+
+	@Override
+	public Collection<? extends L1Node> transformSplit(final HshContext context) {
+		throw new RuntimeException("split has to be done afer substitution");
+	}
+
+	@Override
+	public void appendUnquoted(final StringBuilder sb) {
+		throw new RuntimeException("unquote has to be done after split and substitution");
+	}
+
 }

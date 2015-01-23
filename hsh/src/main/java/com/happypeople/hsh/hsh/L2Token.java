@@ -1,14 +1,22 @@
 package com.happypeople.hsh.hsh;
 
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
+import com.happypeople.hsh.hsh.l1parser.ComplexL1Node;
+import com.happypeople.hsh.hsh.l1parser.GenericComplexL1Node;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
+import com.happypeople.hsh.hsh.l1parser.QuotedL1Node;
 
 /** A L2Token extends Token to have:
  * -a list of L1Nodes as childs
@@ -66,13 +74,19 @@ public class L2Token extends Token implements L1Node {
 		for(int i=1; i<getPartCount(); i++) {
 			final L1Node lPart=getPart(i);
 			// adjust the offsets of the subtree of parts
-			NodeTraversal.traverse(lPart, new NodeTraversal.TraverseListener() {
-				@Override
-				public TraverseListenerResult node(final L1Node node, final int level) {
-					node.addOff(-partLen);
-					return TraverseListenerResult.CONTINUE;
-				}
-			});
+			try {
+				NodeTraversal.traverse(lPart, new NodeTraversal.TraverseListener() {
+					@Override
+					public TraverseListenerResult node(final L1Node node, final int level) {
+						node.addOff(-partLen);
+						return TraverseListenerResult.CONTINUE;
+					}
+				});
+			} catch (final Exception e) {
+				// should not happen
+				e.printStackTrace();
+				throw new RuntimeException("something went wrong :/", e);
+			}
 			tok.addPart(lPart);
 		}
 		// remove all but the first part
@@ -187,40 +201,191 @@ public class L2Token extends Token implements L1Node {
 	 *
 	 * The '$' character is used to introduce parameter expansion, command substitution, or arithmetic evaluation. If an unquoted '$' is followed by a character that is either not numeric, the name of one of the special parameters (see Special Parameters), a valid first character of a variable name, a left curly brace ( '{' ) or a left parenthesis, the result is unspecified.
 	 *
-	 * NOTE FE: Step 3. and 4. are not in correct order:
-	 * The quotes have to be remove prior to or as part of Pathname expansion!!!
-	 * i.e 'ls "x"* ' should list the same as 'ls x* ', and does with all shells i know.
-	 * On the other hand, 'ls x\* ' should NOT list alls files starting with x.
+	 ************************************************
+	 * Implementation:
+	 * The implementation is done implemented as some transformations on the tree, with a last step
+	 * of transforming the tree nodes into Strings.
+	 * ************************************************
 	 * @return the expanded WORD as a list of fields
 	 * @throws Exception
 	 */
-	public String[] doExpansion(final HshContext context) throws Exception {
-		final List<String> ret=new ArrayList<String>();
-		final List<String> pathExpansions=new ArrayList<String>();
-		//final String s=NodeTraversal.substituteSubtree(this, context);
-		String currentPortion="";
-		for(final L1Node child : this) {
-			final List<Portion> portions=new ArrayList<Portion>();
-			final String substituted=child.substituteAndSplit(context, portions);
-			for(int i=0; i<portions.size(); i++) {
-				final Portion por=portions.get(i);
-				currentPortion+=substituted.substring(por.off, por.off+por.len);
-				pathExpansions.clear();
-				ret.addAll(pathnameExpand(context, currentPortion));
-			}
-		}
-		return ret.toArray(new String[ret.size()]);
+	public List<String> doExpansion(final HshContext context) throws Exception {
+		final L2Token substituted=new L2Token();
+		transformSubstitution(substituted, context);
+		substituted.finishImage();
+		final List<L1Node> splitted=substituted.transformSplit(context);
+		return pathnameExpand(splitted, context);
 	}
 
-	private Collection<String> pathnameExpand(final HshContext context, final String s) {
-		// TODO implement Parser to parse pathname Expansions, and execute them
-		// The parser need only implement all pathname patterns (/, *, ? and [...]).
-		// Since the String s contains all characters
-		return Arrays.asList(s);
+	/** Transforms this node-tree into n trees. These n trees are the splitted ones.
+	 * @param context context of splitting (IFS)
+	 * @return a list of at least on L1Node. If it is one most likely the one is this.
+	 * If more than one, this L1Node was splitted and the list contains the parts.
+	 */
+	@Override
+	public List<L1Node> transformSplit(final HshContext context) {
+		final List<L1Node> ret=new ArrayList<L1Node>();
+		GenericComplexL1Node split=new GenericComplexL1Node(this, 0, 0);
+		final L1Node lastNode;
+		for(final L1Node child : this) {
+			if(split==null)
+				split=new GenericComplexL1Node(this, 0, 0);
+			if(child.getLen()>0) {
+				split.add(child);
+				split.addLen(child.getLen());
+			}
+			else
+				if(split.getChildCount()>0) {
+					ret.add(split.getChildCount()==1?split.get(0):split);
+					split=null;
+				}
+		}
+		if(split!=null && split.getChildCount()>0)
+			ret.add(split.getChildCount()==1?split.get(0):split);
+
+		return ret;
+	}
+
+	/** This adds all childs of this replaced by
+	 * the result of child.transformSubstitution(newTok, context) to tok.
+	 * @param tok the image holder of
+	 * @param context
+	 * @return for syntactic reasons tok is returned.
+	 * @throws Exception
+	 * TODO split this functionality into copy and transformInPlace
+	 * Commands which are execute only once then do not need to copy.
+	 * And transformation in place should be faster since less memory
+	 * management.
+	 * But this optimization should be implemented _after_ refactoring
+	 * of the tree node, since it needs the CharSequence interface on
+	 * the nodes.
+	 */
+	@Override
+	public L1Node transformSubstitution(final L2Token tok, final HshContext context) throws Exception {
+		for(final L1Node child : this)
+			tok.addPart(child.transformSubstitution(tok, context));
+		return tok;
+	}
+
+	private Pattern makePattern(final CharSequence shPattern) throws IOException {
+		// TODO make a java Pattern from shPattern
+		return Pattern.compile(shPattern.toString());
+	}
+
+	/**
+	 * @param trees
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private List<String> pathnameExpand(final Collection<L1Node> trees, final HshContext context) throws Exception {
+		final List<String> ret=new ArrayList<String>();
+		for(final L1Node tree : trees) {
+			ret.addAll(pathnameExpand(tree, context));
+		}
+		return ret;
+	}
+
+	private void finishCurrentPattern(final ArrayList<Path> matchedPaths, final StringBuilder pattern) throws IOException {
+		// on first call, matchedPaths is empty. Find to start on "/" or on "."
+		if(matchedPaths.isEmpty()) {
+			if(pattern.charAt(0)=='/')
+				matchedPaths.add(Paths.get("/"));
+			else
+				matchedPaths.add(Paths.get("."));
+		}
+
+		final List<Path> nextMatches=new ArrayList<Path>();
+		for(final Path dir : matchedPaths)
+			if(Files.isDirectory(dir))
+				try(DirectoryStream<Path> ds=Files.newDirectoryStream(dir, pattern.toString())) {
+					for(final Path path : ds)
+						nextMatches.add(path);
+				}
+		pattern.setLength(0);
+		matchedPaths.clear();
+		matchedPaths.addAll(nextMatches);
+	}
+
+	private Collection<String> pathnameExpand(final L1Node tree, final HshContext context) throws Exception {
+		// **************************************************
+		// *. Break tree into parts separated by slashes (escaped or unescaped), since the slash separates
+		//    patterns and directories. Translate these parts into java glob patterns (these are fairly the same
+		//    as the posix shell ones).
+		//    Translate escaped parts by simply escape any char with a backslash.
+
+		// *. If the first part is empty start at root ("/"), else start at CWD.
+
+		// while breaking the tree, for every part:
+		// *. If on the last part list files and directories, else only directories.
+		// *. List the files/directories using the part as glob pattern.
+		//    If none found, finish.
+		//    If found, use the found directories for the next part and so on.
+
+		// **************************************************
+
+		final ArrayList<Path> matchedPaths=new ArrayList<Path>();
+		final StringBuilder currentPattern=new StringBuilder();
+
+		NodeTraversal.traverse(tree, new NodeTraversal.TraverseListener() {
+			@Override
+			public TraverseListenerResult node(final L1Node node, final int level) throws IOException {
+				// make a String out of child
+				if(node instanceof QuotedL1Node) {
+					final StringBuilder sb=new StringBuilder();
+					node.appendUnquoted(sb);
+					final String[] parts=sb.toString().split("/");
+					if(parts.length==1) { // no match
+						currentPattern.append(sb);
+					} else {
+						for(int i=0; i<parts.length-1; i++) {	// for all but the last part
+							currentPattern.append(parts[i]);
+							finishCurrentPattern(matchedPaths, currentPattern);
+						}
+						currentPattern.append(parts[parts.length-1]);
+					}
+				} else if(!(node instanceof ComplexL1Node)) { // node isLeaf()
+					final String str=node.getImage();
+					final String[] parts=str.split("/");
+					if(parts.length==1) { // no match
+						currentPattern.append(sb);
+					} else {
+						for(int i=0; i<parts.length-1; i++) {	// for all but the last part
+							currentPattern.append(parts[i]);
+							finishCurrentPattern(matchedPaths, currentPattern);
+						}
+						currentPattern.append(parts[parts.length-1]);
+					}
+				} // else it is another Subtree, go on iterate the children
+				return TraverseListenerResult.CONTINUE;
+			}
+		});
+
+		final List<String> ret=new ArrayList<String>();
+		if(matchedPaths.isEmpty()) {
+			final StringBuilder sb=new StringBuilder();
+			tree.appendUnquoted(sb);
+			ret.add(sb.toString());
+		} else
+			for(final Path path : matchedPaths)
+				ret.add(path.toString());
+		return ret;
+	}
+
+	private static class FilePattern {
+		public List<Object> parts=new ArrayList<Object>();
+		/**
+		 * @param o must be CharSequence or PatternPart
+		 */
+		void add(final Object o) {
+			parts.add(o);
+		}
+
 	}
 
 	@Override
-	public String substituteAndSplit(final HshContext context, final List<Portion> portions) throws Exception {
-		throw new RuntimeException("must not call this method on L2Token (need to refactor interfaces) :/");
+	public void appendUnquoted(final StringBuilder sb) {
+		for(final L1Node child : this)
+			child.appendUnquoted(sb);
 	}
 }

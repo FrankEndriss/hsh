@@ -1,6 +1,7 @@
 package com.happypeople.hsh.hsh.l1parser;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 
@@ -12,7 +13,7 @@ import com.happypeople.hsh.hsh.L2Token;
  * if token.kind==DO_SPECIAL it is one of the single-character defined in "special parameters".
  * Else token.image is simply the variable name.
  */
-public class DollarVarNode extends AbstractL1Node implements Substitutable {
+public class DollarVarNode extends AbstractL1Node {
 	private final Token t;
 	DollarVarNode(final L2Token tok, final int off, final int len, final Token t) {
 		super(tok, off, len);
@@ -24,7 +25,14 @@ public class DollarVarNode extends AbstractL1Node implements Substitutable {
 	}
 
 	@Override
-	public String getSubstitutedString(final HshContext context) throws IOException {
+	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+		final String s=getSubstitutedString(context);
+		final SimpleL1Node node=new SimpleL1Node(imageHolder, imageHolder.getLen(), s.length());
+		imageHolder.append(s);
+		return node;
+	}
+
+	private String getSubstitutedString(final HshContext context) throws IOException {
 		String val=null;
 		switch(getToken().kind) {
 		case L1ParserConstants.DO_SPECIAL:
@@ -97,5 +105,15 @@ public class DollarVarNode extends AbstractL1Node implements Substitutable {
 			sb.append('\t');
 		sb.append(getClass().getName()+": $"+getToken().image);
 		System.out.println(""+sb);
+	}
+
+	@Override
+	public Collection<? extends L1Node> transformSplit(final HshContext context) {
+		throw new RuntimeException("split has to be done after substitution");
+	}
+
+	@Override
+	public void appendUnquoted(final StringBuilder sb) {
+		throw new RuntimeException("unquote has to be done after split and substitution");
 	}
 }

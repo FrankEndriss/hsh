@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,11 +76,11 @@ public class HshParserTest {
 
 
 	@Test
-	public void testComplete_dollar_only1() throws ParseException, IOException {
+	public void testComplete_dollar_only1() throws Exception {
 		context.getEnv().setVariableValue("x", "3");
 		final CompleteCommand cc=doTestCompleteCommand("$x");
 		final DollarVarNode dvn=findFirstNodeOfClass(cc, DollarVarNode.class);
-		assertEquals("substitution", "3", dvn.getSubstitutedString(context));
+		assertEquals("substitution", "3", NodeTraversal.substituteSubtree(dvn, context));
 	}
 
 	/* this does not parse in bash, too
@@ -127,7 +126,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_dollar2() throws ParseException {
+	public void testComplete_dollar2() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("${x:-hallo}");
 		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
 		assertNotNull("# parameter", dsn.getParameter());
@@ -146,7 +145,7 @@ public class HshParserTest {
 		assertEquals("substitution", "3", dsn.getSubstitutedString(context));
 	}
 
-	private <T> T findFirstNodeOfClass(final CompleteCommand cc, final Class<T> class1) {
+	private <T> T findFirstNodeOfClass(final CompleteCommand cc, final Class<T> class1) throws Exception {
 		final List<T> listT=new ArrayList<T>();
 
 		NodeTraversal.traverse(cc, new TraverseListener() {
@@ -163,7 +162,7 @@ public class HshParserTest {
 		return listT.size()>0?listT.get(0):null;
 	}
 
-	private DollarSubstNode findFirstDollarSubstNode(final CompleteCommand cc) {
+	private DollarSubstNode findFirstDollarSubstNode(final CompleteCommand cc) throws Exception {
 		final DollarSubstNode[] dsnode=new DollarSubstNode[1];
 
 		NodeTraversal.traverse(cc, new TraverseListener() {
@@ -180,7 +179,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command_Assignment8() throws ParseException {
+	public void testComplete_command_Assignment8() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo <input.txt");
 		final SimpleCommand sc=findSimpleCommand(cc);
 
@@ -191,7 +190,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command_Assignment7() throws ParseException {
+	public void testComplete_command_Assignment7() throws Exception {
 		final CompleteCommand[] res=doTestCompleteCommand2(
 				"x=1 y=2 2>file.txt echo bla y=2<input.txt <input.txt laber\nx=1 y=2 echo2 bla y=2 laber <input.txt", 2);
 		final SimpleCommand sc=findSimpleCommand(res[0]);
@@ -210,7 +209,7 @@ public class HshParserTest {
 
 
 	@Test
-	public void testComplete_command_Assignment6() throws ParseException {
+	public void testComplete_command_Assignment6() throws Exception {
 		final CompleteCommand[] cc=doTestCompleteCommand2("x=1 y=2 echo bla y=2 laber\nx=1 y=2 echo2 bla y=2 laber", 2);
 		final SimpleCommand sc1=findSimpleCommand(cc[0]);
 
@@ -225,7 +224,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command_Assignment5() throws ParseException {
+	public void testComplete_command_Assignment5() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("x=1 y=2 echo bla y=2 laber");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 2, sc.getAssignments().size());
@@ -234,7 +233,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command_Assignment4() throws ParseException {
+	public void testComplete_command_Assignment4() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("x=1 y=2 echo bla laber");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 2, sc.getAssignments().size());
@@ -243,7 +242,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command_Assignment3() throws ParseException {
+	public void testComplete_command_Assignment3() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("x=1 echo x");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 1, sc.getAssignments().size());
@@ -252,7 +251,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command_Assignment2() throws ParseException {
+	public void testComplete_command_Assignment2() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("x=1 y=2");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 2, sc.getAssignments().size());
@@ -260,7 +259,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command_Assignment1() throws ParseException {
+	public void testComplete_command_Assignment1() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("x=1");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 1, sc.getAssignments().size());
@@ -268,7 +267,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command7() throws ParseException {
+	public void testComplete_command7() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo \"a`echo x` b c\"");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
@@ -277,7 +276,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command6() throws ParseException {
+	public void testComplete_command6() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo \"a\\\\ b c\"");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
@@ -286,7 +285,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command5() throws ParseException {
+	public void testComplete_command5() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo \"a \\b c\"");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
@@ -295,7 +294,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command4() throws ParseException {
+	public void testComplete_command4() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo \"a b c\"");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
@@ -304,7 +303,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command3() throws ParseException {
+	public void testComplete_command3() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo 'a b c'");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
@@ -313,7 +312,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command2() throws ParseException {
+	public void testComplete_command2() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo a b c");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
@@ -322,7 +321,7 @@ public class HshParserTest {
 	}
 
 	@Test
-	public void testComplete_command1() throws ParseException {
+	public void testComplete_command1() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("x");
 		if(DEBUG)
 			classTreeTraversal(cc);
@@ -356,7 +355,7 @@ public class HshParserTest {
 		return cc;
 	}
 
-	private void classTreeTraversal(final L1Node root) {
+	private void classTreeTraversal(final L1Node root) throws Exception {
 		NodeTraversal.traverse(root, new TraverseListener() {
 			@Override
 			public TraverseListenerResult node(final L1Node node, final int level) {
@@ -369,11 +368,11 @@ public class HshParserTest {
 		});
 	}
 
-	private SimpleCommand findSimpleCommand(final CompleteCommand cc) {
+	private SimpleCommand findSimpleCommand(final CompleteCommand cc) throws Exception {
 		return findSimpleCommands(cc, 1)[0];
 	}
 
-	private SimpleCommand[] findSimpleCommands(final CompleteCommand cc, final int count) {
+	private SimpleCommand[] findSimpleCommands(final CompleteCommand cc, final int count) throws Exception {
 		final int[] c={ 0 };
 		final SimpleCommand[] sc=new SimpleCommand[count];
 		NodeTraversal.traverse(cc, new NodeTraversal.TraverseListener() {
@@ -398,7 +397,7 @@ public class HshParserTest {
 		return sc;
 	}
 
-	private String node2String(final L1Node node) {
+	private String node2String(final L1Node node) throws Exception {
 		final StringBuilder sb=new StringBuilder();
 		NodeTraversal.traverse(node, new NodeTraversal.TraverseListener() {
 			@Override

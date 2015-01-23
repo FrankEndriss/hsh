@@ -1,6 +1,5 @@
 package com.happypeople.hsh.hsh;
 
-import java.io.IOException;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -8,14 +7,12 @@ import java.util.LinkedList;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
-import com.happypeople.hsh.hsh.l1parser.StringifiableNode;
-import com.happypeople.hsh.hsh.l1parser.Substitutable;
 
 public class NodeTraversal {
 	/** Parent-first Depth-first traversal of the nodes tree.
 	 * @param listener called once on every node in the tree
 	 */
-	public static void traverse(final L1Node root, final TraverseListener listener) {
+	public static void traverse(final L1Node root, final TraverseListener listener) throws Exception {
 		if(listener.node(root, 0)!=TraverseListenerResult.CONTINUE)
 			return;
 
@@ -51,7 +48,14 @@ public class NodeTraversal {
 	}
 
 	public interface TraverseListener {
-		TraverseListenerResult node(L1Node node, int level);
+		TraverseListenerResult node(L1Node node, int level) throws Exception;
+	}
+
+	public static String substituteSubtree(final L1Node subtree, final HshContext context) throws Exception {
+		final L2Token tok=new L2Token();
+		final L1Node transformed=subtree.transformSubstitution(tok, context);
+		tok.finishImage();
+		return transformed.getImage();
 	}
 
 	/** Executes substitution on a subtree.
@@ -65,7 +69,6 @@ public class NodeTraversal {
 	 * @return the stringified subtree, substitutions executed
 	 * @throws IOException if one of the getSubstitutedString()-calls throws an Exception the traversal is stopped, and
 	 * that Exception is rethrown
-	 */
 	public static String substituteSubtree(final L1Node subtree, final HshContext context) throws Exception {
 		final StringBuilder sb=new StringBuilder();
 		final Exception[] ex=new Exception[1];
@@ -92,6 +95,7 @@ public class NodeTraversal {
 
 		return sb.toString();
 	}
+	 */
 
 	/** Executes a subtree.
 	 * The traversal is implemented in a way that all Executables are searched in subtree, parent-first.
