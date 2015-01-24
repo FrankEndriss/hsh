@@ -13,7 +13,7 @@ import com.happypeople.hsh.hsh.NodeTraversal;
  * Chapter "2.6.2 Parameter Expansion"
  *
  */
-public class DollarSubstNode extends ComplexL1Node implements Substitutable {
+public class DollarSubstNode extends ComplexL1Node {
 	public DollarSubstNode(final L2Token tok, final int off, final int len) {
 		super(tok, off, len);
 	}
@@ -61,22 +61,21 @@ public class DollarSubstNode extends ComplexL1Node implements Substitutable {
 	}
 
 	@Override
-	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+	public SimpleL1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
 		final String s=getSubstitutedString(context);
 		final SimpleL1Node node=new SimpleL1Node(imageHolder, imageHolder.getLen(), s.length());
 		imageHolder.append(s);
 		return node;
 	}
 
-	@Override
-	public String getSubstitutedString(final HshContext context) throws Exception {
+	private String getSubstitutedString(final HshContext context) throws Exception {
 		final L1Node variable=getParameter();
 		// if the variable name contains substitutions itself (i.e. "${${x}}"), substitute them now
 		// Note that this is not Posix, (and also per 2015-01-10 this does not parse)
 		final L2Token varNameToken=new L2Token();
-		variable.transformSubstitution(varNameToken, context);
-		//final String varName=NodeTraversal.substituteSubtree(variable, env);
-		final String varName=varNameToken.image;
+		final L1Node substituted=variable.transformSubstitution(varNameToken, context);
+		varNameToken.finishImage();
+		final String varName=substituted.getImage();
 
 		final L1Node operatorNode=getOperator();
 		if(operatorNode!=null) {

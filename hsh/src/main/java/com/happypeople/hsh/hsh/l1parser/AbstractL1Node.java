@@ -54,7 +54,7 @@ public abstract class AbstractL1Node implements L1Node {
 
 	@Override
 	public String getImage() {
-		return tok.image.substring(off, off+len);
+		return tok.getImage().substring(off, off+len);
 	}
 
 	protected L2Token getImageHolder() {

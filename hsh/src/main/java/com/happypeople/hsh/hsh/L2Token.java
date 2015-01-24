@@ -131,12 +131,12 @@ public class L2Token extends Token implements L1Node {
 	 */
 	@Override
 	public String getImage() {
-		return image;
+		return sb!=null?sb.toString():image;
 	}
 
 	@Override
 	public int getLen() {
-		return sb.length();
+		return sb!=null?sb.length():image.length();
 	}
 
 	/** Appends a String to the image and returns this.
@@ -210,9 +210,9 @@ public class L2Token extends Token implements L1Node {
 	 * @throws Exception
 	 */
 	public List<String> doExpansion(final HshContext context) throws Exception {
-		final L2Token substituted=new L2Token();
-		transformSubstitution(substituted, context);
-		substituted.finishImage();
+		final L2Token imageHolder=new L2Token();
+		final L2Token substituted=transformSubstitution(imageHolder, context);
+		imageHolder.finishImage();
 		final List<L1Node> splitted=substituted.transformSplit(context);
 		return pathnameExpand(splitted, context);
 	}
@@ -261,10 +261,15 @@ public class L2Token extends Token implements L1Node {
 	 * the nodes.
 	 */
 	@Override
-	public L1Node transformSubstitution(final L2Token tok, final HshContext context) throws Exception {
-		for(final L1Node child : this)
-			tok.addPart(child.transformSubstitution(tok, context));
-		return tok;
+	public L2Token transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+		final L2Token ret=new L2Token();
+		for(final L1Node child : this) {
+			final L1Node substituted=child.transformSubstitution(imageHolder, context);
+			ret.addPart(substituted);
+			ret.append(substituted.getImage());
+		}
+		ret.finishImage();
+		return ret;
 	}
 
 	private Pattern makePattern(final CharSequence shPattern) throws IOException {
@@ -278,7 +283,7 @@ public class L2Token extends Token implements L1Node {
 	 * @return
 	 * @throws Exception
 	 */
-	private List<String> pathnameExpand(final Collection<L1Node> trees, final HshContext context) throws Exception {
+	private static List<String> pathnameExpand(final Collection<L1Node> trees, final HshContext context) throws Exception {
 		final List<String> ret=new ArrayList<String>();
 		for(final L1Node tree : trees) {
 			ret.addAll(pathnameExpand(tree, context));
@@ -286,7 +291,7 @@ public class L2Token extends Token implements L1Node {
 		return ret;
 	}
 
-	private void finishCurrentPattern(final ArrayList<Path> matchedPaths, final StringBuilder pattern) throws IOException {
+	private static void finishCurrentPattern(final ArrayList<Path> matchedPaths, final StringBuilder pattern) throws IOException {
 		// on first call, matchedPaths is empty. Find to start on "/" or on "."
 		if(matchedPaths.isEmpty()) {
 			if(pattern.charAt(0)=='/')
@@ -307,7 +312,7 @@ public class L2Token extends Token implements L1Node {
 		matchedPaths.addAll(nextMatches);
 	}
 
-	private Collection<String> pathnameExpand(final L1Node tree, final HshContext context) throws Exception {
+	private static Collection<String> pathnameExpand(final L1Node tree, final HshContext context) throws Exception {
 		// **************************************************
 		// *. Break tree into parts separated by slashes (escaped or unescaped), since the slash separates
 		//    patterns and directories. Translate these parts into java glob patterns (these are fairly the same
@@ -348,7 +353,7 @@ public class L2Token extends Token implements L1Node {
 					final String str=node.getImage();
 					final String[] parts=str.split("/");
 					if(parts.length==1) { // no match
-						currentPattern.append(sb);
+						currentPattern.append(str);
 					} else {
 						for(int i=0; i<parts.length-1; i++) {	// for all but the last part
 							currentPattern.append(parts[i]);

@@ -113,6 +113,14 @@ public class HshParserTest {
 	}
 
 	*/
+
+	private String getSubstitutedString(final DollarSubstNode node, final HshContext context) throws Exception {
+		final L2Token imageHolder=new L2Token();
+		final L1Node resultNode=node.transformSubstitution(imageHolder, context);
+		imageHolder.finishImage();
+		return resultNode.getImage();
+	}
+
 	@Test
 	public void testComplete_dollar3() throws ParseException, Exception {
 		context.getEnv().setVariableValue("x", "3");
@@ -122,7 +130,7 @@ public class HshParserTest {
 		assertNotNull("# parameter", dsn.getParameter());
 		assertNotNull("operator", dsn.getOperator());
 		assertNotNull("no word", dsn.getWord());
-		assertEquals("substitution", "3", dsn.getSubstitutedString(context));
+		assertEquals("substitution", "3", getSubstitutedString(dsn, context));
 	}
 
 	@Test
@@ -136,13 +144,16 @@ public class HshParserTest {
 
 	@Test
 	public void testComplete_dollar1() throws Exception {
-		context.getEnv().setVariableValue("x", "3");
+		context.getEnv().setVariableValue("x", "3 2");
+		context.getEnv().setVariableValue("IFS", " \t\n");
 		final CompleteCommand cc=doTestCompleteCommand("${x}");
 		final DollarSubstNode dsn=findFirstDollarSubstNode(cc);
 		assertNotNull("# parameter", dsn.getParameter());
 		assertNull("no operator", dsn.getOperator());
 		assertNull("no word", dsn.getWord());
-		assertEquals("substitution", "3", dsn.getSubstitutedString(context));
+		final List<String> res=cc.doExpansion(context);
+		assertEquals("expansion len, res="+res, 2, res.size());
+		assertEquals("substitution", "3 2", res.get(0));
 	}
 
 	private <T> T findFirstNodeOfClass(final CompleteCommand cc, final Class<T> class1) throws Exception {
