@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
@@ -246,35 +245,18 @@ public class L2Token extends Token implements L1Node {
 		return ret;
 	}
 
-	/** This adds all childs of this replaced by
-	 * the result of child.transformSubstitution(newTok, context) to tok.
+	/** This replaces all childs of this by
+	 * the result of child.transformSubstitution(imageHolder, context).
 	 * @param tok the image holder of
 	 * @param context
 	 * @return for syntactic reasons tok is returned.
 	 * @throws Exception
-	 * TODO split this functionality into copy and transformInPlace
-	 * Commands which are execute only once then do not need to copy.
-	 * And transformation in place should be faster since less memory
-	 * management.
-	 * But this optimization should be implemented _after_ refactoring
-	 * of the tree node, since it needs the CharSequence interface on
-	 * the nodes.
 	 */
 	@Override
 	public L2Token transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
-		final L2Token ret=new L2Token();
-		for(final L1Node child : this) {
-			final L1Node substituted=child.transformSubstitution(imageHolder, context);
-			ret.addPart(substituted);
-			ret.append(substituted.getImage());
-		}
-		ret.finishImage();
-		return ret;
-	}
-
-	private Pattern makePattern(final CharSequence shPattern) throws IOException {
-		// TODO make a java Pattern from shPattern
-		return Pattern.compile(shPattern.toString());
+		for(int i=0; i<parts.size(); i++)
+			parts.set(i, parts.get(i).transformSubstitution(imageHolder, context));
+		return this;
 	}
 
 	/**
@@ -392,5 +374,16 @@ public class L2Token extends Token implements L1Node {
 	public void appendUnquoted(final StringBuilder sb) {
 		for(final L1Node child : this)
 			child.appendUnquoted(sb);
+	}
+
+	@Override
+	public L2Token copySubtree() {
+		final L2Token ret=new L2Token();
+		ret.append(getImage());
+		if(sb==null)
+			ret.finishImage();
+		for(final L1Node child : this)
+			ret.addPart(child.copySubtree());
+		return ret;
 	}
 }

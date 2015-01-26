@@ -46,9 +46,10 @@ public interface L1Node extends Iterable<L1Node> {
 	 */
 	public String getImage();
 
-	/** Creates a new L1Node as a copy of this node, but which is not Substitutable and contains no Substitutables.
+	/** Transforms this subtree into one which is not Substitutable and contains no Substitutables.
 	 * ie all Substitutables in the tree rooted by this node are replaced by ones whithout
 	 * substitutions.
+	 * This is done in place if possible, so it might return this.
 	 * This is called as one step of the execution of commands.
 	 * @param tok the image holder for the new L1Nodes
 	 * @param context context for substitution
@@ -64,6 +65,7 @@ public interface L1Node extends Iterable<L1Node> {
 	 * This is called as one step of the execution of commands.
 	 * @param context context of splitting (IFS)
 	 * @return a list of at least on L1Node. If it is one most likely the one is this, because no split was done.
+	 * TODO should be more stream-like, since the returned nodes are processed left to right.
 	 */
 	public Collection<? extends L1Node> transformSplit(HshContext context);
 
@@ -72,4 +74,9 @@ public interface L1Node extends Iterable<L1Node> {
 	 */
 	public void appendUnquoted(StringBuilder sb);
 
+	/** Creates a copy of this subtree (this node, and all subnotes).
+	 * Useful while execution of commands, if executed more than once (ie within loops)
+	 * @return an independent copy of this node.
+	 */
+	public L1Node copySubtree();
 }

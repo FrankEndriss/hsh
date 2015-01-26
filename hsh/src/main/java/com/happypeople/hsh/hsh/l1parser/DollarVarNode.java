@@ -116,4 +116,9 @@ public class DollarVarNode extends AbstractL1Node {
 	public void appendUnquoted(final StringBuilder sb) {
 		throw new RuntimeException("unquote has to be done after split and substitution");
 	}
+
+	@Override
+	public L1Node copySubtree() {
+		return new DollarVarNode(getImageHolder(), getOff(), getLen(), t);
+	}
 }

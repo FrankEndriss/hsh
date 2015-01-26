@@ -124,4 +124,9 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 		sb.append(getImageHolder().image.substring(getOff(), getOff()+getLen()));
 	}
 
+	@Override
+	public SimpleL1Node copySubtree() {
+		return new SimpleL1Node(getImageHolder(), getOff(), getLen(), l1Kind);
+	}
+
 }

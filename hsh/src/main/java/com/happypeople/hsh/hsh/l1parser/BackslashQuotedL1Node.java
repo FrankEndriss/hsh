@@ -24,9 +24,7 @@ public class BackslashQuotedL1Node extends AbstractL1Node implements QuotedL1Nod
 
 	@Override
 	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
-		final BackslashQuotedL1Node node=new BackslashQuotedL1Node(imageHolder, imageHolder.getLen(), getLen());
-		imageHolder.append(getImage());
-		return node;
+		return this;
 	}
 
 	@Override
@@ -38,5 +36,10 @@ public class BackslashQuotedL1Node extends AbstractL1Node implements QuotedL1Nod
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
 		sb.append(getImage().charAt(1));
+	}
+
+	@Override
+	public L1Node copySubtree() {
+		return new BackslashQuotedL1Node(getImageHolder(), getOff(), getLen());
 	}
 }

@@ -29,4 +29,12 @@ public class BacktickedNode extends ComplexL1Node {
 	public void appendUnquoted(final StringBuilder sb) {
 		throw new RuntimeException("unquote has to be done after split and substitution");
 	}
+
+	@Override
+	public L1Node copySubtree() {
+		final BacktickedNode ret=new BacktickedNode(getImageHolder(), getOff(), getLen());
+		for(final L1Node child : this)
+			ret.add(child.copySubtree());
+		return ret;
+	}
 }

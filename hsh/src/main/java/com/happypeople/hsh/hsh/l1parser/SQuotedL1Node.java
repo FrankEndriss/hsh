@@ -19,10 +19,8 @@ public class SQuotedL1Node extends AbstractL1Node implements QuotedL1Node {
 	}
 
 	@Override
-	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
-		final SQuotedL1Node node=new SQuotedL1Node(imageHolder, imageHolder.getLen(), getLen());
-		imageHolder.append(getImage());
-		return node;
+	public SQuotedL1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+		return this;
 	}
 
 	@Override
@@ -33,5 +31,10 @@ public class SQuotedL1Node extends AbstractL1Node implements QuotedL1Node {
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
 		sb.append(getImageHolder().image.substring(getOff()+1, getOff()+getLen()-1));
+	}
+
+	@Override
+	public SQuotedL1Node copySubtree() {
+		return new SQuotedL1Node(getImageHolder(), getOff(), getLen());
 	}
 }

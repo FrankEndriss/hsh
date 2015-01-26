@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.L2Token;
 
 /** L1Node with children.
@@ -41,4 +42,16 @@ public abstract class ComplexL1Node extends AbstractL1Node {
 		for(final L1Node child : children)
 			child.dump(level+1);
 	}
+
+	/* (non-Javadoc)
+	 * @see com.happypeople.hsh.hsh.l1parser.L1Node#transformSubstitution(com.happypeople.hsh.hsh.L2Token, com.happypeople.hsh.HshContext)
+	 * @return this, children substituted
+	 */
+	@Override
+	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+		for(int i=0; i<children.size(); i++)
+			children.set(i, children.get(i).transformSubstitution(imageHolder, context));
+		return this;
+	}
+
 }

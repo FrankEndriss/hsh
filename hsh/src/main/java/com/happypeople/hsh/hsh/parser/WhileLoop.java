@@ -19,8 +19,8 @@ public class WhileLoop extends L2Node implements Executable {
 		int result=-1;
 		// result of while loop is last executed command...usually the last one of the condition
 		// TODO: break???
-		while(qualifyResult(result=NodeTraversal.executeSubtree(condition, context)))
-			result=NodeTraversal.executeSubtree(body, context);
+		while(qualifyResult(result=NodeTraversal.executeSubtree(condition.copySubtree(), context)))
+			result=NodeTraversal.executeSubtree(body.copySubtree(), context);
 
 		return result;
 	}

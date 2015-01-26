@@ -32,4 +32,12 @@ public class GenericComplexL1Node extends ComplexL1Node {
 			child.appendUnquoted(sb);
 	}
 
+	@Override
+	public GenericComplexL1Node copySubtree() {
+		final GenericComplexL1Node ret=new GenericComplexL1Node(getImageHolder(), getOff(), getLen());
+		for(final L1Node child : this)
+			ret.add(child.copySubtree());
+		return ret;
+	}
+
 }

@@ -251,4 +251,12 @@ public class DollarSubstNode extends ComplexL1Node {
 		throw new RuntimeException("unquote has to be done after split and substitution");
 	}
 
+	@Override
+	public L1Node copySubtree() {
+		final DollarSubstNode ret=new DollarSubstNode(getImageHolder(), getOff(), getLen());
+		for(final L1Node child : this)
+			ret.add(child.copySubtree());
+		return ret;
+	}
+
 }
