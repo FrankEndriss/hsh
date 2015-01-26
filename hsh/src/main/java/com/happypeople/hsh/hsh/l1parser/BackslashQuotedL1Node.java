@@ -1,9 +1,9 @@
 package com.happypeople.hsh.hsh.l1parser;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.L2Token;
@@ -28,7 +28,7 @@ public class BackslashQuotedL1Node extends AbstractL1Node implements QuotedL1Nod
 	}
 
 	@Override
-	public Collection<? extends L1Node> transformSplit(final HshContext context) {
+	public List<? extends L1Node> transformSplit(final HshContext context) {
 		// a backslashed char cannot be a IFS separator, because it is quoted, so no split is done
 		return Arrays.asList(this);
 	}

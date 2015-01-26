@@ -212,7 +212,7 @@ public class L2Token extends Token implements L1Node {
 		final L2Token imageHolder=new L2Token();
 		final L2Token substituted=transformSubstitution(imageHolder, context);
 		imageHolder.finishImage();
-		final List<L1Node> splitted=substituted.transformSplit(context);
+		final List<? extends L1Node> splitted=substituted.transformSplit(context);
 		return pathnameExpand(splitted, context);
 	}
 
@@ -220,28 +220,36 @@ public class L2Token extends Token implements L1Node {
 	 * @param context context of splitting (IFS)
 	 * @return a list of at least on L1Node. If it is one most likely the one is this.
 	 * If more than one, this L1Node was splitted and the list contains the parts.
+	 * This method uses GenericComplexL1Node to group childrens splits.
 	 */
 	@Override
-	public List<L1Node> transformSplit(final HshContext context) {
-		final List<L1Node> ret=new ArrayList<L1Node>();
-		GenericComplexL1Node split=new GenericComplexL1Node(this, 0, 0);
-		final L1Node lastNode;
-		for(final L1Node child : this) {
-			if(split==null)
-				split=new GenericComplexL1Node(this, 0, 0);
-			if(child.getLen()>0) {
-				split.add(child);
-				split.addLen(child.getLen());
-			}
-			else
-				if(split.getChildCount()>0) {
-					ret.add(split.getChildCount()==1?split.get(0):split);
-					split=null;
-				}
-		}
-		if(split!=null && split.getChildCount()>0)
-			ret.add(split.getChildCount()==1?split.get(0):split);
+	public List<? extends L1Node> transformSplit(final HshContext context) {
+		// optimazation
+		if(getPartCount()==1)
+			return getPart(0).transformSplit(context);
 
+		final List<L1Node> ret=new ArrayList<L1Node>();
+		GenericComplexL1Node currentSplit=new GenericComplexL1Node(this, 0, 0);
+		for(final L1Node child : this) {
+			final List<? extends L1Node> splits=child.transformSplit(context);
+			if(splits.get(0).getLen()==0) {
+				ret.add(currentSplit);
+				currentSplit=new GenericComplexL1Node(this, 0, 0);
+			}
+			for(final L1Node childSplit : splits) {
+				if(childSplit.getLen()>0) {
+					currentSplit.add(childSplit);
+					currentSplit.addLen(childSplit.getLen());
+				} else if(currentSplit.getChildCount()>0) {
+					ret.add(currentSplit);
+					currentSplit=new GenericComplexL1Node(this, 0, 0);
+				}
+			}
+		}
+		if(ret.size()==0 || currentSplit.getChildCount()>0)
+			ret.add(currentSplit);
+
+		// note ret maybe includes empty L1 nodes here
 		return ret;
 	}
 
@@ -265,7 +273,7 @@ public class L2Token extends Token implements L1Node {
 	 * @return
 	 * @throws Exception
 	 */
-	private static List<String> pathnameExpand(final Collection<L1Node> trees, final HshContext context) throws Exception {
+	private static List<String> pathnameExpand(final List<? extends L1Node> trees, final HshContext context) throws Exception {
 		final List<String> ret=new ArrayList<String>();
 		for(final L1Node tree : trees) {
 			ret.addAll(pathnameExpand(tree, context));

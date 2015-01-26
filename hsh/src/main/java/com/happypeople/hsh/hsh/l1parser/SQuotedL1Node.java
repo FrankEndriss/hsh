@@ -1,9 +1,9 @@
 package com.happypeople.hsh.hsh.l1parser;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.L2Token;
@@ -24,7 +24,7 @@ public class SQuotedL1Node extends AbstractL1Node implements QuotedL1Node {
 	}
 
 	@Override
-	public Collection<? extends L1Node> transformSplit(final HshContext context) {
+	public List<? extends L1Node> transformSplit(final HshContext context) {
 		return Arrays.asList(this);
 	}
 

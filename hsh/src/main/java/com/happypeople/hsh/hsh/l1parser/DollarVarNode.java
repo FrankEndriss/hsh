@@ -1,9 +1,9 @@
 package com.happypeople.hsh.hsh.l1parser;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
@@ -108,7 +108,7 @@ public class DollarVarNode extends AbstractL1Node {
 	}
 
 	@Override
-	public Collection<? extends L1Node> transformSplit(final HshContext context) {
+	public List<? extends L1Node> transformSplit(final HshContext context) {
 		throw new RuntimeException("split has to be done after substitution");
 	}
 

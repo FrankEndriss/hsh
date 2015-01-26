@@ -1,7 +1,6 @@
 package com.happypeople.hsh.hsh.l1parser;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import org.junit.Before;
@@ -32,7 +31,8 @@ public class DollarSubstNodeTest {
 
 	private SimpleL1Node createSimpleL1Node(final String image) {
 		final L2Token t=new L2Token();
-		t.image=image;
+		t.append(image);
+		t.finishImage();
 		return new SimpleL1Node(t, 0, image.length());
 	}
 
@@ -40,8 +40,7 @@ public class DollarSubstNodeTest {
 	public void testOperators() throws Exception {
 		final L1Node expVar=createSimpleL1Node(valueOfVariableSet);
 		final L1Node expWord=createSimpleL1Node(valueOfSimpleWord);
-//		final L1Node expNull=createSimpleL1Node("");
-		final L1Node expNull=null;
+		final L1Node expNull=createSimpleL1Node("");
 		final L1Node expExit=createSimpleL1Node("EXIT");
 		final L1Node expNULL_SET=createSimpleL1Node("NULL");
 
@@ -99,7 +98,7 @@ public class DollarSubstNodeTest {
 		}
 
 		String exp=((SimpleL1Node)testData[2]).getImage();
-		exp="NULL".equals(exp)?null:exp;
+		exp="NULL".equals(exp)?"":exp;
 		final L2Token imageHolder=new L2Token();
 		final L1Node resultNode=out.transformSubstitution(imageHolder, context);
 		imageHolder.finishImage();
@@ -144,7 +143,8 @@ public class DollarSubstNodeTest {
 		if(testData.length>3 && testData[3]!=null) { // assignment test
 			// the variable given in testData[0] should now have the value given in testData[3]
 			final String varname=((SimpleL1Node)testData[0]).getImage();
-			final String valueOfVar=context.getEnv().getVariableValue(varname);
+			String valueOfVar=context.getEnv().getVariableValue(varname);
+			valueOfVar=valueOfVar==null?"":valueOfVar;
 			final String expOfAss=((SimpleL1Node)testData[3]).getImage();
 			assertEquals("ass "+dbg1+" "+testData[1], expOfAss, valueOfVar);
 		}
@@ -154,19 +154,19 @@ public class DollarSubstNodeTest {
 	@Test
 	public void testGetSubstitutedString4() throws Exception {
 		out.setParameter(variableUnset);
-		assertNull("simple subst unset", getSubstitutedString(out, context));
+		assertEquals("simple subst unset", getSubstitutedString(out, context), "");
 	}
 
 	@Test
 	public void testGetSubstitutedString3() throws Exception {
 		out.setParameter(variableUnset);
-		assertNull("simple subst unset", getSubstitutedString(out, context));
+		assertEquals("simple subst unset", getSubstitutedString(out, context), "");
 	}
 
 	@Test
 	public void testGetSubstitutedString2() throws Exception {
 		out.setParameter(variableSetButNull);
-		assertNull("simple subst null", getSubstitutedString(out, context));
+		assertEquals("simple subst null", getSubstitutedString(out, context), "");
 	}
 
 	@Test

@@ -1,6 +1,6 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-import java.util.Collection;
+import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.L2Token;
@@ -67,7 +67,7 @@ public interface L1Node extends Iterable<L1Node> {
 	 * @return a list of at least on L1Node. If it is one most likely the one is this, because no split was done.
 	 * TODO should be more stream-like, since the returned nodes are processed left to right.
 	 */
-	public Collection<? extends L1Node> transformSplit(HshContext context);
+	public List<? extends L1Node> transformSplit(HshContext context);
 
 	/** Appends this node as a "value" to sb. This is called while the last step in expanding a command line.
 	 * @param sb the buffer to append this to.

@@ -1,7 +1,7 @@
 package com.happypeople.hsh.hsh.l1parser;
 
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.L2Token;
@@ -13,7 +13,7 @@ public class DQuotedL1Node extends ComplexL1Node implements QuotedL1Node {
 	}
 
 	@Override
-	public Collection<? extends L1Node> transformSplit(final HshContext context) {
+	public List<? extends L1Node> transformSplit(final HshContext context) {
 		// Double quoted words/parts are not split.
 		return Arrays.asList(this);
 	}

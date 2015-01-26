@@ -1,7 +1,7 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.happypeople.hsh.HshContext;
@@ -62,7 +62,8 @@ public class DollarSubstNode extends ComplexL1Node {
 
 	@Override
 	public SimpleL1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
-		final String s=getSubstitutedString(context);
+		final String str=getSubstitutedString(context);
+		final String s=str==null?"":str;
 		final SimpleL1Node node=new SimpleL1Node(imageHolder, imageHolder.getLen(), s.length());
 		imageHolder.append(s);
 		return node;
@@ -242,7 +243,7 @@ public class DollarSubstNode extends ComplexL1Node {
 	}
 
 	@Override
-	public Collection<? extends L1Node> transformSplit(final HshContext context) {
+	public List<? extends L1Node> transformSplit(final HshContext context) {
 		throw new RuntimeException("split has to be done afer substitution");
 	}
 

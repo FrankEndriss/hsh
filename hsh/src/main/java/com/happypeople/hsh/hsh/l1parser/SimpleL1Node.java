@@ -2,7 +2,6 @@ package com.happypeople.hsh.hsh.l1parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -53,7 +52,7 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 	}
 
 	@Override
-	public Collection<? extends L1Node> transformSplit(final HshContext context) {
+	public List<? extends L1Node> transformSplit(final HshContext context) {
 		// This is the real implementation of L1Node splitting
 
 		final String input=getImage();
@@ -71,8 +70,8 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 				ifsWSsb.append(c);
 		}
 
+		int endIdx=input.length()-1;
 		int startIdx=0;
-		int endIdx=input.length();
 
 		final List<L1Node> ret=new ArrayList<L1Node>();
 		final String ifsWS=ifsWSsb.toString();
@@ -96,7 +95,7 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 
 			int state=IN_FS;
 			int lastStart=-42;	// initialization here is irrelevant
-			for(int i=startIdx; i<endIdx; i++) {
+			for(int i=startIdx; i<=endIdx; i++) {
 				if(FS.indexOf(input.charAt(i))>=0) {
 					if(state==IN_MATCH) {
 						ret.add(new SimpleL1Node(getImageHolder(), lastStart, i));
@@ -110,10 +109,10 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 				}
 			}
 			if(state==IN_MATCH)
-				ret.add(new SimpleL1Node(getImageHolder(), lastStart, endIdx));
+				ret.add(new SimpleL1Node(getImageHolder(), lastStart, endIdx-lastStart+1));
 		}
 
-		if(endIdx>startIdx && endIdx<input.length()) // found trailing WS
+		if(endIdx>startIdx && endIdx<input.length()-1) // found trailing WS
 			ret.add(new SimpleL1Node(getImageHolder(), 0, 0));
 
 		return ret;

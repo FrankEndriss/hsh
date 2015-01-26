@@ -152,8 +152,10 @@ public class HshParserTest {
 		assertNull("no operator", dsn.getOperator());
 		assertNull("no word", dsn.getWord());
 		final List<String> res=cc.doExpansion(context);
+		while(res.remove(""));
 		assertEquals("expansion len, res="+res, 2, res.size());
-		assertEquals("substitution", "3 2", res.get(0));
+		assertEquals("substitution", "3", res.get(0));
+		assertEquals("substitution", "2", res.get(1));
 	}
 
 	private <T> T findFirstNodeOfClass(final CompleteCommand cc, final Class<T> class1) throws Exception {

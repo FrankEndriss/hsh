@@ -1,6 +1,6 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-import java.util.Collection;
+import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.L2Token;
@@ -22,7 +22,7 @@ public class GenericComplexL1Node extends ComplexL1Node {
 	}
 
 	@Override
-	public Collection<? extends L1Node> transformSplit(final HshContext context) {
+	public List<? extends L1Node> transformSplit(final HshContext context) {
 		throw new RuntimeException("TODO not implemented");
 	}
 
