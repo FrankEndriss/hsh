@@ -31,4 +31,12 @@ public class PipeSequence extends L2Node implements Executable {
 		return result;
 	}
 
+	@Override
+	public PipeSequence copySubtree() {
+		final PipeSequence ret=new PipeSequence();
+		ret.setBanged(isBanged());
+		for(final L1Node child : this)
+			ret.addPart(child);
+		return ret;
+	}
 }

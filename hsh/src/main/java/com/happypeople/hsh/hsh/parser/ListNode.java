@@ -17,7 +17,8 @@ public class ListNode extends L2Node implements Executable, Backgroundable {
 		for(final L1Node node : this) {
 			if(node instanceof And_orNode) {
 				if(((And_orNode)node).isBackground())
-					exitState=NodeTraversal.executeSubtree(node, context);
+					//exitState=NodeTraversal.executeSubtree(node, context);
+					throw new RuntimeException("background execution of ListNode not implemented");
 				else // TODO execute in background
 					exitState=NodeTraversal.executeSubtree(node, context);
 			} else {
@@ -40,5 +41,13 @@ public class ListNode extends L2Node implements Executable, Backgroundable {
 	@Override
 	public boolean isBackground() {
 		return ((Backgroundable)getChild(getChildCount()-1)).isBackground();
+	}
+
+	@Override
+	public ListNode copySubtree() {
+		final ListNode ret=new ListNode();
+		for(final L1Node child : this)
+			ret.addPart(child);
+		return ret;
 	}
 }

@@ -12,8 +12,10 @@ public interface Parameter {
 	public Type getType();
 
 	public boolean isReadOnly();
-	
+
 	public boolean isExport();
-	
+
 	public Parameter createCopy();
+
+	public void setExport(boolean export);
 }

@@ -37,6 +37,8 @@ public class ExpansionTest {
 				return 0;
 			}
 		});
+		context.getEnv().setVariableValue("IFS", " \t\n");
+		context.getEnv().getParameter("IFS").setExport(true);
 	}
 
 	private void runTest(final String input) throws Exception {
@@ -66,6 +68,17 @@ public class ExpansionTest {
 		assertEquals("# cmdline", 2, executedList.get(0).length);
 		assertEquals("# cmdline", "echo", executedList.get(0)[0]);
 		assertEquals("# cmdline", "hallo", executedList.get(0)[1]);
+	}
+
+	@Test
+	public void test_split3() throws Exception {
+		runTest("x=\"\\\"x y\"\\\" echo $x hallo");
+		assertEquals("# execs", 1, executedList.size());
+		//assertEquals("# cmdline", 4, executedList.get(0).length);
+		assertEquals("# cmdline", "echo", executedList.get(0)[0]);
+		assertEquals("# cmdline", "\"x", executedList.get(0)[1]);
+		assertEquals("# cmdline", "y\"", executedList.get(0)[2]);
+		assertEquals("# cmdline", "hallo", executedList.get(0)[3]);
 	}
 
 	@Test

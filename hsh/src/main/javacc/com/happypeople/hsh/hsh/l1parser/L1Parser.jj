@@ -462,10 +462,10 @@ L1Node dquoted(L2Token l2Token):
 {
 	< DQUOTE_START > { l2Token.append("\""); }
 	(
-		(		  t=< ESC_DQUOTE >		{ childs.add(new BackslashQuotedL1Node(l2Token, l2Token.getLen(), t.image.length())); }		| t=< ESC_DOLLAR >		{ childs.add(new BackslashQuotedL1Node(l2Token, l2Token.getLen(), t.image.length())); }
-		| t=< ESC_BACKTIC >		{ childs.add(new BackslashQuotedL1Node(l2Token, l2Token.getLen(), t.image.length())); }
-		| t=< ESC_BACKSLASH >	{ childs.add(new BackslashQuotedL1Node(l2Token, l2Token.getLen(), t.image.length())); }
-		| t=< CHAR_BACKSLASH >	{ childs.add(new SimpleL1Node(l2Token, l2Token.getLen(), 1)); }
+		(		  t=< ESC_DQUOTE >		{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="\""; }		| t=< ESC_DOLLAR >		{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="$"; }
+		| t=< ESC_BACKTIC >		{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="`"; }
+		| t=< ESC_BACKSLASH >	{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="\\"; }
+		| t=< CHAR_BACKSLASH >	{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="\\"; }
 		| t=< DANYTHING >		{ childs.add(new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length())); }
 		| childNode=backticked(l2Token)
 		| childNode=dollar_var(l2Token)

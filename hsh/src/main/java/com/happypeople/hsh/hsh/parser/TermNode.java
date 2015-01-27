@@ -9,6 +9,7 @@ import com.happypeople.hsh.hsh.l1parser.L1Node;
  * Execution is from first to last.
  */
 public class TermNode extends L2Node implements Backgroundable, Executable {
+	@Override
 	public boolean isBackground() {
 		return ((And_orNode)getChild(getChildCount()-1)).isBackground();
 	}
@@ -30,5 +31,13 @@ public class TermNode extends L2Node implements Backgroundable, Executable {
 			result=NodeTraversal.executeSubtree(child, context);
 		}
 		return result;
+	}
+
+	@Override
+	public TermNode copySubtree() {
+		final TermNode ret=new TermNode();
+		for(final L1Node child : this)
+			ret.addPart(child);
+		return ret;
 	}
 }

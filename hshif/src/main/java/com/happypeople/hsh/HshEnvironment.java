@@ -66,6 +66,10 @@ public interface HshEnvironment {
 		public Parameter createCopy() {
 			return this;
 		}
+
+		@Override
+		public void setExport(final boolean isExport) {
+		}
 	};
 
 	public interface ChangeListener {
@@ -81,7 +85,7 @@ public interface HshEnvironment {
 	}
 
 	/**
-	 * @return the count of positional parameters set in this context, or if not set the count of 
+	 * @return the count of positional parameters set in this context, or if not set the count of
 	 * the parents positional parameters.
 	 */
 	public int getPositionalCount();

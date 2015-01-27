@@ -34,4 +34,14 @@ public class WhileLoop extends L2Node implements Executable {
 	private boolean qualifyResult(final int status) {
 		return untilFlag?status!=0:status==0;
 	}
+
+	@Override
+	public WhileLoop copySubtree() {
+		final WhileLoop ret=new WhileLoop();
+		if(untilFlag)
+			ret.setUntil();
+		for(final L1Node child : this)
+			ret.addPart(child);
+		return ret;
+	}
 }
