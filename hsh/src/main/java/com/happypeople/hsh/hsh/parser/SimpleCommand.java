@@ -16,6 +16,12 @@ import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 
 public class SimpleCommand extends L2Node implements Executable {
+	private final static boolean DEBUG=true;
+
+	// TODO cmdName should not be treated in another way than the args, since
+	// the only thing that makes the cmdName to what it is, is the fact that
+	// it is the arg at position 0.
+	// ie if it expands to the empty string, arg[1] becomes the cmdName and so on
 	private int cmdName=-1;
 	private final List<Integer> args=new ArrayList<Integer>();
 	private final List<Integer> assignments=new ArrayList<Integer>();
@@ -64,6 +70,8 @@ public class SimpleCommand extends L2Node implements Executable {
 
 	@Override
 	public int doExecution(final HshContext context) throws Exception {
+		if(DEBUG)
+			System.out.println("SimpleCommand.doExecution");
 
 		final HshContext lContext=context.createChildContext(new HshEnvironmentImpl(context.getEnv()), null);
 
@@ -85,6 +93,8 @@ public class SimpleCommand extends L2Node implements Executable {
 		for(final Integer idx : assAndRedirs) {
 			final L2Token tok=getChild(idx);
 			if(tok instanceof RedirNode) {	// its an redirection
+				if(DEBUG)
+					System.out.println("SimpleCommand.doExecution, have RedirNode: "+tok);
 				final RedirNode redirNode=(RedirNode)tok;
 				Redirect redirect=null;
 
@@ -118,6 +128,8 @@ public class SimpleCommand extends L2Node implements Executable {
 
 			} else {	// its an assignment
 				final L2Token assi=tok;
+				if(DEBUG)
+					System.out.println("SimpleCommand.doExecution, have assignment: "+assi);
 				// Assignment-L2Token (kind=ASSIGNMENT_WORD) are structured:
 				// First child SimpleNode(varName)
 				// Second is SimpleNode("=")
@@ -131,8 +143,22 @@ public class SimpleCommand extends L2Node implements Executable {
 						rhs.addPart(assi.getPart(i));
 				}
 
-				final String value=rhs!=null?NodeTraversal.substituteSubtree(rhs, lContext):null;
+				String value;
+				if(rhs==null)
+					value=null;
+				else {
+					final List<String> lValue=rhs.doExpansion(lContext);
+					if(lValue.size()==0)
+						value=null;
+					else {
+						value=lValue.get(0);
+						for(int i=1; i<lValue.size(); i++)
+							value+=" "+lValue.get(i);
+					}
+				}
 				lContext.getEnv().setVariableValue(varName, value);
+				if(DEBUG)
+					System.out.println("SimpleCommand.doExecution, assignment, key/value: "+varName+" "+value);
 			}
 		}
 

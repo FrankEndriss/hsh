@@ -5,6 +5,7 @@ import com.happypeople.hsh.hsh.l1parser.L1ParserConstants;
 import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
 
 public class HshLookaheadHelper {
+	private final static boolean DEBUG=false;
 	private final HshParser parser;
 
 	public HshLookaheadHelper(final HshParser parser) {
@@ -283,17 +284,33 @@ public class HshLookaheadHelper {
 	 * @return true if match, else false
 	 */
 	public boolean lookahead_isIoRedir() {
+		if(DEBUG)
+			System.out.println("lookahead_isIoRedir");
 		// check if a previous call of this method did
 		// created the outcome.
 		if(getToken(1).kind==HshParserConstants.IO_NUMBER ||
 			(isHshRedirOperator(getToken(1).kind) && getToken(2)!=null && getToken(2).kind==HshParserConstants.WORD))
 				return true;
 
+		if(DEBUG)
+			System.out.println("lookahead_isIoRedir, checking for kind word");
+
+		if(getToken(1).kind!=HshParserConstants.WORD)
+			return false;
+
+		if(DEBUG)
+			System.out.println("lookahead_isIoRedir, first check false");
+
 		// match and count the parts, beginn with two
 		final L1Node p1=getPart(0);
-		final L1Node p2=getPart(1);
-		if(p1==null || p2==null)
+		if(p1==null)
 			return false;
+		final L1Node p2=getPart(1);
+		if(p2==null)
+			return false;
+
+		if(DEBUG)
+			System.out.println("lookahead_isIoRedir, did get first two parts");
 
 		final L2Token filenameToken;
 		if((isNUMBER(p1) && is_redir_operator(p2)) && isWORD(getTokenOfPart(2)) ||
@@ -322,8 +339,12 @@ public class HshLookaheadHelper {
 				parser.reloadJJNTK();
 			}
 
+			if(DEBUG)
+				System.out.println("lookahead_isIoRedir, return true");
 			return true;
 		}
+		if(DEBUG)
+			System.out.println("lookahead_isIoRedir, return false");
 		return false;
 	}
 

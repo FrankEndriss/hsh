@@ -25,6 +25,7 @@ import com.happypeople.hsh.hsh.l1parser.QuotedL1Node;
  *
  */
 public class L2Token extends Token implements L1Node {
+	private final static boolean DEBUG=true;
 	private List<L1Node> parts=new ArrayList<L1Node>();
 	private StringBuilder sb=new StringBuilder();
 
@@ -282,6 +283,8 @@ public class L2Token extends Token implements L1Node {
 	}
 
 	private static void finishCurrentPattern(final ArrayList<Path> matchedPaths, final StringBuilder pattern) throws IOException {
+		if(DEBUG)
+			System.out.println("finishCurrentPattern, pattern="+pattern);
 		// on first call, matchedPaths is empty. Find to start on "/" or on "."
 		if(matchedPaths.isEmpty()) {
 			if(pattern.charAt(0)=='/')
@@ -289,6 +292,8 @@ public class L2Token extends Token implements L1Node {
 			else
 				matchedPaths.add(Paths.get("."));
 		}
+		if(DEBUG)
+			System.out.println("finishCurrentPattern, matchedPaths="+matchedPaths);
 
 		final List<Path> nextMatches=new ArrayList<Path>();
 		for(final Path dir : matchedPaths)
@@ -297,6 +302,8 @@ public class L2Token extends Token implements L1Node {
 					for(final Path path : ds)
 						nextMatches.add(path);
 				}
+		if(DEBUG)
+			System.out.println("finishCurrentPattern, nextMatches="+nextMatches);
 		pattern.setLength(0);
 		matchedPaths.clear();
 		matchedPaths.addAll(nextMatches);
