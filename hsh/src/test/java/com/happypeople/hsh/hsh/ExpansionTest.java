@@ -1,6 +1,7 @@
 package com.happypeople.hsh.hsh;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.PipedReader;
 import java.io.PipedWriter;
@@ -53,6 +54,14 @@ public class ExpansionTest {
 	}
 
 	@Test
+	public void test_pathExpand() throws Exception {
+		runTest("ls *");
+		assertEquals("# execs", 1, executedList.size());
+		assertEquals("# cmdline", "ls", executedList.get(0)[0]);
+		assertTrue("# * should be substituted", !"*".equals(executedList.get(0)[1]));
+	}
+
+	@Test
 	public void test_simple2() throws Exception {
 		runTest("echo hallo bla laber");
 		assertEquals("# execs", 1, executedList.size());
@@ -74,7 +83,7 @@ public class ExpansionTest {
 	public void test_split3() throws Exception {
 		runTest("x=\"\\\"x y\"\\\" echo $x hallo");
 		assertEquals("# execs", 1, executedList.size());
-		//assertEquals("# cmdline", 4, executedList.get(0).length);
+		assertEquals("# cmdline", 4, executedList.get(0).length);
 		assertEquals("# cmdline", "echo", executedList.get(0)[0]);
 		assertEquals("# cmdline", "\"x", executedList.get(0)[1]);
 		assertEquals("# cmdline", "y\"", executedList.get(0)[2]);

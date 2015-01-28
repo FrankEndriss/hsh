@@ -25,7 +25,7 @@ import com.happypeople.hsh.hsh.l1parser.QuotedL1Node;
  *
  */
 public class L2Token extends Token implements L1Node {
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 	private List<L1Node> parts=new ArrayList<L1Node>();
 	private StringBuilder sb=new StringBuilder();
 
@@ -225,7 +225,7 @@ public class L2Token extends Token implements L1Node {
 	 */
 	@Override
 	public List<? extends L1Node> transformSplit(final HshContext context) {
-		// optimazation
+		// optimization
 		if(getPartCount()==1)
 			return getPart(0).transformSplit(context);
 
@@ -286,12 +286,16 @@ public class L2Token extends Token implements L1Node {
 		if(DEBUG)
 			System.out.println("finishCurrentPattern, pattern="+pattern);
 		// on first call, matchedPaths is empty. Find to start on "/" or on "."
+		boolean removePwd=false;
 		if(matchedPaths.isEmpty()) {
 			if(pattern.charAt(0)=='/')
 				matchedPaths.add(Paths.get("/"));
-			else
+			else {
 				matchedPaths.add(Paths.get("."));
+				removePwd=true;
+			}
 		}
+
 		if(DEBUG)
 			System.out.println("finishCurrentPattern, matchedPaths="+matchedPaths);
 
@@ -306,7 +310,8 @@ public class L2Token extends Token implements L1Node {
 			System.out.println("finishCurrentPattern, nextMatches="+nextMatches);
 		pattern.setLength(0);
 		matchedPaths.clear();
-		matchedPaths.addAll(nextMatches);
+		for(final Path p : nextMatches)
+			matchedPaths.add(removePwd?p.subpath(1, p.getNameCount()):p);
 	}
 
 	private static Collection<String> pathnameExpand(final L1Node tree, final HshContext context) throws Exception {
@@ -362,6 +367,9 @@ public class L2Token extends Token implements L1Node {
 				return TraverseListenerResult.CONTINUE;
 			}
 		});
+
+		if(currentPattern.length()>0)
+			finishCurrentPattern(matchedPaths, currentPattern);
 
 		final List<String> ret=new ArrayList<String>();
 		if(matchedPaths.isEmpty()) {
