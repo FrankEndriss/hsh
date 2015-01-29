@@ -5,6 +5,10 @@ import com.happypeople.hshutil.util.AsyncIterator;
 public class GenericL1ParserTokenManager extends L1ParserTokenManager {
 	private final AsyncIterator<Token> tokenQ=new AsyncIterator<Token>();
 
+	public GenericL1ParserTokenManager() {
+		this(null, null);
+	}
+
 	public GenericL1ParserTokenManager(final L1Parser parserArg, final SimpleCharStream stream) {
 		super(parserArg, stream);
 	}
