@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
+import com.happypeople.hsh.HshRedirections;
 
 public class HshChildContext implements HshContext {
 	private final HshContext parent;
@@ -15,7 +16,7 @@ public class HshChildContext implements HshContext {
 	public HshChildContext(final HshContext parent) {
 		this.parent=parent;
 		this.env=parent!=null?parent.getEnv():new HshEnvironmentImpl(null);
-		this.executor=parent!=null?parent.getExecutor():new HshExecutorImpl(this, null);
+		this.executor=parent!=null?parent.getExecutor():new HshExecutorImpl(null, this, null);
 	}
 
 	/** Initializes a new HshContext.
@@ -70,6 +71,11 @@ public class HshChildContext implements HshContext {
 	@Override
 	public HshContext createChildContext(final HshEnvironment newEnv, final HshExecutor newExcecutor) {
 		return new HshChildContext(this, newEnv==null?this.getEnv():newEnv, newExcecutor==null?this.getExecutor():newExcecutor);
+	}
+
+	@Override
+	public HshContext createChildContext(final HshRedirections hshRedirections) {
+		return new HshChildContext(this, null, new HshExecutorImpl(getExecutor(), this, hshRedirections));
 	}
 
 

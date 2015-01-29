@@ -1,4 +1,4 @@
-package com.happypeople.hsh.hsh;
+package com.happypeople.hsh;
 
 import java.io.OutputStream;
 import java.nio.channels.SelectableChannel;

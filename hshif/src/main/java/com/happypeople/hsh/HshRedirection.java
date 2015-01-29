@@ -1,4 +1,4 @@
-package com.happypeople.hsh.hsh;
+package com.happypeople.hsh;
 
 
 /** Objects of this class combines a ProcessBuilder.Redirect with an optional Stream or Channel.

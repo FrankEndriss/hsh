@@ -14,6 +14,10 @@ import java.util.Map;
 import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshExecutor;
+import com.happypeople.hsh.HshInput;
+import com.happypeople.hsh.HshOutput;
+import com.happypeople.hsh.HshRedirection;
+import com.happypeople.hsh.HshRedirections;
 import com.happypeople.hsh.Parameter;
 import com.happypeople.hsh.VariableParameter;
 
@@ -22,14 +26,29 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	private List<File> path=new ArrayList<File>();
 	private final HshContext hshContext;
 	private final HshRedirections hshRedirections;
+	private final HshExecutor delegate;
 
-	public HshExecutorImpl(final HshContext context, final HshRedirections redirections) {
+	/**
+	 * @param context Context send to child processes while execution. Note that this can be the parent context
+	 * of this executor, or some other context. Both makes sense in some scenarios.
+	 * @param redirections redirections used for execution
+	 */
+	public HshExecutorImpl(final HshExecutor delegate, final HshContext context, final HshRedirections redirections) {
+		this.delegate=delegate;
 		this.hshContext=context;
 		this.hshRedirections=redirections;
 	}
 
 	@Override
 	public int execute(final String[] command) throws Exception {
+		return execute(command, getRedirecions());
+	}
+
+	@Override
+	public int execute(final String[] command, final HshRedirections hshRedirections) throws Exception {
+		if(delegate!=null)
+			return delegate.execute(command, hshRedirections);
+
 		if(command.length<1)
 			return 0;	// empty line
 
@@ -37,7 +56,7 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 		if(buildin!=null)
 			return exec_buildin_Main(buildin, command);
 		else
-			return exec_extern_synchron(command);
+			return exec_extern_synchron(command, hshRedirections);
 	}
 
 	/** Executes the cmd line given in args and waits for it to finish execution.
@@ -49,7 +68,7 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private int exec_extern_synchron(final String[] args) {
+	private int exec_extern_synchron(final String[] args, final HshRedirections hshRedirections) {
 		// TODO export hshContext as environment
 		try {
 			final ProcessBuilder builder=new ProcessBuilder();
@@ -189,6 +208,18 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	@Override
 	public void changed(final VariableParameter parameter, final String oldValue) {
 		varChanged(parameter.getName());
+	}
+
+	@Override
+	public HshRedirections getRedirecions() {
+		return hshRedirections;
+	}
+
+	@Override
+	public HshExecutor createChild(final HshContext context, final HshRedirections hshRedirections) {
+		return new HshExecutorImpl(this,
+				context!=null?context:this.hshContext,
+				hshRedirections!=null?hshRedirections:this.hshRedirections);
 	}
 
 	// end HshEnvirionment-Listener

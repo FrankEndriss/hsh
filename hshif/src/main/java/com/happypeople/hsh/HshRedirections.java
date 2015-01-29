@@ -1,4 +1,4 @@
-package com.happypeople.hsh.hsh;
+package com.happypeople.hsh;
 
 /** A HshRedirections object is used to setup the ProcessBuilder while executing a command.
  */

@@ -46,9 +46,7 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 
 	@Override
 	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
-		final SimpleL1Node node=new SimpleL1Node(imageHolder, imageHolder.getLen(), getLen());
-		imageHolder.append(getImage());
-		return node;
+		return this;
 	}
 
 	@Override
@@ -98,7 +96,7 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 			for(int i=startIdx; i<=endIdx; i++) {
 				if(FS.indexOf(input.charAt(i))>=0) {
 					if(state==IN_MATCH) {
-						ret.add(new SimpleL1Node(getImageHolder(), lastStart, i));
+						ret.add(new SimpleL1Node(getImageHolder(), getOff()+lastStart, i));
 						state=IN_FS;
 					}
 				} else {
@@ -109,7 +107,7 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 				}
 			}
 			if(state==IN_MATCH)
-				ret.add(new SimpleL1Node(getImageHolder(), lastStart, endIdx-lastStart+1));
+				ret.add(new SimpleL1Node(getImageHolder(), getOff()+lastStart, endIdx-lastStart+1));
 		}
 
 		if(endIdx>startIdx && endIdx<input.length()-1) // found trailing WS

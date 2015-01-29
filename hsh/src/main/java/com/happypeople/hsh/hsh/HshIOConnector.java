@@ -11,6 +11,9 @@ import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.happypeople.hsh.HshInput;
+import com.happypeople.hsh.HshOutput;
+
 /** HshIOConnector copies bytes from InputStreams to OutputStreams. One adds such a pair by calling add(in, out).
  * The copying process is stopped when in is closed (in.read(buf) returns <=0).
  */

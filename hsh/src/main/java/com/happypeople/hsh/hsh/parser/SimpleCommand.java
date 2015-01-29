@@ -7,9 +7,9 @@ import java.util.Collections;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.hsh.HshEnvironmentImpl;
 import com.happypeople.hsh.hsh.HshParserConstants;
-import com.happypeople.hsh.hsh.HshRedirection;
 import com.happypeople.hsh.hsh.HshRedirectionImpl;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
@@ -76,7 +76,7 @@ public class SimpleCommand extends L2Node implements Executable {
 		final HshContext lContext=context.createChildContext(new HshEnvironmentImpl(context.getEnv()), null);
 
 		//HshRedirections hshRedirections=lContext.getExecutor().
-		final HshRedirection[] redirections=new HshRedirection[3];
+		//final HshRedirection[] redirections=new HshRedirection[3];
 
 		// Note: the HshExecutor must be set up step by step, since there are possibly assignments
 		// exectuted in between the io-redirects.

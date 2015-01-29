@@ -1,31 +1,26 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-import com.happypeople.hshutil.util.AsyncIterator;
 
 public class GenericL1ParserTokenManager extends L1ParserTokenManager {
-	private final AsyncIterator<Token> tokenQ=new AsyncIterator<Token>();
+	private final boolean DEBUG=true;
 
-	public GenericL1ParserTokenManager() {
-		this(null, null);
+	private final Callback callback;
+
+	public GenericL1ParserTokenManager(final Callback callback) {
+		super(null, null);
+		this.callback=callback;
 	}
 
-	public GenericL1ParserTokenManager(final L1Parser parserArg, final SimpleCharStream stream) {
-		super(parserArg, stream);
-	}
-
-	public void close() {
-		tokenQ.close();
-	}
-
-	public void put(final Token t) {
-		tokenQ.offer(t);
+	public interface Callback {
+		public Token nextToken();
 	}
 
 	@Override
 	public Token getNextToken() {
-		if(tokenQ.hasNext())
-			return tokenQ.next();
-		return new Token(L1ParserConstants.EOF);
+		final Token t=callback.nextToken();
+		if(DEBUG)
+			System.out.println("GenericL1ParserTokenManager.getNextToken(), kind="+t.kind+" image="+t.image);
+		return t;
 	}
 
 	@Override

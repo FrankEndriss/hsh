@@ -43,24 +43,26 @@ public class L2TokenManager implements TokenManager, RuleApplier {
 	 */
 	private int translateL1KindToL2Kind(final int l1kind) {
 		switch(l1kind) {
-		case L1ParserConstants.EOF:		return HshParserConstants.EOF;
-		case L1ParserConstants.AND_IF:	return HshParserConstants.AND_IF;
-		case L1ParserConstants.OR_IF:	return HshParserConstants.OR_IF;
-		case L1ParserConstants.DSEMI:	return HshParserConstants.DSEMI;
-		case L1ParserConstants.DLESS:	return HshParserConstants.DLESS;
-		case L1ParserConstants.DGREAT:	return HshParserConstants.DGREAT;
-		case L1ParserConstants.LESSAND:	return HshParserConstants.LESSAND;
-		case L1ParserConstants.LESS:	return HshParserConstants.LESS;
-		case L1ParserConstants.GREAT:	return HshParserConstants.GREAT;
-		case L1ParserConstants.GREATAND: return HshParserConstants.GREATAND;
-		case L1ParserConstants.LESSGREAT: return HshParserConstants.LESSGREAT;
-		case L1ParserConstants.DLESSDASH: return HshParserConstants.DLESSDASH;
-		case L1ParserConstants.CLOBBER:	return HshParserConstants.CLOBBER;
-		case L1ParserConstants.NEWLINE: return HshParserConstants.NEWLINE;
-		case L1ParserConstants.SEMICOLON: return HshParserConstants.SEMICOLON;
-		case L1ParserConstants.UPPERSANT: return HshParserConstants.UPPERSANT;
-		case L1ParserConstants.BANG:	return HshParserConstants.BANG;
-		case L1ParserConstants.WS:	return -42;
+		case L1ParserConstants.EOF:			return HshParserConstants.EOF;
+		case L1ParserConstants.AND_IF:		return HshParserConstants.AND_IF;
+		case L1ParserConstants.OR_IF:		return HshParserConstants.OR_IF;
+		case L1ParserConstants.DSEMI:		return HshParserConstants.DSEMI;
+		case L1ParserConstants.DLESS:		return HshParserConstants.DLESS;
+		case L1ParserConstants.DGREAT:		return HshParserConstants.DGREAT;
+		case L1ParserConstants.LESSAND:		return HshParserConstants.LESSAND;
+		case L1ParserConstants.LESS:		return HshParserConstants.LESS;
+		case L1ParserConstants.GREAT:		return HshParserConstants.GREAT;
+		case L1ParserConstants.GREATAND: 	return HshParserConstants.GREATAND;
+		case L1ParserConstants.LESSGREAT: 	return HshParserConstants.LESSGREAT;
+		case L1ParserConstants.DLESSDASH: 	return HshParserConstants.DLESSDASH;
+		case L1ParserConstants.CLOBBER:		return HshParserConstants.CLOBBER;
+		case L1ParserConstants.NEWLINE: 	return HshParserConstants.NEWLINE;
+		case L1ParserConstants.SEMICOLON: 	return HshParserConstants.SEMICOLON;
+		case L1ParserConstants.UPPERSANT: 	return HshParserConstants.UPPERSANT;
+		case L1ParserConstants.BANG:		return HshParserConstants.BANG;
+		case L1ParserConstants.KLAMMER_AUF:	return HshParserConstants.KLAMMER_AUF;
+		case L1ParserConstants.KLAMMER_ZU:	return HshParserConstants.KLAMMER_ZU;
+		case L1ParserConstants.WS:			return -42;
 		default:
 			return HshParserConstants.WORD;
 		}

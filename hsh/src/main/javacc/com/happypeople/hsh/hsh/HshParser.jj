@@ -330,12 +330,14 @@ void brace_group():
 subshell         : '(' compound_list ')'
                  ;
 */
-void subshell():
+public SubshellNode subshell():
 {
+SubshellNode ret=new SubshellNode();
+L2Node compList;
 }
 {
-	< KLAMMER_AUF > compound_list() < KLAMMER_ZU >
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	< KLAMMER_AUF > compList=compound_list() { ret.addChild(compList); } < KLAMMER_ZU >
+	{ return ret; }
 }
 
 /**
@@ -590,7 +592,7 @@ L2Node compound_command():
 	L2Node compCommand=null;
 }
 {
-	(	brace_group() { throwNI(); }|	subshell() { throwNI(); }
+	(	brace_group() { throwNI(); }|	compCommand=subshell()
 |	for_clause() { throwNI(); }
 |	case_clause() { throwNI(); }
 |	if_clause() { throwNI(); }

@@ -147,6 +147,17 @@ public class L2Token extends Token implements L1Node {
 		return this;
 	}
 
+	/** Appends the buffer content to the image and returns this.
+	 * @param buf
+	 * @param off
+	 * @param len
+	 * See StringBuilder.append(buf, off, len)
+	 */
+	public L2Token append(final char[] buf, final int off, final int len) {
+		sb.append(buf, off, len);
+		return this;
+	}
+
 	/** Removes all parts starting at idx i
 	 * @param i the starting idx
 	 */
@@ -382,17 +393,6 @@ public class L2Token extends Token implements L1Node {
 		return ret;
 	}
 
-	private static class FilePattern {
-		public List<Object> parts=new ArrayList<Object>();
-		/**
-		 * @param o must be CharSequence or PatternPart
-		 */
-		void add(final Object o) {
-			parts.add(o);
-		}
-
-	}
-
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
 		for(final L1Node child : this)
@@ -409,4 +409,5 @@ public class L2Token extends Token implements L1Node {
 			ret.addPart(child.copySubtree());
 		return ret;
 	}
+
 }

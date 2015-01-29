@@ -14,6 +14,7 @@ import jline.console.ConsoleReader;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
+import com.happypeople.hsh.HshRedirections;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
 import com.happypeople.hsh.hsh.parser.ListNode;
@@ -30,7 +31,7 @@ public class Hsh implements HshContext {
 	private static PrintWriter log;
 	private ConsoleReader console;
 	private final HshEnvironment env=new HshEnvironmentImpl(null);
-	private final HshExecutorImpl executor=new HshExecutorImpl(this, new HshRedirectionsImpl());
+	private final HshExecutorImpl executor=new HshExecutorImpl(null, this, new HshRedirectionsImpl());
 	private final HshParser parser;
 
 	/** Reader with input */
@@ -184,5 +185,10 @@ public class Hsh implements HshContext {
 	@Override
 	public HshContext createChildContext(final HshEnvironment env, final HshExecutor executor) {
 		return new HshChildContext(this, env, executor);
+	}
+
+	@Override
+	public HshContext createChildContext(final HshRedirections hshRedirections) {
+		return new HshChildContext(this, null, new HshExecutorImpl(getExecutor(), this, hshRedirections));
 	}
 }

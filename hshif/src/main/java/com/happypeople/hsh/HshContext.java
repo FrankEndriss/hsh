@@ -46,4 +46,10 @@ public interface HshContext {
 	 * ExecutorService.
 	 */
 	public HshExecutor getExecutor();
+
+	/** Creates a new HshContext as a child of this context with new HshRedirections
+	 * @param hshRedirections
+	 * @return a new HshContext
+	 */
+	public HshContext createChildContext(HshRedirections hshRedirections);
 }

@@ -2,6 +2,10 @@ package com.happypeople.hsh.hsh;
 
 import java.lang.ProcessBuilder.Redirect;
 
+import com.happypeople.hsh.HshInput;
+import com.happypeople.hsh.HshOutput;
+import com.happypeople.hsh.HshRedirection;
+
 public class HshRedirectionImpl implements HshRedirection {
 	private final Redirect redirection;
 	private HshInput in;
@@ -23,7 +27,7 @@ public class HshRedirectionImpl implements HshRedirection {
 
 	@Override
 	public void setIn(final HshInput in) {
-		if(in!=null)
+		if(this.in!=null)
 			throw new IllegalStateException("setIn() must not be called more than once");
 
 		if(redirection!=Redirect.PIPE)
@@ -40,7 +44,7 @@ public class HshRedirectionImpl implements HshRedirection {
 
 	@Override
 	public void setOut(final HshOutput out) {
-		if(out!=null)
+		if(this.out!=null)
 			throw new IllegalStateException("setOut() must not be called more than once");
 
 		if(redirection!=Redirect.PIPE)
