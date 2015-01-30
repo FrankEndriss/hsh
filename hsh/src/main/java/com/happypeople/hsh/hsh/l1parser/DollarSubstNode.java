@@ -14,8 +14,8 @@ import com.happypeople.hsh.hsh.NodeTraversal;
  *
  */
 public class DollarSubstNode extends ComplexL1Node {
-	public DollarSubstNode(final L2Token tok, final int off, final int len) {
-		super(tok, off, len);
+	public DollarSubstNode(final ImageHolder imageHolder, final int off, final int len) {
+		super(imageHolder, off, len);
 	}
 
 	int parameterIdx=-1;
@@ -61,7 +61,7 @@ public class DollarSubstNode extends ComplexL1Node {
 	}
 
 	@Override
-	public SimpleL1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+	public SimpleL1Node transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		final String str=getSubstitutedString(context);
 		final String s=str==null?"":str;
 		final SimpleL1Node node=new SimpleL1Node(imageHolder, imageHolder.getLen(), s.length());
@@ -249,7 +249,7 @@ public class DollarSubstNode extends ComplexL1Node {
 
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
-		throw new RuntimeException("unquote has to be done after split and substitution");
+		sb.append(getImage());
 	}
 
 	@Override

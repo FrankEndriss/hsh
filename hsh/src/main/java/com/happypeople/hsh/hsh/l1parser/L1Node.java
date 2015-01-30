@@ -3,7 +3,6 @@ package com.happypeople.hsh.hsh.l1parser;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.hsh.L2Token;
 
 
 
@@ -56,7 +55,7 @@ public interface L1Node extends Iterable<L1Node> {
 	 * @return the new node
 	 * @throws Exception
 	 */
-	public L1Node transformSubstitution(L2Token imageHolder, HshContext context) throws Exception;
+	public L1Node transformSubstitution(ImageHolder imageHolder, HshContext context) throws Exception;
 
 	/** Transforms this node-tree into n trees. These n trees are the splitted ones.
 	 * If more than one, this L1Node was splitted and the list contains the parts.

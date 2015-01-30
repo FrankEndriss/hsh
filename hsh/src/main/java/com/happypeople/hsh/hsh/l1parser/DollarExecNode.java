@@ -15,7 +15,6 @@ import com.happypeople.hsh.HshOutput;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.HshRedirections;
 import com.happypeople.hsh.hsh.HshRedirectionImpl;
-import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
 
 /** Abstraction of "$(...)" construct
@@ -24,13 +23,12 @@ import com.happypeople.hsh.hsh.NodeTraversal;
  */
 public class DollarExecNode extends ComplexL1Node {
 
-	public DollarExecNode(final L2Token tok, final int off, final int len) {
-		super(tok, off, len);
+	public DollarExecNode(final ImageHolder imageHolder, final int off, final int len) {
+		super(imageHolder, off, len);
 	}
 
 	@Override
-	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
-		final int off=imageHolder.getLen();
+	public L1Node transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		// execute subtree and append grabbed output to imageHolder
 		final HshRedirection stdOutRedir=new HshRedirectionImpl(Redirect.PIPE);
 		final HshExecutor hshExecutor=context.getExecutor();
@@ -42,7 +40,6 @@ public class DollarExecNode extends ComplexL1Node {
 		subOut.connect(subIn);
 		stdOutRedir.setOut(new HshOutput(subOut));
 
-		// TODO execute asynchron or setup an unlimited buffer
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -61,6 +58,8 @@ public class DollarExecNode extends ComplexL1Node {
 				}
 			}
 		}).start();
+
+		final int off=imageHolder.getLen();
 		final Reader subReader=new BufferedReader(new InputStreamReader(subIn), 1024);
 		final char[] buf=new char[1024];
 		int c;
@@ -77,9 +76,7 @@ public class DollarExecNode extends ComplexL1Node {
 
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
-		sb.append('(');
-		get(0).appendUnquoted(sb);
-		sb.append(')');
+		sb.append(getImage());
 	}
 
 	@Override

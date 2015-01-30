@@ -7,7 +7,6 @@ import java.util.List;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
-import com.happypeople.hsh.hsh.L2Token;
 
 /** The Token contained in a DollarVarNode is $<token>
  * if token.kind==DO_SPECIAL it is one of the single-character defined in "special parameters".
@@ -15,8 +14,8 @@ import com.happypeople.hsh.hsh.L2Token;
  */
 public class DollarVarNode extends AbstractL1Node {
 	private final Token t;
-	DollarVarNode(final L2Token tok, final int off, final int len, final Token t) {
-		super(tok, off, len);
+	DollarVarNode(final ImageHolder imageHolder, final int off, final int len, final Token t) {
+		super(imageHolder, off, len);
 		this.t=t;
 	}
 
@@ -25,7 +24,7 @@ public class DollarVarNode extends AbstractL1Node {
 	}
 
 	@Override
-	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+	public L1Node transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		final String s=getSubstitutedString(context);
 		final SimpleL1Node node=new SimpleL1Node(imageHolder, imageHolder.getLen(), s.length());
 		imageHolder.append(s);
@@ -114,7 +113,7 @@ public class DollarVarNode extends AbstractL1Node {
 
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
-		throw new RuntimeException("unquote has to be done after split and substitution");
+		sb.append(getImage());
 	}
 
 	@Override

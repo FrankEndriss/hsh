@@ -14,6 +14,7 @@ import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
 import com.happypeople.hsh.hsh.l1parser.ComplexL1Node;
 import com.happypeople.hsh.hsh.l1parser.GenericComplexL1Node;
+import com.happypeople.hsh.hsh.l1parser.ImageHolder;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.QuotedL1Node;
 
@@ -24,7 +25,7 @@ import com.happypeople.hsh.hsh.l1parser.QuotedL1Node;
  * in an String();
  *
  */
-public class L2Token extends Token implements L1Node {
+public class L2Token extends Token implements L1Node, ImageHolder {
 	private final static boolean DEBUG=false;
 	private List<L1Node> parts=new ArrayList<L1Node>();
 	private StringBuilder sb=new StringBuilder();
@@ -142,7 +143,8 @@ public class L2Token extends Token implements L1Node {
 	/** Appends a String to the image and returns this.
 	 * @param str
 	 */
-	public L2Token append(final String str) {
+	@Override
+	public L2Token append(final CharSequence str) {
 		sb.append(str);
 		return this;
 	}
@@ -153,6 +155,7 @@ public class L2Token extends Token implements L1Node {
 	 * @param len
 	 * See StringBuilder.append(buf, off, len)
 	 */
+	@Override
 	public L2Token append(final char[] buf, final int off, final int len) {
 		sb.append(buf, off, len);
 		return this;
@@ -273,7 +276,7 @@ public class L2Token extends Token implements L1Node {
 	 * @throws Exception
 	 */
 	@Override
-	public L2Token transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+	public L2Token transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		for(int i=0; i<parts.size(); i++)
 			parts.set(i, parts.get(i).transformSubstitution(imageHolder, context));
 		return this;

@@ -6,11 +6,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.hsh.L2Token;
 
 public class SQuotedL1Node extends AbstractL1Node implements QuotedL1Node {
-	public SQuotedL1Node(final L2Token tok, final int off, final int len) {
-		super(tok, off, len);
+	public SQuotedL1Node(final ImageHolder imageHolder, final int off, final int len) {
+		super(imageHolder, off, len);
 	}
 
 	@Override
@@ -19,7 +18,7 @@ public class SQuotedL1Node extends AbstractL1Node implements QuotedL1Node {
 	}
 
 	@Override
-	public SQuotedL1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+	public SQuotedL1Node transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		return this;
 	}
 
@@ -30,7 +29,8 @@ public class SQuotedL1Node extends AbstractL1Node implements QuotedL1Node {
 
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
-		sb.append(getImageHolder().image.substring(getOff()+1, getOff()+getLen()-1));
+		final String s=getImage();
+		sb.append(s.substring(1, s.length()-2));
 	}
 
 	@Override

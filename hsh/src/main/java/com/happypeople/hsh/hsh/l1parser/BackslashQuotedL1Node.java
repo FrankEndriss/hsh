@@ -6,13 +6,12 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.hsh.L2Token;
 
 /** A char escaped by an backslash. Because thats allways one char, the len is fixed to two chars.
  */
 public class BackslashQuotedL1Node extends AbstractL1Node implements QuotedL1Node {
-	public BackslashQuotedL1Node(final L2Token tok, final int off, final int len) {
-		super(tok, off, 2);
+	public BackslashQuotedL1Node(final ImageHolder imageHolder, final int off, final int len) {
+		super(imageHolder, off, 2);
 		if(len!=2)
 			throw new RuntimeException("len of escaped char !=2...something went wrong. :/");
 	}
@@ -23,7 +22,7 @@ public class BackslashQuotedL1Node extends AbstractL1Node implements QuotedL1Nod
 	}
 
 	@Override
-	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+	public L1Node transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		return this;
 	}
 

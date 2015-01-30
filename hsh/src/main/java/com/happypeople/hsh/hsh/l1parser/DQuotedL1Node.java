@@ -4,12 +4,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.hsh.L2Token;
 
 public class DQuotedL1Node extends ComplexL1Node implements QuotedL1Node {
 
-	public DQuotedL1Node(final L2Token tok, final int off, final int len) {
-		super(tok, off, len);
+	public DQuotedL1Node(final ImageHolder imageHolder, final int off, final int len) {
+		super(imageHolder, off, len);
 	}
 
 	@Override
@@ -20,7 +19,8 @@ public class DQuotedL1Node extends ComplexL1Node implements QuotedL1Node {
 
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
-		sb.append(getImageHolder().image.substring(getOff()+1, getOff()+getLen()-1));
+		final String s=getImage();
+		sb.append(s.substring(1, s.length()-2));
 	}
 
 	@Override

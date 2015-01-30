@@ -5,15 +5,14 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.hsh.L2Token;
 
 /** L1Node with children.
  */
 public abstract class ComplexL1Node extends AbstractL1Node {
 	private final List<L1Node> children=new ArrayList<L1Node>();
 
-	public ComplexL1Node(final L2Token tok, final int off, final int len) {
-		super(tok, off, len);
+	public ComplexL1Node(final ImageHolder imageHolder, final int off, final int len) {
+		super(imageHolder, off, len);
 	}
 
 	public int add(final L1Node child) {
@@ -48,7 +47,7 @@ public abstract class ComplexL1Node extends AbstractL1Node {
 	 * @return this, children substituted
 	 */
 	@Override
-	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+	public L1Node transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		for(int i=0; i<children.size(); i++)
 			children.set(i, children.get(i).transformSubstitution(imageHolder, context));
 		return this;

@@ -1,14 +1,13 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-import com.happypeople.hsh.hsh.L2Token;
 
 public abstract class AbstractL1Node implements L1Node {
-	private final L2Token tok;
+	private final ImageHolder imageHolder;
 	private int off;
 	private int len;
 
-	public AbstractL1Node(final L2Token tok, final int off, final int len) {
-		this.tok=tok;
+	public AbstractL1Node(final ImageHolder imageHolder, final int off, final int len) {
+		this.imageHolder=imageHolder;
 		this.off=off;
 		this.len=len;
 		if(off<0)
@@ -54,10 +53,10 @@ public abstract class AbstractL1Node implements L1Node {
 
 	@Override
 	public String getImage() {
-		return tok.getImage().substring(off, off+len);
+		return imageHolder.getImage().substring(off, off+len);
 	}
 
-	protected L2Token getImageHolder() {
-		return tok;
+	protected ImageHolder getImageHolder() {
+		return imageHolder;
 	}
 }

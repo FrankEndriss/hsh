@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.hsh.L2Token;
 
 
 /** SimpleL1Node is a node with simple text. The text is interpreted to have no special meaning.
@@ -18,12 +17,12 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 
 	private final int l1Kind;
 
-	public SimpleL1Node(final L2Token tok, final int off, final int len) {
-		this(tok, off, len, -1);
+	public SimpleL1Node(final ImageHolder imageHolder, final int off, final int len) {
+		this(imageHolder, off, len, -1);
 	}
 
-	public SimpleL1Node(final L2Token tok, final int off, final int len, final int l1Kind) {
-		super(tok, off, len);
+	public SimpleL1Node(final ImageHolder imageHolder, final int off, final int len, final int l1Kind) {
+		super(imageHolder, off, len);
 		this.l1Kind=l1Kind;
 	}
 
@@ -45,7 +44,7 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 	}
 
 	@Override
-	public L1Node transformSubstitution(final L2Token imageHolder, final HshContext context) throws Exception {
+	public L1Node transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		return this;
 	}
 
@@ -118,7 +117,7 @@ public class SimpleL1Node extends AbstractL1Node implements L1Node, Stringifiabl
 
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
-		sb.append(getImageHolder().image.substring(getOff(), getOff()+getLen()));
+		sb.append(getImage());
 	}
 
 	@Override
