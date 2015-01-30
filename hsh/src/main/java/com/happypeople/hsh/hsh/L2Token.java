@@ -67,36 +67,17 @@ public class L2Token extends Token implements L1Node, ImageHolder {
 			return false;
 
 		final L1Node firstPart=getPart(0);
-		final int partLen=firstPart.getLen();
-
 		final L2Token tok=new L2Token();
 		tok.kind=kind;
 
-		for(int i=1; i<getPartCount(); i++) {
-			final L1Node lPart=getPart(i);
-			// adjust the offsets of the subtree of parts
-			try {
-				NodeTraversal.traverse(lPart, new NodeTraversal.TraverseListener() {
-					@Override
-					public TraverseListenerResult node(final L1Node node, final int level) {
-						node.addOff(-partLen);
-						return TraverseListenerResult.CONTINUE;
-					}
-				});
-			} catch (final Exception e) {
-				// should not happen
-				e.printStackTrace();
-				throw new RuntimeException("something went wrong :/", e);
-			}
-			tok.addPart(lPart);
-		}
-		// remove all but the first part
+		// copy all parts but the first to new Token
+		for(int i=1; i<getPartCount(); i++)
+			tok.addPart(getPart(i));
+
+		// remove all but the first part from this
 		parts.clear();
 		parts.add(firstPart);
 
-		tok.append(image.substring(partLen, image.length()));
-		tok.finishImage();
-		image=image.substring(0, partLen);
 		tok.next=next;
 		next=tok;
 

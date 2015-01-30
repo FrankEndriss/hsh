@@ -56,10 +56,13 @@ public class ExpansionTest {
 	@Test
 	public void test_dollarExec1() throws Exception {
 		runTest("$(echo myCmd)");
-		assertEquals("# execs", 1, executedList.size());
+		// should execute "echo myCmd" while substitution, and then "myCmd" as command
+		assertEquals("# execs", 2, executedList.size());
 		assertEquals("# cmdline", 2, executedList.get(0).length);
 		assertEquals("# cmdline", "echo", executedList.get(0)[0]);
 		assertEquals("# cmdline", "myCmd", executedList.get(0)[1]);
+		assertEquals("# cmdline", 1, executedList.get(1).length);
+		assertEquals("# cmdline", "myCmd", executedList.get(1)[0]);
 	}
 
 	@Test
