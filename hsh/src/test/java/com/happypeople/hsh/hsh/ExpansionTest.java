@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -17,6 +18,7 @@ import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
 import com.happypeople.hsh.hsh.parser.CompleteCommand;
 
 public class ExpansionTest {
+	private final static boolean DEBUG=true;
 
 	private HshParser parser;
 	private PipedWriter toParser;
@@ -92,6 +94,18 @@ public class ExpansionTest {
 	}
 
 	@Test
+	public void test_split4() throws Exception {
+		runTest("echo 'x y' hallo");
+		assertEquals("# execs", 1, executedList.size());
+		if(DEBUG)
+			System.out.println("executed[0]: "+Arrays.asList(executedList.get(0)));
+		assertEquals("# cmdline", 3, executedList.get(0).length);
+		assertEquals("# cmdline", "echo", executedList.get(0)[0]);
+		assertEquals("# cmdline", "x y", executedList.get(0)[1]);
+		assertEquals("# cmdline", "hallo", executedList.get(0)[2]);
+	}
+
+	@Test
 	public void test_split3() throws Exception {
 		runTest("x=\"\\\"x y\"\\\" echo $x hallo");
 		assertEquals("# execs", 1, executedList.size());
@@ -117,6 +131,8 @@ public class ExpansionTest {
 	public void test_split1() throws Exception {
 		runTest("echo \"x y\" hallo");
 		assertEquals("# execs", 1, executedList.size());
+		if(DEBUG)
+			System.out.println("executed[0]: "+Arrays.asList(executedList.get(0)));
 		assertEquals("# cmdline", 3, executedList.get(0).length);
 		assertEquals("# cmdline", "echo", executedList.get(0)[0]);
 		assertEquals("# cmdline", "x y", executedList.get(0)[1]);

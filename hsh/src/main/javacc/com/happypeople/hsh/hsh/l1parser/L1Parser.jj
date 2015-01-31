@@ -508,36 +508,36 @@ L1Node dollar_var(ImageHolder l2token):
 	}}
 
 /** A double quoted part. There can be backticked and dollar- subparts. */
-L1Node dquoted(ImageHolder l2Token):
+L1Node dquoted(ImageHolder imageHolder):
 {
-	List<L1Node> childs=new ArrayList<L1Node>();
 	Token t=null;
+	String simpleImage=null;
 	L1Node childNode=null;
-	final int off=l2Token.getLen();
+	final int off=imageHolder.getLen();
+	DQuotedL1Node ret=new DQuotedL1Node(imageHolder, off, 0);
 }
 {
-	< DQUOTE_START > { l2Token.append("\""); }
+	< DQUOTE_START > { imageHolder.append("\""); }
 	(
-		(		  t=< ESC_DQUOTE >		{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="\""; }		| t=< ESC_DOLLAR >		{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="$"; }
-		| t=< ESC_BACKTIC >		{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="`"; }
-		| t=< ESC_BACKSLASH >	{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="\\"; }
-		| t=< CHAR_BACKSLASH >	{ childs.add(new SimpleL1Node(l2Token, 1, 1)); t.image="\\"; }
-		| t=< DANYTHING >		{ childs.add(new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length())); }
-		| childNode=backticked(l2Token)
-		| childNode=dollar_var(l2Token)
-		| childNode=dollar_subst(l2Token)
-		| childNode=dollar_exec(l2Token)
+		(		  < ESC_DQUOTE >		{ simpleImage="\""; }		| < ESC_DOLLAR >		{ simpleImage="$"; }
+		| < ESC_BACKTIC >		{ simpleImage="`"; }
+		| < ESC_BACKSLASH >		{ simpleImage="\\"; }
+		| < CHAR_BACKSLASH >	{ simpleImage="\\"; }
+		| t=< DANYTHING >		{ simpleImage=t.image; }
+		| childNode=backticked(imageHolder)
+		| childNode=dollar_var(imageHolder)
+		| childNode=dollar_subst(imageHolder)
+		| childNode=dollar_exec(imageHolder)
 		)
 		{
-			if(t!=null) {
-				l2Token.append(t.image);
-			} else // childNode!=null
-				childs.add(childNode);		}	)*
+			if(simpleImage!=null) {				childNode=new SimpleL1Node(imageHolder, imageHolder.getLen(), simpleImage.length());
+				imageHolder.append(simpleImage);
+				simpleImage=null;
+			}
+			ret.add(childNode);		}	)*
 	< DQUOTE_END >
-	{ 	l2Token.append("\"");
-		DQuotedL1Node ret=new DQuotedL1Node(l2Token, off, l2Token.getLen()-off);
-		for(L1Node l1Node : childs)
-			ret.add(l1Node);
+	{ 	imageHolder.append("\"");
+		ret.addLen(imageHolder.getLen()-off);
 		return ret;
 	}
 }
@@ -563,12 +563,12 @@ int off=l2token.getLen();
 		}}
 
 /** Single quoted part of a word */
-L1Node squoted(ImageHolder l2Token):
+L1Node squoted(ImageHolder imageHolder):
 {Token t;
-int off=l2Token.getLen();
-}{	<SQUOTE_START>	{ l2Token.append("'"); }	( t=<SANYTHING>	{ l2Token.append(t.image); } )?
-	<SQUOTE_END>	{ l2Token.append("'");
-		return new SQuotedL1Node(l2Token, off, l2Token.getLen()-off);
+int off=imageHolder.getLen();
+}{	<SQUOTE_START>	{ imageHolder.append("'"); }	( t=<SANYTHING>	{ imageHolder.append(t.image); } )?
+	<SQUOTE_END>	{ imageHolder.append("'");
+		return new SQuotedL1Node(imageHolder, off, imageHolder.getLen()-off);
 	}}
 
 void separating_part(ImageHolder imageHolder, L2Token parent):
@@ -647,7 +647,7 @@ void word(L2Token ret):
 	SimpleImageHolder imageHolder=new SimpleImageHolder();
 }{
 	( 
-			word_part_list(imageHolder, wplParent=new GenericComplexL1Node(ret, 0, 0)) {
+			word_part_list(imageHolder, wplParent=new GenericComplexL1Node(imageHolder, 0, 0)) {
 				for(L1Node node : wplParent)
 					ret.addPart(node);
 				ret.kind=HshParserConstants.WORD;

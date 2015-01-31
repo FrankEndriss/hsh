@@ -6,7 +6,9 @@ import java.util.LinkedList;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.l1parser.Executable;
+import com.happypeople.hsh.hsh.l1parser.ImageHolder;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
+import com.happypeople.hsh.hsh.l1parser.SimpleImageHolder;
 
 public class NodeTraversal {
 	/** Parent-first Depth-first traversal of the nodes tree.
@@ -52,9 +54,8 @@ public class NodeTraversal {
 	}
 
 	public static String substituteSubtree(final L1Node subtree, final HshContext context) throws Exception {
-		final L2Token tok=new L2Token();
+		final ImageHolder tok=new SimpleImageHolder();
 		final L1Node transformed=subtree.transformSubstitution(tok, context);
-		tok.finishImage();
 		return transformed.getImage();
 	}
 

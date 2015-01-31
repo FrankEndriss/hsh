@@ -30,7 +30,7 @@ public class SQuotedL1Node extends AbstractL1Node implements QuotedL1Node {
 	@Override
 	public void appendUnquoted(final StringBuilder sb) {
 		final String s=getImage();
-		sb.append(s.substring(1, s.length()-2));
+		sb.append(s.substring(1, s.length()-1));
 	}
 
 	@Override

@@ -8,7 +8,6 @@ import org.junit.Test;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.HshChildContext;
-import com.happypeople.hsh.hsh.L2Token;
 
 public class DollarSubstNodeTest {
 
@@ -30,10 +29,9 @@ public class DollarSubstNodeTest {
 	}
 
 	private SimpleL1Node createSimpleL1Node(final String image) {
-		final L2Token t=new L2Token();
-		t.append(image);
-		t.finishImage();
-		return new SimpleL1Node(t, 0, image.length());
+		final ImageHolder imageHolder=new SimpleImageHolder();
+		imageHolder.append(image);
+		return new SimpleL1Node(imageHolder, 0, image.length());
 	}
 
 	@Test
@@ -87,7 +85,7 @@ public class DollarSubstNodeTest {
 		out.setWord(simpleWord);
 		if(testData[2].getImage().equals("EXIT")) {	// indicates error should be thrown
 			try {
-				final L2Token imageHolder=new L2Token();
+				final ImageHolder imageHolder=new SimpleImageHolder();
 				out.transformSubstitution(imageHolder, context);
 				fail("should have thrown HshExit");
 			}catch(final HshExit hshEx) {
@@ -99,9 +97,8 @@ public class DollarSubstNodeTest {
 
 		String exp=((SimpleL1Node)testData[2]).getImage();
 		exp="NULL".equals(exp)?"":exp;
-		final L2Token imageHolder=new L2Token();
+		final ImageHolder imageHolder=new SimpleImageHolder();
 		final L1Node resultNode=out.transformSubstitution(imageHolder, context);
-		imageHolder.finishImage();
 		final String result=resultNode.getImage();
 
 		String dbg1=null;
@@ -117,9 +114,8 @@ public class DollarSubstNodeTest {
 	}
 
 	private String getSubstitutedString(final DollarSubstNode node, final HshContext context) throws Exception {
-		final L2Token imageHolder=new L2Token();
+		final ImageHolder imageHolder=new SimpleImageHolder();
 		final L1Node resultNode=node.transformSubstitution(imageHolder, context);
-		imageHolder.finishImage();
 		return resultNode.getImage();
 	}
 

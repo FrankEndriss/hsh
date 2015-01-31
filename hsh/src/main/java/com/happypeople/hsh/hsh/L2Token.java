@@ -17,6 +17,7 @@ import com.happypeople.hsh.hsh.l1parser.GenericComplexL1Node;
 import com.happypeople.hsh.hsh.l1parser.ImageHolder;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.QuotedL1Node;
+import com.happypeople.hsh.hsh.l1parser.SimpleImageHolder;
 
 /** A L2Token extends Token to have:
  * -a list of L1Nodes as childs
@@ -25,7 +26,7 @@ import com.happypeople.hsh.hsh.l1parser.QuotedL1Node;
  * in an String();
  *
  */
-public class L2Token extends Token implements L1Node, ImageHolder {
+public class L2Token extends Token implements L1Node {
 	private final static boolean DEBUG=false;
 	private List<L1Node> parts=new ArrayList<L1Node>();
 	private StringBuilder sb=new StringBuilder();
@@ -123,8 +124,8 @@ public class L2Token extends Token implements L1Node, ImageHolder {
 
 	/** Appends a String to the image and returns this.
 	 * @param str
-	 */
 	@Override
+	 */
 	public L2Token append(final CharSequence str) {
 		sb.append(str);
 		return this;
@@ -135,8 +136,8 @@ public class L2Token extends Token implements L1Node, ImageHolder {
 	 * @param off
 	 * @param len
 	 * See StringBuilder.append(buf, off, len)
-	 */
 	@Override
+	 */
 	public L2Token append(final char[] buf, final int off, final int len) {
 		sb.append(buf, off, len);
 		return this;
@@ -205,9 +206,7 @@ public class L2Token extends Token implements L1Node, ImageHolder {
 	 * @throws Exception
 	 */
 	public List<String> doExpansion(final HshContext context) throws Exception {
-		final L2Token imageHolder=new L2Token();
-		final L2Token substituted=transformSubstitution(imageHolder, context);
-		imageHolder.finishImage();
+		final L1Node substituted=transformSubstitution(new SimpleImageHolder(), context);
 		final List<? extends L1Node> splitted=substituted.transformSplit(context);
 		return pathnameExpand(splitted, context);
 	}
@@ -225,12 +224,12 @@ public class L2Token extends Token implements L1Node, ImageHolder {
 			return getPart(0).transformSplit(context);
 
 		final List<L1Node> ret=new ArrayList<L1Node>();
-		GenericComplexL1Node currentSplit=new GenericComplexL1Node(this, 0, 0);
+		GenericComplexL1Node currentSplit=new GenericComplexL1Node(new SimpleImageHolder(), 0, 0);
 		for(final L1Node child : this) {
 			final List<? extends L1Node> splits=child.transformSplit(context);
 			if(splits.get(0).getLen()==0) {
 				ret.add(currentSplit);
-				currentSplit=new GenericComplexL1Node(this, 0, 0);
+				currentSplit=new GenericComplexL1Node(new SimpleImageHolder(), 0, 0);
 			}
 			for(final L1Node childSplit : splits) {
 				if(childSplit.getLen()>0) {
@@ -238,7 +237,7 @@ public class L2Token extends Token implements L1Node, ImageHolder {
 					currentSplit.addLen(childSplit.getLen());
 				} else if(currentSplit.getChildCount()>0) {
 					ret.add(currentSplit);
-					currentSplit=new GenericComplexL1Node(this, 0, 0);
+					currentSplit=new GenericComplexL1Node(new SimpleImageHolder(), 0, 0);
 				}
 			}
 		}

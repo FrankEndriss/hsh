@@ -17,9 +17,11 @@ import com.happypeople.hsh.hsh.NodeTraversal.TraverseListener;
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
 import com.happypeople.hsh.hsh.l1parser.DollarSubstNode;
 import com.happypeople.hsh.hsh.l1parser.DollarVarNode;
+import com.happypeople.hsh.hsh.l1parser.ImageHolder;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
+import com.happypeople.hsh.hsh.l1parser.SimpleImageHolder;
 import com.happypeople.hsh.hsh.l1parser.StringifiableNode;
 import com.happypeople.hsh.hsh.parser.CompleteCommand;
 import com.happypeople.hsh.hsh.parser.SimpleCommand;
@@ -115,9 +117,8 @@ public class HshParserTest {
 	*/
 
 	private String getSubstitutedString(final DollarSubstNode node, final HshContext context) throws Exception {
-		final L2Token imageHolder=new L2Token();
+		final ImageHolder imageHolder=new SimpleImageHolder();
 		final L1Node resultNode=node.transformSubstitution(imageHolder, context);
-		imageHolder.finishImage();
 		return resultNode.getImage();
 	}
 

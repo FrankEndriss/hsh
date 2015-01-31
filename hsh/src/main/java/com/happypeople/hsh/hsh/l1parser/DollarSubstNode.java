@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
 
 
@@ -73,17 +72,14 @@ public class DollarSubstNode extends ComplexL1Node {
 		final L1Node variable=getParameter();
 		// if the variable name contains substitutions itself (i.e. "${${x}}"), substitute them now
 		// Note that this is not Posix, (and also per 2015-01-10 this does not parse)
-		final L2Token varNameToken=new L2Token();
-		final L1Node substituted=variable.transformSubstitution(varNameToken, context);
-		varNameToken.finishImage();
+		final L1Node substituted=variable.transformSubstitution(new SimpleImageHolder(), context);
 		final String varName=substituted.getImage();
 
 		final L1Node operatorNode=getOperator();
 		if(operatorNode!=null) {
 			// if the operator contains substitutions itself (i.e. "${x${op}hello}"), substitute them now
 			// Note that this is not Posix, (and also per 2015-01-10 this does not parse)
-			final L2Token operatorToken=new L2Token();
-			operatorNode.transformSubstitution(operatorToken, context);
+			operatorNode.transformSubstitution(new SimpleImageHolder(), context);
 			final Operator operator=operatorMap.get(operatorNode.getImage());
 			if(operator==null)
 				throw new RuntimeException("operator in DollarSubstNode unknown: "+operatorNode);
