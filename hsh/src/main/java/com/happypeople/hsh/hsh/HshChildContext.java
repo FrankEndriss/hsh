@@ -6,88 +6,92 @@ import java.io.PrintStream;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
-import com.happypeople.hsh.HshRedirections;
+import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshTerminal;
 
 public class HshChildContext implements HshContext {
 	private final HshContext parent;
 	private final HshEnvironment env;
 	private final HshExecutor executor;
-
-	public HshChildContext(final HshContext parent) {
-		this.parent=parent;
-		this.env=parent!=null?parent.getEnv():new HshEnvironmentImpl(null);
-		this.executor=parent!=null?parent.getExecutor():new HshExecutorImpl(null, this, null);
-	}
+	private final HshFDSet fdSet;
+	private final HshTerminal terminal;
+	private boolean finished=false;
 
 	/** Initializes a new HshContext.
-	 * @param parent if parent is not null the new Context is a child of parent
-	 * @param env if env is not null env is the env of this context. if env is null, parent.getEnv() is used.
-	 * @param executor if executor is not null executor is the executor of this context. if executor is null, parent.getExecutor() is used.
+	 * @param parent of the new Context
+	 * @param env of the new Context
+	 * @param executor of the new Context
+	 * @param fdSet of the new Context
 	 */
-	public HshChildContext(final HshContext parent, final HshEnvironment env, final HshExecutor executor) {
-		if(parent==null)
-			throw new IllegalArgumentException("parent must not be null with this constructor");
+	HshChildContext(final HshContext parent,
+		final HshEnvironment env,
+		final HshExecutor executor,
+		final HshFDSet fdSet,
+		final HshTerminal terminal)
+	{
 		this.parent=parent;
-
-		this.env= env==null?parent.getEnv():env;
-		this.executor= executor==null?parent.getExecutor():executor;
-
-		//((HshEnvironmentImpl)env).addListener(executor);
-	}
-
-
-	@Override
-	public PrintStream getStdOut() {
-		// TODO replace by getExecutor().getRedirections().getOutRedirection().getPrintStream()
-		return parent.getStdOut();
+		this.env=env;
+		this.executor=executor;
+		if(fdSet==null)
+			throw new IllegalArgumentException("HshFDSet must not be null");
+		this.fdSet=fdSet;
+		this.terminal=terminal;
 	}
 
 	@Override
 	public InputStream getStdIn() {
-		return parent.getStdIn();
+		return getFDSet().getInput(HshFDSet.STDIN).getInputStream();
+	}
+
+	@Override
+	public PrintStream getStdOut() {
+		return getFDSet().getOutput(HshFDSet.STDOUT).getOutputStream();
+
 	}
 
 	@Override
 	public PrintStream getStdErr() {
-		return parent.getStdErr();
-	}
-
-	@Override
-	public int getCols() {
-		return parent.getCols();
-	}
-
-	@Override
-	public int getRows() {
-		return parent.getRows();
+		return getFDSet().getOutput(HshFDSet.STDERR).getOutputStream();
 	}
 
 	@Override
 	public void finish() {
-		// this is a child
-		// should cause that no more commands are executed in this context
+		finished=true;
 	}
 
 	@Override
-	public HshContext createChildContext(final HshEnvironment newEnv, final HshExecutor newExcecutor) {
-		return new HshChildContext(this, newEnv==null?this.getEnv():newEnv, newExcecutor==null?this.getExecutor():newExcecutor);
+	public boolean isFinish() {
+		return finished;
 	}
-
-	@Override
-	public HshContext createChildContext(final HshRedirections hshRedirections) {
-		return new HshChildContext(this, null, new HshExecutorImpl(getExecutor(), this, hshRedirections));
-	}
-
 
 	@Override
 	public HshEnvironment getEnv() {
-		return env;
+		return env!=null?env:parent.getEnv();
 	}
 
 	@Override
 	public HshExecutor getExecutor() {
-		return executor;
+		return executor!=null?executor:parent.getExecutor();
 	}
 
+	@Override
+	public HshFDSet getFDSet() {
+		return fdSet;
+	}
+
+	@Override
+	public HshTerminal getTerminal() {
+		return terminal;
+	}
+
+	@Override
+	public void close() {
+		if(env!=null)
+			env.close();
+		if(executor!=null)
+			executor.close();
+		if(fdSet!=null)
+			fdSet.close();
+	}
 
 }

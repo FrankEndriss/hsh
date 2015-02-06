@@ -219,7 +219,7 @@ cmd_name         : WORD                   // Apply rule 7a
 void cmd_name(SimpleCommand simpleCommand):
 {
 	Token t;}{
-	t=< WORD > { simpleCommand.setCmdName((L2Token)t); }
+	t=< WORD > { simpleCommand.addArg((L2Token)t); }
 }
 
 /**

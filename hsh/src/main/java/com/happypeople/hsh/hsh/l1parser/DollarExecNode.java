@@ -1,20 +1,15 @@
 package com.happypeople.hsh.hsh.l1parser;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.Reader;
-import java.lang.ProcessBuilder.Redirect;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.HshExecutor;
-import com.happypeople.hsh.HshOutput;
-import com.happypeople.hsh.HshRedirection;
-import com.happypeople.hsh.HshRedirections;
-import com.happypeople.hsh.hsh.HshRedirectionImpl;
+import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshPipe;
+import com.happypeople.hsh.hsh.HshContextBuilder;
+import com.happypeople.hsh.hsh.HshFDSetImpl;
+import com.happypeople.hsh.hsh.HshPipeImpl;
 import com.happypeople.hsh.hsh.NodeTraversal;
 
 /** Abstraction of "$(...)" construct
@@ -30,16 +25,13 @@ public class DollarExecNode extends ComplexL1Node {
 	@Override
 	public L1Node transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		// execute subtree and append grabbed output to imageHolder
-		final HshRedirection stdOutRedir=new HshRedirectionImpl(Redirect.PIPE);
-		final HshExecutor hshExecutor=context.getExecutor();
-		final HshRedirections parentRedirections=hshExecutor.getRedirecions();
-		final HshRedirections hshRedirections=parentRedirections.createChild(null, stdOutRedir, null);
-		final HshContext lContext=context.createChildContext(hshRedirections);
-		final PipedInputStream subIn=new PipedInputStream();
-		final PipedOutputStream subOut=new PipedOutputStream();
-		subOut.connect(subIn);
-		stdOutRedir.setOut(new HshOutput(subOut));
+		final HshFDSetImpl fdSet=new HshFDSetImpl(context.getFDSet());
+		final HshPipe hshPipe=new HshPipeImpl();
+		fdSet.setOutput(HshFDSet.STDOUT, hshPipe);
 
+		final HshContext lContext=new HshContextBuilder().parent(context).fdSet(fdSet).create();
+
+		/*
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -49,18 +41,17 @@ public class DollarExecNode extends ComplexL1Node {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} finally {
-					try {
-						subOut.close();
-					} catch (final IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					hshPipe.getOutputStream().close();
 				}
 			}
 		}).start();
+		*/
+
+					NodeTraversal.executeSubtree(get(0), lContext);
+					lContext.getStdOut().close();
 
 		final int off=imageHolder.getLen();
-		final Reader subReader=new BufferedReader(new InputStreamReader(subIn), 1024);
+		final Reader subReader=new InputStreamReader(hshPipe.getInputStream());
 		final char[] buf=new char[1024];
 		int c;
 		while((c=subReader.read(buf))>0)

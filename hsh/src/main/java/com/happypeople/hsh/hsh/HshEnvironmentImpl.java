@@ -21,6 +21,7 @@ public class HshEnvironmentImpl implements HshEnvironment {
 	private final HshEnvironment parent;
 	private final Map<String, Parameter> vars=new HashMap<String, Parameter>();
 	private final Set<ChangeListener> listeners=new HashSet<ChangeListener>();
+	private final ChangeListener parentListener;
 
 	/** Number of positional parameters set in this environment. -1==undefined */
 	private int positionalCount=-1;
@@ -30,56 +31,61 @@ public class HshEnvironmentImpl implements HshEnvironment {
 	 */
 	public HshEnvironmentImpl(final HshEnvironment parent) {
 		this.parent=parent;
-		if(parent!=null) {
-			// copy on write to parent
-			parent.addListener(new ChangeListener() {
+		parentListener= parent==null?null:new ChangeListener() {
 
-				@Override
-				public void created(final Parameter parameter) {
-					// if a Parameter is created in parents context after copy of the context,
-					// that Parameter is still undefined in the copy.
-					if(!vars.containsKey(parameter.getName()))
-						vars.put(parameter.getName(), UNDEFINED);
-				}
+			@Override
+			public void created(final Parameter parameter) {
+				// if a Parameter is created in parents context after copy of the context,
+				// that Parameter is still undefined in the copy.
+				if(!vars.containsKey(parameter.getName()))
+					vars.put(parameter.getName(), UNDEFINED);
+			}
 
-				@Override
-				public void removed(final Parameter parameter) {
-					// if a Parameter is removed in parents context after copy of the context,
-					// that Parameter is still defined (or undefined) in the copy.
-					if(parameter.isExport()) {
-						// check if copy exists
-						final Parameter lParam=vars.get(parameter.getName());
-						// copy if the removed param was exported
-						if(lParam==null && parameter.isExport())
-							vars.put(parameter.getName(), parameter);
-					}
+			@Override
+			public void removed(final Parameter parameter) {
+				// if a Parameter is removed in parents context after copy of the context,
+				// that Parameter is still defined (or undefined) in the copy.
+				if(parameter.isExport()) {
+					// check if copy exists
+					final Parameter lParam=vars.get(parameter.getName());
+					// copy if the removed param was exported
+					if(lParam==null && parameter.isExport())
+						vars.put(parameter.getName(), parameter);
 				}
+			}
 
-				@Override
-				public void changed(final VariableParameter parameter, final String oldValue) {
-					// if a Parameter value is changed in parents context after copy of the context,
-					// that Parameter is still defined with the old value in the copy.
-					if(parameter.isExport()) {
-						final Parameter lParam=vars.get(parameter.getName());
-						if(lParam==null)
-							vars.put(parameter.getName(), parameter.createCopy());
-					}
+			@Override
+			public void changed(final VariableParameter parameter, final String oldValue) {
+				// if a Parameter value is changed in parents context after copy of the context,
+				// that Parameter is still defined with the old value in the copy.
+				if(parameter.isExport()) {
+					final Parameter lParam=vars.get(parameter.getName());
+					if(lParam==null)
+						vars.put(parameter.getName(), parameter.createCopy());
 				}
+			}
 
-				@Override
-				public void exported(final Parameter parameter) {
-					// if a Parameter is exported in parents context after copy of the context,
-					// that Parameter is still undefined (or defined) in the copy.
-					if(!vars.containsKey(parameter.getName()))
-						vars.put(parameter.getName(), UNDEFINED);
-				}
-			});
-		}
+			@Override
+			public void exported(final Parameter parameter) {
+				// if a Parameter is exported in parents context after copy of the context,
+				// that Parameter is still undefined (or defined) in the copy.
+				if(!vars.containsKey(parameter.getName()))
+					vars.put(parameter.getName(), UNDEFINED);
+			}
+		};
+
+		if(parent!=null)
+			parent.addListener(parentListener);
 	}
 
 	@Override
 	public void addListener(final ChangeListener listener) {
 		listeners.add(listener);
+	}
+
+	@Override
+	public void removeListener(final ChangeListener listener) {
+		listeners.remove(listener);
 	}
 
 	@Override
@@ -192,6 +198,14 @@ public class HshEnvironmentImpl implements HshEnvironment {
 	private void fireChanged(final VariableParameter parameter, final String oldValue) {
 		for(final ChangeListener listener : listeners)
 			listener.changed(parameter, oldValue);
+	}
+
+	@Override
+	public void close() {
+		if(parent!=null)
+			parent.removeListener(parentListener);
+		vars.clear();
+		listeners.clear();
 	}
 
 }

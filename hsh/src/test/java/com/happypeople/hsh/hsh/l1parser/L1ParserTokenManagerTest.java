@@ -86,7 +86,7 @@ public class L1ParserTokenManagerTest {
 	private void countToken(final TTest ttest, final String message) {
 		final L1Parser parser=new L1Parser(new StringReader(ttest.str));
 		tokenMgr=parser.token_source;
-		parser.pushState(0);
+		tokenMgr.pushState(0);
 		tokenMgr.SwitchTo(ttest.parserState);
 
 

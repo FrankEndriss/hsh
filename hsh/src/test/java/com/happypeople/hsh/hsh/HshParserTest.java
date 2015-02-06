@@ -34,8 +34,9 @@ public class HshParserTest {
 
 	@Before
 	public void init_setup() {
-		context=new HshChildContext(null);
+		context=new HshContextBuilder().create();
 	}
+
 	public HshParser setup(final String input) {
 		final L2TokenManager tokMgr=new L2TokenManager(new L1Parser(new StringReader(input)));
 		final HshParser parser=new HshParser(tokMgr);
@@ -198,8 +199,8 @@ public class HshParserTest {
 		final SimpleCommand sc=findSimpleCommand(cc);
 
 		assertEquals("# assignments", 0, sc.getAssignments().size());
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
-		assertEquals("# args", 0, sc.getArgs().size());
+		assertEquals("# args", 1, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 		assertEquals("# redir", 1, sc.getRedirects().size());
 	}
 
@@ -210,14 +211,14 @@ public class HshParserTest {
 		final SimpleCommand sc=findSimpleCommand(res[0]);
 
 		assertEquals("# assignments", 2, sc.getAssignments().size());
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
-		assertEquals("# args", 3, sc.getArgs().size());
+		assertEquals("# args", 4, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 		assertEquals("# redir", 2, sc.getRedirects().size());
 
 		final SimpleCommand sc2=findSimpleCommand(res[1]);
 		assertEquals("2.# assignments", 2, sc2.getAssignments().size());
-		assertEquals("2.cmd", "echo2", node2String(sc2.getCmdName()));
-		assertEquals("2.# args", 3, sc2.getArgs().size());
+		assertEquals("2.# args", 4, sc2.getArgs().size());
+		assertEquals("2.cmd", "echo2", node2String(sc2.getArgs().get(0)));
 		assertEquals("# redir", 1, sc2.getRedirects().size());
 	}
 
@@ -228,13 +229,13 @@ public class HshParserTest {
 		final SimpleCommand sc1=findSimpleCommand(cc[0]);
 
 		assertEquals("# assignments", 2, sc1.getAssignments().size());
-		assertEquals("cmd", "echo", node2String(sc1.getCmdName()));
-		assertEquals("# args", 3, sc1.getArgs().size());
+		assertEquals("# args", 4, sc1.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc1.getArgs().get(0)));
 
 		final SimpleCommand sc2=findSimpleCommand(cc[1]);
 		assertEquals("2.# assignments", 2, sc2.getAssignments().size());
-		assertEquals("2.cmd", "echo2", node2String(sc2.getCmdName()));
-		assertEquals("2.# args", 3, sc2.getArgs().size());
+		assertEquals("2.# args", 4, sc2.getArgs().size());
+		assertEquals("2.cmd", "echo2", node2String(sc2.getArgs().get(0)));
 	}
 
 	@Test
@@ -242,8 +243,8 @@ public class HshParserTest {
 		final CompleteCommand cc=doTestCompleteCommand("x=1 y=2 echo bla y=2 laber");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 2, sc.getAssignments().size());
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
-		assertEquals("# args", 3, sc.getArgs().size());
+		assertEquals("# args", 4, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 	}
 
 	@Test
@@ -251,8 +252,8 @@ public class HshParserTest {
 		final CompleteCommand cc=doTestCompleteCommand("x=1 y=2 echo bla laber");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 2, sc.getAssignments().size());
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
-		assertEquals("# args", 2, sc.getArgs().size());
+		assertEquals("# args", 3, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 	}
 
 	@Test
@@ -260,8 +261,8 @@ public class HshParserTest {
 		final CompleteCommand cc=doTestCompleteCommand("x=1 echo x");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 1, sc.getAssignments().size());
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
-		assertEquals("# args", 1, sc.getArgs().size());
+		assertEquals("# args", 2, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 	}
 
 	@Test
@@ -269,7 +270,7 @@ public class HshParserTest {
 		final CompleteCommand cc=doTestCompleteCommand("x=1 y=2");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 2, sc.getAssignments().size());
-		assertNull("cmd", sc.getCmdName());
+		assertEquals("# args", 0, sc.getArgs().size());
 	}
 
 	@Test
@@ -277,72 +278,70 @@ public class HshParserTest {
 		final CompleteCommand cc=doTestCompleteCommand("x=1");
 		final SimpleCommand sc=findSimpleCommand(cc);
 		assertEquals("# assignments", 1, sc.getAssignments().size());
-		assertNull("cmd", sc.getCmdName());
+		assertEquals("# args", 0, sc.getArgs().size());
 	}
 
 	@Test
 	public void testComplete_command7() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo \"a`echo x` b c\"");
 		final SimpleCommand sc=findSimpleCommand(cc);
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
+		assertEquals("# args", 2, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 		assertEquals("# assignments", 0, sc.getAssignments().size());
-		assertEquals("# args", 1, sc.getArgs().size());
 	}
 
 	@Test
 	public void testComplete_command6() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo \"a\\\\ b c\"");
 		final SimpleCommand sc=findSimpleCommand(cc);
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
+		assertEquals("# args", 2, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 		assertEquals("# assignments", 0, sc.getAssignments().size());
-		assertEquals("# args", 1, sc.getArgs().size());
 	}
 
 	@Test
 	public void testComplete_command5() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo \"a \\b c\"");
 		final SimpleCommand sc=findSimpleCommand(cc);
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
+		assertEquals("# args", 2, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 		assertEquals("# assignments", 0, sc.getAssignments().size());
-		assertEquals("# args", 1, sc.getArgs().size());
 	}
 
 	@Test
 	public void testComplete_command4() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo \"a b c\"");
 		final SimpleCommand sc=findSimpleCommand(cc);
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
+		assertEquals("# args", 2, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 		assertEquals("# assignments", 0, sc.getAssignments().size());
-		assertEquals("# args", 1, sc.getArgs().size());
 	}
 
 	@Test
 	public void testComplete_command3() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo 'a b c'");
 		final SimpleCommand sc=findSimpleCommand(cc);
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
+		assertEquals("# args", 2, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 		assertEquals("# assignments", 0, sc.getAssignments().size());
-		assertEquals("# args", 1, sc.getArgs().size());
 	}
 
 	@Test
 	public void testComplete_command2() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("echo a b c");
 		final SimpleCommand sc=findSimpleCommand(cc);
-		assertEquals("cmd", "echo", node2String(sc.getCmdName()));
+		assertEquals("# args", 4, sc.getArgs().size());
+		assertEquals("cmd", "echo", node2String(sc.getArgs().get(0)));
 		assertEquals("# assignments", 0, sc.getAssignments().size());
-		assertEquals("# args", 3, sc.getArgs().size());
 	}
 
 	@Test
 	public void testComplete_command1() throws Exception {
 		final CompleteCommand cc=doTestCompleteCommand("x");
-		if(DEBUG)
-			classTreeTraversal(cc);
 		final SimpleCommand sc=findSimpleCommand(cc);
-		assertEquals("cmd", "x", node2String(sc.getCmdName()));
+		assertEquals("# args", 1, sc.getArgs().size());
+		assertEquals("cmd", "x", node2String(sc.getArgs().get(0)));
 		assertEquals("# assignments", 0, sc.getAssignments().size());
-		assertEquals("# args", 0, sc.getArgs().size());
 	}
 
 	private CompleteCommand[] doTestCompleteCommand2(final String input, final int count) throws ParseException {
@@ -367,19 +366,6 @@ public class HshParserTest {
 		if(DEBUG)
 			cc.dump(0);
 		return cc;
-	}
-
-	private void classTreeTraversal(final L1Node root) throws Exception {
-		NodeTraversal.traverse(root, new TraverseListener() {
-			@Override
-			public TraverseListenerResult node(final L1Node node, final int level) {
-				final StringBuilder sb=new StringBuilder();
-				for(int i=0; i<level; i++)
-					sb.append("\t");
-				System.out.println(sb.toString()+node.getClass().getName());
-				return TraverseListenerResult.CONTINUE;
-			}
-		});
 	}
 
 	private SimpleCommand findSimpleCommand(final CompleteCommand cc) throws Exception {

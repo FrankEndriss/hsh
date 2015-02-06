@@ -2,7 +2,6 @@ package com.happypeople.hsh.hsh;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,82 +13,70 @@ import java.util.Map;
 import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshExecutor;
-import com.happypeople.hsh.HshInput;
-import com.happypeople.hsh.HshOutput;
-import com.happypeople.hsh.HshRedirection;
-import com.happypeople.hsh.HshRedirections;
 import com.happypeople.hsh.Parameter;
 import com.happypeople.hsh.VariableParameter;
 
 public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeListener {
 	private final static Map<String, String> predefs=init_predefines();
 	private List<File> path=new ArrayList<File>();
-	private final HshContext hshContext;
-	private final HshRedirections hshRedirections;
-	private final HshExecutor delegate;
+	//private final HshRedirections hshRedirections;
+	//private final HshExecutor delegate;
+	//private final Map<Integer, HshInput> inFD=new HashMap<Integer, HshInput>();
+	//private final Map<Integer, HshOutput> outFD=new HashMap<Integer, HshOutput>();
 
-	/**
-	 * @param context Context send to child processes while execution. Note that this can be the parent context
-	 * of this executor, or some other context. Both makes sense in some scenarios.
-	 * @param redirections redirections used for execution
-	 */
-	public HshExecutorImpl(final HshExecutor delegate, final HshContext context, final HshRedirections redirections) {
-		this.delegate=delegate;
-		this.hshContext=context;
-		this.hshRedirections=redirections;
+	@Override
+	public boolean isExternalCommand(final String cmd) {
+		return predefs.get(cmd)==null;
 	}
 
 	@Override
-	public int execute(final String[] command) throws Exception {
-		return execute(command, getRedirecions());
-	}
-
-	@Override
-	public int execute(final String[] command, final HshRedirections hshRedirections) throws Exception {
-		if(delegate!=null)
-			return delegate.execute(command, hshRedirections);
-
+	public int execute(final String[] command, final HshContext context) throws Exception {
 		if(command.length<1)
 			return 0;	// empty line
 
 		final String buildin=predefs.get(command[0]);
 		if(buildin!=null)
-			return exec_buildin_Main(buildin, command);
+			return exec_buildin_Main(buildin, command, context);
 		else
-			return exec_extern_synchron(command, hshRedirections);
+			return exec_extern_synchron(command, context);
 	}
 
 	/** Executes the cmd line given in args and waits for it to finish execution.
 	 * args[0] is the command to execute.
 	 * $PATH is resolved to find that program.
 	 * @param args the arg vector
-	 * @param redirections the redirections to apply to the ProcessBuilder
 	 * @return exit status of the created process
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private int exec_extern_synchron(final String[] args, final HshRedirections hshRedirections) {
+	private int exec_extern_synchron(final String[] args, final HshContext context) {
 		// TODO export hshContext as environment
 		try {
 			final ProcessBuilder builder=new ProcessBuilder();
 			args[0]=resolveCmd(args[0]);
 			builder.command(Arrays.asList(args));
 
+			// TODO set env based on context
+
+			/*
 			final HshRedirection stderrRedir=hshRedirections.getStderrRedirection();
 			builder.redirectError(stderrRedir.getType());
 			final HshRedirection stdoutRedir=hshRedirections.getStdoutRedirection();
 			builder.redirectOutput(stdoutRedir.getType());
 			final HshRedirection stdinRedir=hshRedirections.getStdinRedirection();
 			builder.redirectInput(stdinRedir.getType());
+			*/
 
 			final Process p=builder.start();
 
+			/*
 			if(stderrRedir.getType()==Redirect.PIPE)
 				stderrRedir.setIn(new HshInput(p.getErrorStream()));
 			if(stdoutRedir.getType()==Redirect.PIPE)
 				stdoutRedir.setOut(new HshOutput(p.getOutputStream()));
 			if(stdinRedir.getType()==Redirect.PIPE)
 				stdinRedir.setIn(new HshInput(p.getInputStream()));
+				*/
 
 			p.waitFor();
 			return p.exitValue();
@@ -110,12 +97,14 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	 * @throws IllegalArgumentException if the class cannot be loaded or called
 	 * @throws IllegalAccessException if the class cannot be loaded or called
 	 */
-	private int exec_buildin_Main(final String buildinClass, final String[] args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+	private int exec_buildin_Main(final String buildinClass, final String[] args, final HshContext context)
+	throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException
+	{
 		try {
 			final Class<?> cls=Class.forName(buildinClass);
 			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
-				final HshCmd hshCmd=(HshCmd) cls.newInstance(); // TODO cache instance or not
-				return hshCmd.execute(hshContext, new ArrayList<String>(Arrays.asList(args)));
+				final HshCmd hshCmd=(HshCmd) cls.newInstance();
+				return hshCmd.execute(context, new ArrayList<String>(Arrays.asList(args)));
 			} else {
 				Class.forName(buildinClass).getMethod("main", new Class[]{ args.getClass()}).invoke(
 					null, new Object[] { args });
@@ -210,6 +199,7 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 		varChanged(parameter.getName());
 	}
 
+	/*
 	@Override
 	public HshRedirections getRedirecions() {
 		return hshRedirections;
@@ -219,9 +209,20 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	public HshExecutor createChild(final HshContext context, final HshRedirections hshRedirections) {
 		return new HshExecutorImpl(this,
 				context!=null?context:this.hshContext,
-				hshRedirections!=null?hshRedirections:this.hshRedirections);
+				hshRedirections!=null?hshRedirections:this.hshRedirections,
+				this);
 	}
+	*/
 
 	// end HshEnvirionment-Listener
 
+	@Override
+	public void close() {
+		/*
+		for(final HshOutput out : outFD.values())
+			out.close();
+		for(final HshInput in : inFD.values())
+			in.close();
+			*/
+	}
 }

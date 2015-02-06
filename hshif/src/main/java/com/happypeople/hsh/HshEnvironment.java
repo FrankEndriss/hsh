@@ -38,6 +38,11 @@ public interface HshEnvironment {
 	 */
 	public void addListener(ChangeListener listener);
 
+	/** Removes a changeListener from this env
+	 * @param listener
+	 */
+	public void removeListener(ChangeListener listener);
+
 	/** Special parameter used for explicit unset variables.
 	 */
 	public final static Parameter UNDEFINED=new Parameter() {
@@ -95,6 +100,8 @@ public interface HshEnvironment {
 	 * @param values
 	 */
 	public void setPositionalValues(String[] values);
+
+	public void close();
 
 
 }

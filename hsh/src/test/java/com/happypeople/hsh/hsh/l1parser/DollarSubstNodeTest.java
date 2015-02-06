@@ -7,7 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.hsh.HshChildContext;
+import com.happypeople.hsh.hsh.HshContextBuilder;
 
 public class DollarSubstNodeTest {
 
@@ -22,7 +22,7 @@ public class DollarSubstNodeTest {
 
 	@Before
 	public void setup() {
-		context=new HshChildContext(null);
+		context=new HshContextBuilder().create();
 		out=new DollarSubstNode(null, 0, 0);
 		context.getEnv().setVariableValue("x", valueOfVariableSet);
 		context.getEnv().setVariableValue("z", null);

@@ -1,10 +1,8 @@
 package com.happypeople.hsh.hsh;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PipedReader;
 import java.io.PipedWriter;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.Map;
@@ -13,8 +11,8 @@ import jline.console.ConsoleReader;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
-import com.happypeople.hsh.HshExecutor;
-import com.happypeople.hsh.HshRedirections;
+import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshTerminal;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
 import com.happypeople.hsh.hsh.parser.ListNode;
@@ -25,14 +23,15 @@ import com.happypeople.hsh.hsh.parser.ListNode;
  * "quit" does an "exit 0"
  * "exit <number>" exits with status <number>
  */
-public class Hsh implements HshContext {
+public class Hsh {
 	private final static boolean DEBUG=false;
 
 	private static PrintWriter log;
 	private ConsoleReader console;
-	private final HshEnvironment env=new HshEnvironmentImpl(null);
-	private final HshExecutorImpl executor=new HshExecutorImpl(null, this, new HshRedirectionsImpl());
+	//private final HshEnvironment env=new HshEnvironmentImpl(null);
+	//private final HshExecutorImpl executor=new HshExecutorImpl(null, this, new HshRedirectionsImpl());
 	private final HshParser parser;
+	private HshContext context;
 
 	/** Reader with input */
 	private final Reader in;
@@ -41,7 +40,7 @@ public class Hsh implements HshContext {
 	private int status=0;
 
 	/** Flag indicating that this instance has finished working. ie "exit" was called. */
-	private boolean finished=false;
+	private final boolean finished=false;
 
 
 	public static void main(final String[] args) throws IOException {
@@ -90,8 +89,27 @@ public class Hsh implements HshContext {
 
 	private void run() {
 
+		final HshContextBuilder contextBuilder=new HshContextBuilder();
+		final HshFDSetImpl fdSet=new HshFDSetImpl(null);
+		// Setup stdstream
+		fdSet.setInput(HshFDSet.STDIN, new HshPipeImpl(System.in));
+		fdSet.setOutput(HshFDSet.STDOUT, new HshPipeImpl(System.out));
+		fdSet.setOutput(HshFDSet.STDERR, new HshPipeImpl(System.err));
+
+		context=contextBuilder.terminal(new HshTerminal() {
+			@Override
+			public int getCols() {
+				return console.getTerminal().getWidth();
+			}
+
+			@Override
+			public int getRows() {
+				return console.getTerminal().getHeight();
+			}
+		}).fdSet(fdSet).create();
+
 		// copy the System properties into the environment
-		final HshEnvironment env=getEnv();
+		final HshEnvironment env=context.getEnv();
 		for(final Map.Entry<Object, Object> ent : System.getProperties().entrySet())
 			env.setVariableValue(""+ent.getKey(), ""+ent.getValue());
 
@@ -100,7 +118,7 @@ public class Hsh implements HshContext {
 			@Override
 			public void listParsed(final ListNode listNode) {
 				try {
-					setStatus(listNode.doExecution(Hsh.this));
+					setStatus(listNode.doExecution(context));
 				} catch (final Exception e) {
 					e.printStackTrace();
 					// TODO maybe reInit parser???
@@ -108,7 +126,7 @@ public class Hsh implements HshContext {
 			}
 		});
 
-		while(!finished) {
+		while(!context.isFinish()) {
 			try {
 				parser.complete_command();
 				if(DEBUG)
@@ -123,72 +141,11 @@ public class Hsh implements HshContext {
 		this.console=console;
 	}
 
-	/** A call to this method causes the Hsh to exit after the current command did finish.
-	 *
-	 */
-	@Override
-	public void finish() {
-		finished=true;
-		// if interactive close stream to make parser return
-		if(console!=null)
-			try {
-				in.close();
-			} catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	}
-
 	private int getStatus() {
 		return status;
 	}
 
 	private void setStatus(final int status) {
 		this.status=status;
-	}
-
-	@Override
-	public PrintStream getStdOut() {
-		return System.out;
-	}
-
-	@Override
-	public InputStream getStdIn() {
-		return System.in;
-	}
-
-	@Override
-	public PrintStream getStdErr() {
-		return System.err;
-	}
-
-	@Override
-	public int getCols() {
-		return console.getTerminal().getWidth();
-	}
-
-	@Override
-	public int getRows() {
-		return console.getTerminal().getHeight();
-	}
-
-	@Override
-	public HshEnvironment getEnv() {
-		return env;
-	}
-
-	@Override
-	public HshExecutor getExecutor() {
-		return executor;
-	}
-
-	@Override
-	public HshContext createChildContext(final HshEnvironment env, final HshExecutor executor) {
-		return new HshChildContext(this, env, executor);
-	}
-
-	@Override
-	public HshContext createChildContext(final HshRedirections hshRedirections) {
-		return new HshChildContext(this, null, new HshExecutorImpl(getExecutor(), this, hshRedirections));
 	}
 }

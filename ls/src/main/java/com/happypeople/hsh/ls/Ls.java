@@ -61,7 +61,7 @@ public class Ls implements HshCmd {
 			cmd = parser.parse(options, args.toArray(new String[0]));
 		} catch (final ParseException e) {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printUsage(new PrintWriter(hsh.getStdErr()), hsh.getCols(), lcmd, options);
+			formatter.printUsage(new PrintWriter(hsh.getStdErr()), hsh.getTerminal().getCols(), lcmd, options);
 			return 1;
 		}
 
@@ -104,7 +104,7 @@ public class Ls implements HshCmd {
 					outputStyle.printFile(fileEntry, hsh.getStdOut());
 				else
 					hsh.getStdOut().println("does not exists: "+fileEntry);
-			outputStyle.doOutput(hsh.getStdOut(), hsh.getCols());
+			outputStyle.doOutput(hsh.getStdOut(), hsh.getTerminal().getCols());
 		}
 
 		if(listedArgs.size()>0) {
@@ -308,7 +308,7 @@ public class Ls implements HshCmd {
 		while(it.hasNext())
 			style.printFile(it.next(), hsh.getStdOut());
 
-		style.doOutput(hsh.getStdOut(), hsh.getCols());
+		style.doOutput(hsh.getStdOut(), hsh.getTerminal().getCols());
 	}
 
 	/** There are three output styles */

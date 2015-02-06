@@ -1,5 +1,6 @@
 package com.happypeople.hsh;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SelectableChannel;
 
@@ -18,11 +19,26 @@ public class HshInput {
 		this.inputChannel=inputChannel;
 	}
 
+	public boolean isStream() {
+		return inputStream!=null;
+	}
+
 	public InputStream getStream() {
 		return inputStream;
 	}
 
 	public SelectableChannel getChannel() {
 		return inputChannel;
+	}
+
+	public void close() {
+		try {
+			if(isStream())
+				inputStream.close();
+			else
+				inputChannel.close();
+		}catch(final IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

@@ -105,7 +105,7 @@ public class NodeTraversal {
 	 * That means the implementation of doExecution() must take care of childs executions and substitutions for
 	 * itself, i.e. by calling this method with the children as subtree.
 	 * @param subtree the subtree to execute
-	 * @param context context of exectuion
+	 * @param context context of execution
 	 * @return the return status of the last execution
 	 * @throws Exception if one of the doExecution()-calls throws an Exception the traversal is stopped, and
 	 * that Exception is rethrown

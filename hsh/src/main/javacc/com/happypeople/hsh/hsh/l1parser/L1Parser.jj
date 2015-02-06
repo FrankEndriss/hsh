@@ -145,26 +145,6 @@ public class L1Parser // implements TokenManager
 {
 	final boolean DEBUG=false;
 	
-	/** Stack of states. Usefull to switch to "previous" state. Initialized to DEFAULT. */
-	private LinkedList<Integer> stateStack=new LinkedList<Integer>(Arrays.asList(DEFAULT));
-
-	/** Called by TokenManager */
-	void pushState(int state) {
-		if(DEBUG)
-			System.out.println("pushState: "+state);
-		stateStack.push(state);
-		token_source.SwitchTo(state);
-	}
-
-	/** Called by TokenManager */
-	void popState() {
-		final int oldstate=stateStack.pop();
-		final int state=stateStack.peek();
-		if(DEBUG)
-			System.out.println("popState, from:"+oldstate+" to:"+state);
-		token_source.SwitchTo(state);
-	}
-
 	/** Interface for token-translation between L1Parser and L2Parser
 	*/
 	public L2Token nextL1Node() throws ParseException {
@@ -183,43 +163,6 @@ public class L1Parser // implements TokenManager
 	private final static int WS_KIND=-42;
 	private final static int UNDEFINED_KIND=-1;
 
-	private final static int[] kindMap=new int[Math.max(
-		L1ParserConstants.tokenImage.length,
-		HshParserConstants.tokenImage.length)];
-	static {
-		for(int i=0; i<kindMap.length; i++)
-			kindMap[i]=UNDEFINED_KIND;
-
-		kindMap[L1ParserConstants.EOF]=HshParserConstants.EOF;
-		kindMap[L1ParserConstants.AND_IF]=HshParserConstants.AND_IF;
-		kindMap[L1ParserConstants.OR_IF]=HshParserConstants.OR_IF;
-		kindMap[L1ParserConstants.DSEMI]=HshParserConstants.DSEMI;
-		kindMap[L1ParserConstants.DLESS]=HshParserConstants.DLESS;
-		kindMap[L1ParserConstants.DGREAT]=HshParserConstants.DGREAT;
-		kindMap[L1ParserConstants.GREAT]=HshParserConstants.GREAT;
-		kindMap[L1ParserConstants.GREATAND]=HshParserConstants.GREATAND;
-		kindMap[L1ParserConstants.LESSAND]=HshParserConstants.LESSAND;
-//		kindMap[L1ParserConstants.LESS]=HshParserConstants.LESS;
-		kindMap[L1ParserConstants.LESSGREAT]=HshParserConstants.LESSGREAT;
-		kindMap[L1ParserConstants.DLESSDASH]=HshParserConstants.DLESSDASH;
-		kindMap[L1ParserConstants.CLOBBER]=HshParserConstants.CLOBBER;
-		kindMap[L1ParserConstants.NEWLINE]=HshParserConstants.NEWLINE;
-		kindMap[L1ParserConstants.SEMICOLON]=HshParserConstants.SEMICOLON;
-		kindMap[L1ParserConstants.WS]=WS_KIND;
-		// TODO others ???
-	}
-
-	/** Returns the L2-kind according to l1kind
-	 * @param kind L1 kind
-	 * @return L2 kind
-	 */
-	private int translateL1KindToL2Kind(final int l1kind) {
-		final int l2kind=kindMap[l1kind];
-		if(l2kind==UNDEFINED_KIND)
-			throw new RuntimeException("internal error: cannot map L1-Kind: "+l1kind);
-		return l2kind;
-	}
-
 	/** Interface for dynamic extra actions. */
 	interface Action {
 		public void after();
@@ -234,12 +177,34 @@ public class L1Parser // implements TokenManager
 
 PARSER_END(L1Parser)
 
+TOKEN_MGR_DECLS:{	final boolean DEBUG=false;
+
+	/** Stack of states. Usefull to switch to "previous" state. Initialized to DEFAULT. */
+	private LinkedList<Integer> stateStack=new LinkedList<Integer>(Arrays.asList(DEFAULT));
+
+	/** Called by TokenManager */
+	public void pushState(int state) {
+		if(DEBUG)
+			System.out.println("pushState: "+state);
+		stateStack.push(state);
+		SwitchTo(state);
+	}
+
+	/** Called by TokenManager */
+	public void popState() {
+		final int oldstate=stateStack.pop();
+		final int state=stateStack.peek();
+		if(DEBUG)
+			System.out.println("popState, from:"+oldstate+" to:"+state);
+		SwitchTo(state);
+	}
+}
+	
 TOKEN:
 {	< #SQUOTE: "'" >
 |	< #DQUOTE: "\"" > 
 |	< #BQUOTE: "\\" >
 |	< #BACKTIC:	"`" >
-//|	< #def_DOLLAR:	"$" >
 |	< #BANYTHING: ~[] >
 |	< #DEF_ESC_BACKSLASH	: "\\\\" >
 |	< #def_DEFAULT_ANYTHING	: (~["`", "'", "\"", "\\", 
@@ -304,8 +269,8 @@ TOKEN:
 // reached on "${"
 <DOLLAR_LBRACE> TOKEN:
 {
-	< _RBRACE 	: <RBRACE> >								{ parser.popState(); }
-|	< COLON_OP	: ":-"|"-"|":="|"="|":?"|"?"|":+"|"+"|"#"|"##"|"%"|"%%" >	{ parser.pushState(DEFAULT); }
+	< _RBRACE 	: <RBRACE> >								{ popState(); }
+|	< COLON_OP	: ":-"|"-"|":="|"="|":?"|"?"|":+"|"+"|"#"|"##"|"%"|"%%" >	{ pushState(DEFAULT); }
 }	
 
 < DEFAULT, BACKTICKED, DOLLAR_LBRACE > TOKEN:
@@ -315,28 +280,28 @@ TOKEN:
 
 < DOLLAR_LBRACE_VARNAME > TOKEN:
 {
-	< DS_VARNAME	: (~[" ", "\t", "%", "#", ":", "}"])+ >		{ parser.popState(); }
+	< DS_VARNAME	: (~[" ", "\t", "%", "#", ":", "}"])+ >		{ popState(); }
 }
 
 < DEFAULT, DQUOTED > TOKEN:
-{	< BACKTIC_START			: < BACKTIC > > { parser.pushState(BACKTICKED); }
-|	< DOLLAR_LBRACE_START	: "${"	>		{ parser.pushState(DOLLAR_LBRACE); 
-											  parser.pushState(DOLLAR_LBRACE_VARNAME); }
+{	< BACKTIC_START			: < BACKTIC > > { pushState(BACKTICKED); }
+|	< DOLLAR_LBRACE_START	: "${"	>		{ pushState(DOLLAR_LBRACE); 
+											  pushState(DOLLAR_LBRACE_VARNAME); }
 |	< DOLLAR_EXEC_START		: "$("	>
-|	< DOLLAR				: "$"	>		{ parser.pushState(DOLLAR_ONLY); }
+|	< DOLLAR				: "$"	>		{ pushState(DOLLAR_ONLY); }
 }
 
 // reached on "$"
 <DOLLAR_ONLY> TOKEN:
 {
-	< DO_SPECIAL	:< def_DO_SPECIAL > >									{ parser.popState(); }
-|	< DO_MULTI		:< def_DA_AND_DO_SPECIAL > (<def_DEFAULT_ANYTHING >)? >	{ parser.popState(); }
+	< DO_SPECIAL	:< def_DO_SPECIAL > >									{ popState(); }
+|	< DO_MULTI		:< def_DA_AND_DO_SPECIAL > (<def_DEFAULT_ANYTHING >)? >	{ popState(); }
 }
 
 /** no escaped chars possible in SQUOTED */
 <SQUOTED> TOKEN:
 {
-	< SQUOTE_END: < SQUOTE > > { parser.popState(); }	 // :DEFAULT	
+	< SQUOTE_END: < SQUOTE > > { popState(); }	 // :DEFAULT	
 |	< SANYTHING	: (~["'"])+ >
 }
 
@@ -347,13 +312,13 @@ TOKEN:
 <BACKTICKED > TOKEN:
 {
 	< BACKTIC_ANYTHING	: (~["`", "\\"])+ >
-|	< BACKTIC_END 		: < BACKTIC > >	{ parser.popState(); }
+|	< BACKTIC_END 		: < BACKTIC > >	{ popState(); }
 }
 
 <DEFAULT> TOKEN:
 {
-	< SQUOTE_START	: < SQUOTE > > { parser.pushState(SQUOTED); }
-|	< DQUOTE_START	: < DQUOTE > > { parser.pushState(DQUOTED); }
+	< SQUOTE_START	: < SQUOTE > > { pushState(SQUOTED); }
+|	< DQUOTE_START	: < DQUOTE > > { pushState(DQUOTED); }
 |	< WS			: (" "|"\t")+  >
 |	< NEWLINE		: "\n" | "\r\n" >
 }
@@ -378,7 +343,7 @@ $   `   "   \   <newline>
 |	< ESC_BACKSLASH			: < DEF_ESC_BACKSLASH > >
 	/* a backslash is a simple char if not followed by one of the above. */
 |	< CHAR_BACKSLASH		: < BQUOTE > >
-|	< DQUOTE_END			: < DQUOTE > >	{ parser.popState(); }/* : DEFAULT */
+|	< DQUOTE_END			: < DQUOTE > >	{ popState(); }/* : DEFAULT */
 	/** anything else */
 |	< DANYTHING				: (~["\"", "$", "`", "\\"])+ >
 }
@@ -394,10 +359,6 @@ int off=l2token.getLen();
 |	 	t=< NAME > 
 |	 	t=< DEFAULT_ANYTHING > 
 |	 	t=< BANG > 
-/* Note that KLAMMER_AUF/ZU is parsed as separating_part(), bash does this, too
-|	 	t=< KLAMMER_AUF > 
-|	 	t=< KLAMMER_ZU > 
-*/
 |	 	t=< LESS > 
 |	 	t=< GREAT >
 |		t=< EQUALS >
@@ -423,7 +384,6 @@ getToken(1).next=klammerAufTok;
 }
 {
 	t=< DOLLAR_EXEC_START >		{ l2Token.append(t.image); 
-		// TODO:
 		// * instantiate HshParser
 		// * instantiate L1Parser as TokenManager for instantiated HshParser
 		// * instantiate a generic TokenManager for instantiated L1Parser
@@ -434,8 +394,6 @@ getToken(1).next=klammerAufTok;
 		L1Parser genParser=new L1Parser(genTokManager);
 		L2TokenManager l2TokManager=new L2TokenManager(genParser);
 		HshParser hshParser=new HshParser(l2TokManager);
-		// TODO feed Tokens into genTokManager until KLAMMER_ZU is found,
-		// or create callback chain.
 		try {
 			subshell=hshParser.subshell();
 		}catch(com.happypeople.hsh.hsh.ParseException e) {
@@ -467,8 +425,10 @@ L1Node dollar_subst(ImageHolder l2Token):
 										l2Token.append(t.image); }
 	(
 		t=< COLON_OP >				{ operator=new SimpleL1Node(l2Token, l2Token.getLen(), t.image.length());
-										l2Token.append(t.image); }		word_part_list(l2Token, wplParent=new GenericComplexL1Node(l2Token, l2Token.getLen(), 0))	{ 
-			popState();
+										l2Token.append(t.image); }		word_part_list(l2Token, wplParent=new GenericComplexL1Node(l2Token, l2Token.getLen(), 0))	{
+			// TODO: this needs to be reworked. Swithing tokenizer-state in the parser is
+			// very, very bad, since there could be arbitrary lookaheads...
+			token_source.popState();
 			// switch the currents token kind to _RBRACE
 			Token token=getToken(1);
 			if(token.kind==RBRACE) {

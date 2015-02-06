@@ -3,38 +3,28 @@ package com.happypeople.hsh;
 import java.io.InputStream;
 import java.io.PrintStream;
 
-/** Context information of the calling instance
+/** Context information of a calling instance.
  */
-public interface HshContext {
-
-	/** @return the StdOut to use */
-	public PrintStream getStdOut();
+public interface HshContext extends AutoCloseable {
 
 	/** @return StdIn to use */
 	public InputStream getStdIn();
 
+	/** @return the StdOut to use */
+	public PrintStream getStdOut();
+
 	/** @return StdErr to use */
 	public PrintStream getStdErr();
-
-	/** @return the number of columns of the display
-	 */
-	public int getCols();
-
-	/** @return the number of rows of the display
-	 */
-	public int getRows();
 
 	/** Denotes that this context should exit after the execution of the current command.
 	 * Used ie by "exit".
 	 */
 	public void finish();
 
-	/** Creates a new HshContext with this context as parent.
-	 * @param env null to use parents environment
-	 * @param executor null to use parents executor
-	 * @return the new created context
+	/** Check if finish was called.
+	 * @return true after finish() has been called at least once
 	 */
-	public HshContext createChildContext(HshEnvironment env, HshExecutor executor);
+	public boolean isFinish();
 
 	/**
 	 * @return the environment of this context
@@ -47,9 +37,20 @@ public interface HshContext {
 	 */
 	public HshExecutor getExecutor();
 
-	/** Creates a new HshContext as a child of this context with new HshRedirections
-	 * @param hshRedirections
-	 * @return a new HshContext
+	/**
+	 * @return the open FDs of this context
 	 */
-	public HshContext createChildContext(HshRedirections hshRedirections);
+	public HshFDSet getFDSet();
+
+	/**
+	 * @return the terminal of this context, or null if there is none
+	 */
+	public HshTerminal getTerminal();
+
+	/** Closes this context by releasing all resources held.
+	 */
+	@Override
+	public void close();
+
+
 }

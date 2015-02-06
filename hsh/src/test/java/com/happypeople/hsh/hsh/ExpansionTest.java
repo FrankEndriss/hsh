@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.PipedReader;
 import java.io.PipedWriter;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -12,7 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.HshRedirections;
+import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
 import com.happypeople.hsh.hsh.parser.CompleteCommand;
@@ -33,13 +34,23 @@ public class ExpansionTest {
 		final L2TokenManager tokMgr=new L2TokenManager(new L1Parser(parserIn));
 		parser=new HshParser(tokMgr);
 		executedList=new ArrayList<String[]>();
-		context=new HshChildContext(null).createChildContext(null, new HshExecutorImpl(null, null, new HshRedirectionsImpl(null, null, null)) {
+		final HshFDSetImpl fdSet=new HshFDSetImpl(null);
+		fdSet.setOutput(HshFDSet.STDOUT, new HshPipeImpl());
+		context=new HshContextBuilder().executor(new HshExecutorImpl() {
 			@Override
-			public int execute(final String[] command, final HshRedirections redir) throws Exception {
+			public int execute(final String[] command, final HshContext context) throws Exception {
+				if(DEBUG)
+					System.out.println("mocked executor, command: "+Arrays.asList(command));
 				executedList.add(command);
+				if(command.length>0 && "echo".equals(command[0])) {
+						final PrintStream ps=context.getStdOut();
+						for(int i=1; i<command.length; i++)
+							ps.print((i>1?" ":"")+command[i]);
+						ps.flush();
+				}
 				return 0;
 			}
-		});
+		}).environment(new HshEnvironmentImpl(null)).fdSet(fdSet).create();
 		context.getEnv().setVariableValue("IFS", " \t\n");
 		context.getEnv().getParameter("IFS").setExport(true);
 	}
@@ -51,8 +62,10 @@ public class ExpansionTest {
 	private void runTest(final String input, final int count) throws Exception {
 		toParser.write(input);
 		toParser.close();
-		final CompleteCommand cc=parser.complete_command();
-		NodeTraversal.executeSubtree(cc, context);
+		for(int i=0; i<count; i++) {
+			final CompleteCommand cc=parser.complete_command();
+			NodeTraversal.executeSubtree(cc, context);
+		}
 	}
 
 	@Test
@@ -107,7 +120,7 @@ public class ExpansionTest {
 
 	@Test
 	public void test_split3() throws Exception {
-		runTest("x=\"\\\"x y\"\\\" echo $x hallo");
+		runTest("x=\"\\\"x y\"\\\" ; echo $x hallo");
 		assertEquals("# execs", 1, executedList.size());
 		assertEquals("# cmdline", 4, executedList.get(0).length);
 		assertEquals("# cmdline", "echo", executedList.get(0)[0]);
@@ -118,7 +131,7 @@ public class ExpansionTest {
 
 	@Test
 	public void test_split2() throws Exception {
-		runTest("x=\"x y\" echo $x hallo");
+		runTest("x=\"x y\" ; echo $x hallo");
 		assertEquals("# execs", 1, executedList.size());
 		//assertEquals("# cmdline", 4, executedList.get(0).length);
 		assertEquals("# cmdline", "echo", executedList.get(0)[0]);
@@ -141,11 +154,13 @@ public class ExpansionTest {
 
 	@Test
 	public void test_assignment2() throws Exception {
-		runTest("x=5 echo $x hallo");
+		runTest("x=foo ; x=bla echo $x hallo");
+		if(DEBUG)
+			System.out.println("executed[0]: "+Arrays.asList(executedList.get(0)));
 		assertEquals("# execs", 1, executedList.size());
 		assertEquals("# cmdline", 3, executedList.get(0).length);
 		assertEquals("# cmdline", "echo", executedList.get(0)[0]);
-		assertEquals("# cmdline", "5", executedList.get(0)[1]);
+		assertEquals("# cmdline", "foo", executedList.get(0)[1]);
 		assertEquals("# cmdline", "hallo", executedList.get(0)[2]);
 	}
 
