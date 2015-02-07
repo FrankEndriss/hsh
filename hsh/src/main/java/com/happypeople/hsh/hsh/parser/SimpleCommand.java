@@ -15,7 +15,7 @@ import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 
 public class SimpleCommand extends L2Node implements Executable {
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	private final List<Integer> args=new ArrayList<Integer>();
 	private final List<Integer> assignments=new ArrayList<Integer>();

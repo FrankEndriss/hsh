@@ -10,7 +10,7 @@ import com.happypeople.hsh.HshTerminal;
 /** Builder class to ease creation of HshContext
  */
 public class HshContextBuilder {
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	private HshContext parentHshContext;
 	private HshRedirections redirections;

@@ -57,6 +57,8 @@ public class HshChildContext implements HshContext {
 	@Override
 	public void finish() {
 		finished=true;
+		if(parent!=null)
+			parent.finish();
 	}
 
 	@Override
@@ -81,7 +83,7 @@ public class HshChildContext implements HshContext {
 
 	@Override
 	public HshTerminal getTerminal() {
-		return terminal;
+		return terminal==null && parent!=null?parent.getTerminal():terminal;
 	}
 
 	@Override

@@ -2,7 +2,7 @@ package com.happypeople.hsh.hsh.l1parser;
 
 
 public class GenericL1ParserTokenManager extends L1ParserTokenManager {
-	private final boolean DEBUG=true;
+	private final boolean DEBUG=false;
 
 	private final Callback callback;
 

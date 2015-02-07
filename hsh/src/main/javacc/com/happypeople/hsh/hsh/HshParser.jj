@@ -3,7 +3,7 @@ options
 	STATIC=false;
 	USER_TOKEN_MANAGER=true;
     FORCE_LA_CHECK=false;
-    DEBUG_PARSER=true;
+    DEBUG_PARSER=false;
     DEBUG_LOOKAHEAD=false;
 }
 PARSER_BEGIN(HshParser)

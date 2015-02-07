@@ -27,8 +27,7 @@ import com.happypeople.hsh.hsh.parser.CompleteCommand;
 import com.happypeople.hsh.hsh.parser.SimpleCommand;
 
 public class HshParserTest {
-
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	private HshContext context;
 

@@ -19,7 +19,7 @@ import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
 import com.happypeople.hsh.hsh.parser.CompleteCommand;
 
 public class ExpansionTest {
-	private final static boolean DEBUG=true;
+	private final static boolean DEBUG=false;
 
 	private HshParser parser;
 	private PipedWriter toParser;
