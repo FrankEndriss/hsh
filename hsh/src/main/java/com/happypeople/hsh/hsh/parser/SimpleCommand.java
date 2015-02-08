@@ -1,15 +1,14 @@
 package com.happypeople.hsh.hsh.parser;
 
 import java.io.File;
-import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.hsh.HshContextBuilder;
 import com.happypeople.hsh.hsh.HshParserConstants;
-import com.happypeople.hsh.hsh.HshRedirectionImpl;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.l1parser.Executable;
@@ -121,36 +120,45 @@ public class SimpleCommand extends L2Node implements Executable {
 			if(DEBUG)
 				System.out.println("SimpleCommand.doExecution, have RedirNode: "+tok);
 			final RedirNode redirNode=(RedirNode)tok;
-			Redirect redirect=null;
 
 			final String filename=NodeTraversal.substituteSubtree(redirNode.getFilename(), lContext);
 			final String ioNumberString=redirNode.getIoNumber();
 			int ioNumber=ioNumberString==null?-1:Integer.parseInt(ioNumberString);
-			int redirIdx=-1;
 
-			// TODO put redirections into fdSet
+			final HshRedirection hshRedir;
+
 			switch(redirNode.getOperator().kind) {
 				case HshParserConstants.CLOBBER:
 				case HshParserConstants.LESS:
-					redirect=Redirect.from(new File(filename));
 					if(ioNumber<0)
-						ioNumber=0;
+						ioNumber=HshFDSet.STDIN;
+					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.READ, new File(filename));
 					break;
 				case HshParserConstants.LESSAND:
-					redirect=Redirect.PIPE;
-					redirIdx=0;
+					if(ioNumber<0)
+						ioNumber=HshFDSet.STDIN;
+					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.READ, Integer.parseInt(filename));
 					break;
 				case HshParserConstants.GREAT:
-					redirect=Redirect.to(new File(filename));
-					redirIdx=1;
+					if(ioNumber<0)
+						ioNumber=HshFDSet.STDOUT;
+					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.WRITE, new File(filename));
+					break;
 				case HshParserConstants.GREATAND:
+					if(ioNumber<0)
+						ioNumber=HshFDSet.STDOUT;
+					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.WRITE, Integer.parseInt(filename));
+					break;
 				case HshParserConstants.DGREAT:
-					redirect=Redirect.appendTo(new File(filename));
+					if(ioNumber<0)
+						ioNumber=HshFDSet.STDOUT;
+					hshRedir=new HshRedirection(ioNumber, new File(filename));
+					break;
 				case HshParserConstants.LESSGREAT:
+					throw new RuntimeException("LESSGREAT redirection not implemented");
 			default:
-				throw new RuntimeException("bad operator type in RedirNode :/");
+				throw new RuntimeException("unknown operator type in RedirNode :/ "+redirNode.getOperator());
 			}
-			final HshRedirection hshRedir=new HshRedirectionImpl(redirect);
 		}
 
 		// Step 5.
