@@ -115,6 +115,7 @@ public class SimpleCommand extends L2Node implements Executable {
 		}
 
 		// Step 4.
+		final List<HshRedirection> redirList=new ArrayList<HshRedirection>();
 		for(final Integer idx : redirects) {
 			final L2Token tok=getChild(idx);
 			if(DEBUG)
@@ -159,13 +160,14 @@ public class SimpleCommand extends L2Node implements Executable {
 			default:
 				throw new RuntimeException("unknown operator type in RedirNode :/ "+redirNode.getOperator());
 			}
+			redirList.add(hshRedir);
 		}
 
 		// Step 5.
 		if(!cmdList.isEmpty()) {
 			if(DEBUG)
 				System.out.println("SimpleCommand, execute: "+cmdList);
-			final int result=context.getExecutor().execute(cmdList.toArray(new String[0]), lContext);
+			final int result=context.getExecutor().execute(cmdList.toArray(new String[0]), lContext, redirList);
 			lContext.close();
 		}
 

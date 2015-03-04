@@ -13,6 +13,7 @@ import java.util.Map;
 import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshExecutor;
+import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.Parameter;
 import com.happypeople.hsh.VariableParameter;
 
@@ -25,12 +26,7 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	//private final Map<Integer, HshOutput> outFD=new HashMap<Integer, HshOutput>();
 
 	@Override
-	public boolean isExternalCommand(final String cmd) {
-		return predefs.get(cmd)==null;
-	}
-
-	@Override
-	public int execute(final String[] command, final HshContext context) throws Exception {
+	public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirs) throws Exception {
 		if(command.length<1)
 			return 0;	// empty line
 

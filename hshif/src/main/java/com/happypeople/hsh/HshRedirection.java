@@ -100,8 +100,9 @@ public class HshRedirection {
 		return operationType;
 	}
 
-	/** Setup the processBuilder to execute a process using this redirection if this is a FILE redirection and this refers to one of the
-	 * standard streams.
+	/** Setup the processBuilder to execute a process using this redirection.
+	 * This is possible only if this is a FILE redirection and this refers to one of the
+	 * standard streams
 	 * @param processBuilder
 	 * @return true if a redirection was set, else false
 	 */
