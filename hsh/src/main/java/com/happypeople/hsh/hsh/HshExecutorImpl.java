@@ -1,11 +1,9 @@
 package com.happypeople.hsh.hsh;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +17,6 @@ import com.happypeople.hsh.VariableParameter;
 
 public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeListener {
 	private final static Map<String, String> predefs=init_predefines();
-	private List<File> path=new ArrayList<File>();
 	//private final HshRedirections hshRedirections;
 	//private final HshExecutor delegate;
 	//private final Map<Integer, HshInput> inFD=new HashMap<Integer, HshInput>();
@@ -46,40 +43,7 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	 * @throws InterruptedException
 	 */
 	private int exec_extern_synchron(final String[] args, final HshContext context) {
-		// TODO export hshContext as environment
-		try {
-			final ProcessBuilder builder=new ProcessBuilder();
-			args[0]=resolveCmd(args[0]);
-			builder.command(Arrays.asList(args));
-
-			// TODO set env based on context
-
-			/*
-			final HshRedirection stderrRedir=hshRedirections.getStderrRedirection();
-			builder.redirectError(stderrRedir.getType());
-			final HshRedirection stdoutRedir=hshRedirections.getStdoutRedirection();
-			builder.redirectOutput(stdoutRedir.getType());
-			final HshRedirection stdinRedir=hshRedirections.getStdinRedirection();
-			builder.redirectInput(stdinRedir.getType());
-			*/
-
-			final Process p=builder.start();
-
-			/*
-			if(stderrRedir.getType()==Redirect.PIPE)
-				stderrRedir.setIn(new HshInput(p.getErrorStream()));
-			if(stdoutRedir.getType()==Redirect.PIPE)
-				stdoutRedir.setOut(new HshOutput(p.getOutputStream()));
-			if(stdinRedir.getType()==Redirect.PIPE)
-				stdinRedir.setIn(new HshInput(p.getInputStream()));
-				*/
-
-			p.waitFor();
-			return p.exitValue();
-		}catch(final Exception e) {
-			e.printStackTrace(System.err);
-			return -1;
-		}
+		return -1;
 	}
 
 	/** Executes a buildin class/cmd.
@@ -111,53 +75,6 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 			return 1;
 		}
 	}
-	/** This method parses the environment var PATH and
-	 * places that list of directories in the class var path.
-	 */
-	private void parsePath() {
-		String lpath=System.getenv().get("PATH");
-		if(lpath==null)
-			lpath=System.getProperty("PATH");
-		System.out.println("PATH: "+lpath);
-
-		if(lpath!=null) {
-			final Collection<String> lpaths=Arrays.asList(lpath.split(File.pathSeparator));
-			for(final String p : lpaths) {
-				final File f=new File(p);
-				if(f.isDirectory()) {
-					path.add(f);
-					System.out.println("adding path: "+f);
-				}
-			}
-		} else
-			System.out.println("no path.");
-	}
-
-	/** Resolves a String to an executable file, using path
-	 * @param string a command name
-	 * @return absolute filename to the executable, or cmd if no executable was found
-	 */
-	private String resolveCmd(final String cmd) {
-		final File f=new File(cmd);
-		if(f.isAbsolute())
-			return cmd;
-
-		if(path==null)
-			parsePath();
-
-		for(final File p : path) {
-			final File r=new File(p, cmd);
-			if(r.exists() && r.isFile())
-				return r.getAbsolutePath();
-
-			// honor windows
-			final File w=new File(p, cmd+".exe");
-			if(w.exists() && w.isFile())
-				return w.getAbsolutePath();
-		}
-
-		return cmd;
-	}
 
 	private static Map<String, String> init_predefines() {
 		final Map<String, String> predefs=new HashMap<String, String>();
@@ -169,31 +86,6 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 		return predefs;
 	}
 
-	// HshEnvirionment-Listener
-	private void varChanged(final String name) {
-		// throw away cache
-		if("PATH".equals(name))
-			path=null;
-	}
-
-	@Override
-	public void created(final Parameter parameter) {
-		varChanged(parameter.getName());
-	}
-
-	@Override
-	public void removed(final Parameter parameter) {
-		varChanged(parameter.getName());
-	}
-
-	@Override
-	public void exported(final Parameter parameter) {
-	}
-
-	@Override
-	public void changed(final VariableParameter parameter, final String oldValue) {
-		varChanged(parameter.getName());
-	}
 
 	/*
 	@Override
@@ -220,5 +112,35 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 		for(final HshInput in : inFD.values())
 			in.close();
 			*/
+	}
+
+	@Override
+	public boolean canExecute(final String[] command) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void created(final Parameter parameter) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void removed(final Parameter parameter) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void exported(final Parameter parameter) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void changed(final VariableParameter parameter, final String oldValue) {
+		// TODO Auto-generated method stub
+
 	}
 }

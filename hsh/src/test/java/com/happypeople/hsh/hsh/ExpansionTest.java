@@ -8,12 +8,14 @@ import java.io.PipedWriter;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
 import com.happypeople.hsh.hsh.parser.CompleteCommand;
@@ -38,7 +40,7 @@ public class ExpansionTest {
 		fdSet.setOutput(HshFDSet.STDOUT, new HshPipeImpl());
 		context=new HshContextBuilder().executor(new HshExecutorImpl() {
 			@Override
-			public int execute(final String[] command, final HshContext context) throws Exception {
+			public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirs) throws Exception {
 				if(DEBUG)
 					System.out.println("mocked executor, command: "+Arrays.asList(command));
 				executedList.add(command);
