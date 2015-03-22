@@ -12,10 +12,8 @@ import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshExecutor;
 import com.happypeople.hsh.HshRedirection;
-import com.happypeople.hsh.Parameter;
-import com.happypeople.hsh.VariableParameter;
 
-public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeListener {
+public class HshExecutorImpl implements HshExecutor {
 	private final static Map<String, String> predefs=init_predefines();
 	//private final HshRedirections hshRedirections;
 	//private final HshExecutor delegate;
@@ -87,21 +85,6 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 	}
 
 
-	/*
-	@Override
-	public HshRedirections getRedirecions() {
-		return hshRedirections;
-	}
-
-	@Override
-	public HshExecutor createChild(final HshContext context, final HshRedirections hshRedirections) {
-		return new HshExecutorImpl(this,
-				context!=null?context:this.hshContext,
-				hshRedirections!=null?hshRedirections:this.hshRedirections,
-				this);
-	}
-	*/
-
 	// end HshEnvirionment-Listener
 
 	@Override
@@ -120,27 +103,4 @@ public class HshExecutorImpl implements HshExecutor, HshEnvironmentImpl.ChangeLi
 		return false;
 	}
 
-	@Override
-	public void created(final Parameter parameter) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void removed(final Parameter parameter) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void exported(final Parameter parameter) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void changed(final VariableParameter parameter, final String oldValue) {
-		// TODO Auto-generated method stub
-
-	}
 }

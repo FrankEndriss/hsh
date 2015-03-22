@@ -13,11 +13,16 @@ import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.Parameter;
 import com.happypeople.hsh.VariableParameter;
 
-public class ExternalHshExecutor implements HshExecutor {
+/** HshExecutor to execute commands from PATH
+ */
+public class PathHshExecutor implements HshExecutor {
 	private final List<File> path=new ArrayList<File>();
 	private final HshEnvironment env;
 
-	public ExternalHshExecutor(final HshEnvironment env) {
+	/**
+	 * @param env this Executor registers itself as a listener to env, to listen to changes of the PATH variable.
+	 */
+	public PathHshExecutor(final HshEnvironment env) {
 		this.env=env;
 		env.addListener(new HshEnvironment.ChangeListener() {
 			@Override

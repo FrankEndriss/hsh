@@ -169,6 +169,7 @@ public class SimpleCommand extends L2Node implements Executable {
 				System.out.println("SimpleCommand, execute: "+cmdList);
 			final int result=context.getExecutor().execute(cmdList.toArray(new String[0]), lContext, redirList);
 			lContext.close();
+			return result;
 		}
 
 		// TODO what to return for assignment only??? try 0
