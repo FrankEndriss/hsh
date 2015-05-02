@@ -22,6 +22,10 @@ public class DelegatingHshExecutor implements HshExecutor {
 	}
 
 	@Override
+	/** The delegates are asked in order if they canExecute(command)
+	 * If one returns true, that ones execute-method is called.
+	 * Else an IllegalArgumentException is thrown.
+	 */
 	public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirections) throws Exception {
 		for(final HshExecutor delegate : delegates)
 			if(delegate.canExecute(command))
@@ -36,6 +40,9 @@ public class DelegatingHshExecutor implements HshExecutor {
 	}
 
 	@Override
+	/** The delegates are asked in order if they canExecute(command)
+	 * If one returns true, true is returnded, else false.
+	 */
 	public boolean canExecute(final String[] command) {
 		for(final HshExecutor delegate : delegates)
 			if(delegate.canExecute(command))
