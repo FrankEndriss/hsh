@@ -12,6 +12,7 @@ import com.happypeople.hsh.HshRedirection;
 
 /** Executor execution commands by instantiating and calling java classes in the current process.
  * TODO implement better class loading. Currently all classes are loaded within one and the same class loader.
+ * Take a look at java9 modules.
  */
 public class InProcessHshExecutor implements HshExecutor {
 	private final Map<String, String> predefs;
