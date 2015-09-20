@@ -1,5 +1,8 @@
 package com.happypeople.hsh.hsh;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
@@ -78,7 +81,7 @@ public class HshContextBuilder {
 			if(lEnvironment==null)
 				lEnvironment=new HshEnvironmentImpl(null);
 			if(lExecutor==null)
-				lExecutor=new HshExecutorImpl();
+				lExecutor=createDefaultExecutor(lEnvironment);
 		}
 
 		// fdSet must not be null at all
@@ -89,5 +92,19 @@ public class HshContextBuilder {
 				lEnvironment, lExecutor, lFDSet, terminal);
 
 		return context;
+	}
+
+	private HshExecutor createDefaultExecutor(final HshEnvironment env) {
+		final List<HshExecutor> xecutors=new ArrayList<HshExecutor>();
+		final FunctionHshExecutor funcExec=new FunctionHshExecutor(env);
+		xecutors.add(funcExec);
+
+		// TODO
+		// create and set buildins executor
+
+		// TODO
+		// create and set PATH executor
+
+		return new DelegatingHshExecutor(xecutors);
 	}
 }
