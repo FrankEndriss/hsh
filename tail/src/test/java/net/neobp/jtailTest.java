@@ -8,7 +8,7 @@ import java.io.PrintWriter;
 
 import org.junit.Test;
 
-import com.happypeople.hsh.tail.jtail;
+import com.happypeople.hsh.tail.Main;
 
 public class jtailTest {
 
@@ -29,14 +29,14 @@ public class jtailTest {
 	@Test
 	public void test() throws IOException {
 		File file=writeFile();
-		jtail.main(new String[]{ "-f", "-n", "100", file.getAbsolutePath() });
+		Main.main(new String[]{ "-f", "-n", "100", file.getAbsolutePath() });
 		file.delete();
 	}
 	
 	@Test
 	public void test_f() throws IOException, InterruptedException {
 		File file=writeFile();
-		jtail.main(new String[]{ "-f", "-n", "10", file.getAbsolutePath() });
+		Main.main(new String[]{ "-f", "-n", "10", file.getAbsolutePath() });
 		PrintWriter pw=new PrintWriter(new FileWriter(file));
 		pw.println("line for tail -f: blah...");
 		pw.println("another one line...");

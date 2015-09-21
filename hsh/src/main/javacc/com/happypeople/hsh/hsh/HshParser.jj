@@ -13,10 +13,10 @@ import com.happypeople.hsh.hsh.l1parser.RuleApplier;
 import com.happypeople.hsh.hsh.l1parser.ParserRule;
 
 public class HshParser {
-private final static boolean DEBUG=false;
-private ListCallback listCallback;
-private RuleApplier ruleApplier;
-private HshLookaheadHelper helper=new HshLookaheadHelper(this);
+	private final static boolean DEBUG=false;
+	private ListCallback listCallback;
+	private RuleApplier ruleApplier;
+	private HshLookaheadHelper helper=new HshLookaheadHelper(this);
 
 	private void throwNI() {		throw new RuntimeException("not implemented");
 	}
@@ -24,6 +24,7 @@ private HshLookaheadHelper helper=new HshLookaheadHelper(this);
 	public void setRuleApplier(RuleApplier ruleApplier) {
 		this.ruleApplier=ruleApplier;	}
 	
+	/** @param listCallback is called whenever the parser did parse a whole Command, useful in rep-loop */
 	public void setListCallback(ListCallback listCallback) {
 		this.listCallback=listCallback;
 	}

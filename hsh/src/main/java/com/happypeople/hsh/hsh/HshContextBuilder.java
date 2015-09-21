@@ -1,7 +1,9 @@
 package com.happypeople.hsh.hsh;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
@@ -99,12 +101,24 @@ public class HshContextBuilder {
 		final FunctionHshExecutor funcExec=new FunctionHshExecutor(env);
 		xecutors.add(funcExec);
 
-		// TODO
 		// create and set buildins executor
+		xecutors.add(new InProcessHshExecutor(init_predefines()));
 
 		// TODO
 		// create and set PATH executor
 
 		return new DelegatingHshExecutor(xecutors);
 	}
+
+	private static Map<String, String> init_predefines() {
+		final Map<String, String> predefs=new HashMap<String, String>();
+		predefs.put("exit",	"com.happypeople.hsh.exit.Exit");
+		predefs.put("find",	"com.happypeople.hsh.find.Find");
+		predefs.put("ls", 	"com.happypeople.hsh.ls.Ls");
+		predefs.put("quit",	"com.happypeople.hsh.exit.Exit");
+		predefs.put("tail",	"com.happypeople.hsh.tail.Main");
+		return predefs;
+	}
+
+
 }
