@@ -98,14 +98,10 @@ public class HshContextBuilder {
 
 	private HshExecutor createDefaultExecutor(final HshEnvironment env) {
 		final List<HshExecutor> xecutors=new ArrayList<HshExecutor>();
-		final FunctionHshExecutor funcExec=new FunctionHshExecutor(env);
-		xecutors.add(funcExec);
 
-		// create and set buildins executor
+		xecutors.add(new FunctionHshExecutor(env));
 		xecutors.add(new InProcessHshExecutor(init_predefines()));
-
-		// TODO
-		// create and set PATH executor
+		xecutors.add(new PathHshExecutor(env));
 
 		return new DelegatingHshExecutor(xecutors);
 	}

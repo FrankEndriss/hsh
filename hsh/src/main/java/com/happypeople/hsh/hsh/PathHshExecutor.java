@@ -13,7 +13,7 @@ import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.Parameter;
 import com.happypeople.hsh.VariableParameter;
 
-/** HshExecutor to execute commands from PATH
+/** HshExecutor to execute commands from PATH by starting processes using javas ProcessBuilder
  */
 public class PathHshExecutor implements HshExecutor {
 	private final List<File> path=new ArrayList<File>();
@@ -85,13 +85,14 @@ public class PathHshExecutor implements HshExecutor {
 
 	@Override
 	public boolean canExecute(final String[] command) {
-		// TODO Auto-generated method stub
-		return false;
+		// note that this makes sence because the PathExecutor is the last one
+		// in the list of executors.
+		return true;
 	}
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
+		// empty
 	}
 
 	/** Resolves a String to an executable file, using path
@@ -108,12 +109,12 @@ public class PathHshExecutor implements HshExecutor {
 
 		for(final File p : path) {
 			final File r=new File(p, cmd);
-			if(r.exists() && r.isFile())
+			if(r.canExecute())
 				return r.getAbsolutePath();
 
 			// honor windows
 			final File w=new File(p, cmd+".exe");
-			if(w.exists() && w.isFile())
+			if(w.canExecute())
 				return w.getAbsolutePath();
 		}
 
