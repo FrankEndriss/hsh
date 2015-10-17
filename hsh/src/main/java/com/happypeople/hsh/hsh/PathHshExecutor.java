@@ -1,6 +1,7 @@
 package com.happypeople.hsh.hsh;
 
 import java.io.File;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -9,7 +10,10 @@ import java.util.List;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
+import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.HshRedirection;
+import com.happypeople.hsh.HshRedirection.OperationType;
+import com.happypeople.hsh.HshRedirection.TargetType;
 import com.happypeople.hsh.Parameter;
 import com.happypeople.hsh.VariableParameter;
 
@@ -147,4 +151,36 @@ public class PathHshExecutor implements HshExecutor {
 			path.clear();
 	}
 
+	/**  TODO: this code should go to the Process-Executor
+	 * Setup the processBuilder to execute a process using this redirection.
+	 * This is possible only if this is a FILE redirection and this refers to one of the
+	 * standard streams
+	 * @param processBuilder
+	 * @return true if a redirection was set, else false
+	 */
+	private boolean setupFileRedirection(final ProcessBuilder processBuilder, final HshRedirection redir) {
+		if(redir.getTargetType()==TargetType.FILE) {
+			if(redir.getRedirectedFD()==HshFDSet.STDIN && redir.getOperationType()==OperationType.READ) {
+				processBuilder.redirectInput(redir.getTargetFile());
+				return true;
+			} else if(redir.getRedirectedFD()==HshFDSet.STDOUT) {
+				if(redir.getOperationType()==OperationType.WRITE) {
+					processBuilder.redirectOutput(redir.getTargetFile());
+					return true;
+				} else if(redir.getOperationType()==OperationType.APPEND) {
+					processBuilder.redirectOutput(Redirect.appendTo(redir.getTargetFile()));
+					return true;
+				}
+			} else if(redir.getRedirectedFD()==HshFDSet.STDERR) {
+				if(redir.getOperationType()==OperationType.WRITE) {
+					processBuilder.redirectError(redir.getTargetFile());
+					return true;
+				} else if(redir.getOperationType()==OperationType.APPEND) {
+					processBuilder.redirectError(Redirect.appendTo(redir.getTargetFile()));
+					return true;
+				}
+			}
+		} // else ignore
+		return false;
+	}
 }

@@ -39,10 +39,10 @@ public class DelegatingHshExecutor implements HshExecutor {
 			delegate.close();
 	}
 
-	@Override
 	/** The delegates are asked in order if they canExecute(command)
 	 * If one returns true, true is returnded, else false.
 	 */
+	@Override
 	public boolean canExecute(final String[] command) {
 		for(final HshExecutor delegate : delegates)
 			if(delegate.canExecute(command))

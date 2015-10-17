@@ -115,6 +115,10 @@ public class SimpleCommand extends L2Node implements Executable {
 		}
 
 		// Step 4.
+		// Note that this Code should be moved to a more common class,
+		// since it is needed in several other command.
+		// Most likely, it should go into the executors.
+		// Another good place would be class RedirNode
 		final List<HshRedirection> redirList=new ArrayList<HshRedirection>();
 		for(final Integer idx : redirects) {
 			final L2Token tok=getChild(idx);
@@ -153,7 +157,7 @@ public class SimpleCommand extends L2Node implements Executable {
 				case HshParserConstants.DGREAT:
 					if(ioNumber<0)
 						ioNumber=HshFDSet.STDOUT;
-					hshRedir=new HshRedirection(ioNumber, new File(filename));
+					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.APPEND, new File(filename));
 					break;
 				case HshParserConstants.LESSGREAT:
 					throw new RuntimeException("LESSGREAT redirection not implemented");
