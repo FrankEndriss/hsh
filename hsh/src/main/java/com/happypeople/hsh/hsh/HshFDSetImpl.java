@@ -1,5 +1,6 @@
 package com.happypeople.hsh.hsh;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,42 +11,40 @@ import com.happypeople.hsh.HshPipe;
  * One for input streams, one for output streams.
  **/
 public class HshFDSetImpl implements HshFDSet {
-	private final Map<Integer, HshPipe> inputMap=new HashMap<Integer, HshPipe>();
-	private final Map<Integer, HshPipe> outputMap=new HashMap<Integer, HshPipe>();
-	private final HshFDSet parent;
+	private final Map<Integer, HshPipe> pipes=new HashMap<Integer, HshPipe>();
 
-	public HshFDSetImpl(final HshFDSet parent) {
-		this.parent=parent;
-	}
-
-	public void setInput(final int fd, final HshPipe pipe) {
-		// TODO close a previous contained pipe?
-		inputMap.put(fd, pipe);
-	}
-
-	public void setOutput(final int fd, final HshPipe pipe) {
-		// TODO close a previous contained pipe?
-		outputMap.put(fd, pipe);
+	@Override
+	public void setPipe(final int fd, final HshPipe pipe) throws IOException {
+		final HshPipe oldPipe=pipes.put(fd, pipe);
+		if(oldPipe!=null)
+			oldPipe.close();
 	}
 
 	@Override
-	public HshPipe getInput(final int fd) {
-		final HshPipe ret=inputMap.get(fd);
-		if(ret==null && parent!=null)
-			return parent.getInput(fd);
-		return ret;
+	public HshPipe getPipe(final int fd) {
+		return pipes.get(fd);
 	}
 
 	@Override
-	public HshPipe getOutput(final int fd) {
-		final HshPipe ret=outputMap.get(fd);
-		if(ret==null && parent!=null)
-			return parent.getOutput(fd);
-		return ret;
+	public void closePipe(final int fd) throws IOException {
+		final HshPipe pipe=pipes.remove(fd);
+		if(pipe!=null)
+			pipe.close();
 	}
 
 	@Override
-	public void close() {
-		// close Streams?
+	public void close() throws IOException {
+		for(final HshPipe pipe : pipes.values())
+			pipe.close();
+		pipes.clear();
+	}
+
+	@Override
+	public HshFDSet createCopy() throws IOException {
+		final HshFDSetImpl copy=new HshFDSetImpl();
+		for(final Map.Entry<Integer, HshPipe> entry : pipes.entrySet())
+			copy.setPipe(entry.getKey(), entry.getValue());
+
+		return copy;
 	}
 }

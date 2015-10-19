@@ -88,7 +88,7 @@ public class HshContextBuilder {
 
 		// fdSet must not be null at all
 		if(lFDSet==null)
-			lFDSet=new HshFDSetImpl(parentHshContext==null?null:parentHshContext.getFDSet());
+			lFDSet=new HshFDSetImpl();
 
 		final HshContext context=new HshChildContext(parentHshContext,
 				lEnvironment, lExecutor, lFDSet, terminal);

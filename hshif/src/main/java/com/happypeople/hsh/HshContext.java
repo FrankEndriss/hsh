@@ -1,5 +1,6 @@
 package com.happypeople.hsh;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 
@@ -48,9 +49,10 @@ public interface HshContext extends AutoCloseable {
 	public HshTerminal getTerminal();
 
 	/** Closes this context by releasing all resources held.
+	 * @throws IOException
 	 */
 	@Override
-	public void close();
+	public void close() throws IOException;
 
 
 }

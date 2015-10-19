@@ -6,8 +6,6 @@ import java.io.PipedWriter;
 import java.io.Reader;
 import java.util.Map;
 
-import jline.console.ConsoleReader;
-
 import org.apache.log4j.Logger;
 
 import com.happypeople.hsh.HshContext;
@@ -17,6 +15,8 @@ import com.happypeople.hsh.HshTerminal;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
 import com.happypeople.hsh.hsh.parser.ListNode;
+
+import jline.console.ConsoleReader;
 
 /** Happy Shell main.
  * The program reads lines from stdin and executes them.
@@ -99,11 +99,16 @@ public class Hsh {
 	private void run() {
 
 		final HshContextBuilder contextBuilder=new HshContextBuilder();
-		final HshFDSetImpl fdSet=new HshFDSetImpl(null);
+		final HshFDSetImpl fdSet=new HshFDSetImpl();
 		// Setup stdstream
-		fdSet.setInput(HshFDSet.STDIN, new HshPipeImpl(System.in));
-		fdSet.setOutput(HshFDSet.STDOUT, new HshPipeImpl(System.out));
-		fdSet.setOutput(HshFDSet.STDERR, new HshPipeImpl(System.err));
+		try {
+			fdSet.setPipe(HshFDSet.STDIN, new HshPipeImpl(System.in));
+			fdSet.setPipe(HshFDSet.STDOUT, new HshPipeImpl(System.out));
+			fdSet.setPipe(HshFDSet.STDERR, new HshPipeImpl(System.err));
+		}catch(final IOException e) {
+			e.printStackTrace(System.err);
+			throw new RuntimeException(e);
+		}
 
 		context=contextBuilder.terminal(new HshTerminal() {
 			@Override

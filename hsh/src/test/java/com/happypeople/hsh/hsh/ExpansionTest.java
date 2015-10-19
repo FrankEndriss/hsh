@@ -36,8 +36,8 @@ public class ExpansionTest {
 		final L2TokenManager tokMgr=new L2TokenManager(new L1Parser(parserIn));
 		parser=new HshParser(tokMgr);
 		executedList=new ArrayList<String[]>();
-		final HshFDSetImpl fdSet=new HshFDSetImpl(null);
-		fdSet.setOutput(HshFDSet.STDOUT, new HshPipeImpl());
+		final HshFDSetImpl fdSet=new HshFDSetImpl();
+		fdSet.setPipe(HshFDSet.STDOUT, new HshPipeImpl());
 		context=new HshContextBuilder().executor(new HshExecutorImpl() {
 			@Override
 			public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirs) throws Exception {

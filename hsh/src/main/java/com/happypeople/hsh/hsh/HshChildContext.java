@@ -1,5 +1,6 @@
 package com.happypeople.hsh.hsh;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 
@@ -40,18 +41,18 @@ public class HshChildContext implements HshContext {
 
 	@Override
 	public InputStream getStdIn() {
-		return getFDSet().getInput(HshFDSet.STDIN).getInputStream();
+		return getFDSet().getPipe(HshFDSet.STDIN).getInputStream();
 	}
 
 	@Override
 	public PrintStream getStdOut() {
-		return getFDSet().getOutput(HshFDSet.STDOUT).getOutputStream();
+		return getFDSet().getPipe(HshFDSet.STDOUT).getOutputStream();
 
 	}
 
 	@Override
 	public PrintStream getStdErr() {
-		return getFDSet().getOutput(HshFDSet.STDERR).getOutputStream();
+		return getFDSet().getPipe(HshFDSet.STDERR).getOutputStream();
 	}
 
 	@Override
@@ -87,7 +88,7 @@ public class HshChildContext implements HshContext {
 	}
 
 	@Override
-	public void close() {
+	public void close() throws IOException {
 		if(env!=null)
 			env.close();
 		if(executor!=null)
