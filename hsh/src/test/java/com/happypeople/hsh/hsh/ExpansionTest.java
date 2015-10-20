@@ -14,6 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hsh.HshExecutor;
 import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
@@ -38,7 +39,7 @@ public class ExpansionTest {
 		executedList=new ArrayList<String[]>();
 		final HshFDSetImpl fdSet=new HshFDSetImpl();
 		fdSet.setPipe(HshFDSet.STDOUT, new HshPipeImpl());
-		context=new HshContextBuilder().executor(new HshExecutorImpl() {
+		context=new HshContextBuilder().executor(new HshExecutor() {
 			@Override
 			public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirs) throws Exception {
 				if(DEBUG)
@@ -51,6 +52,16 @@ public class ExpansionTest {
 						ps.flush();
 				}
 				return 0;
+			}
+
+			@Override
+			public boolean canExecute(final String[] command, final HshContext parentContext) {
+				return true;
+			}
+
+			@Override
+			public void close() {
+				// TODO Auto-generated method stub
 			}
 		}).environment(new HshEnvironmentImpl(null)).fdSet(fdSet).create();
 		context.getEnv().setVariableValue("IFS", " \t\n");

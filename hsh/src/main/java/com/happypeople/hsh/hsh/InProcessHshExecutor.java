@@ -25,7 +25,7 @@ public class InProcessHshExecutor implements HshExecutor {
 	}
 
 	@Override
-	public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirections)
+	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections)
 				throws Exception {
 		final String className=predefs.get(command[0]);
 
@@ -33,7 +33,7 @@ public class InProcessHshExecutor implements HshExecutor {
 			final Class<?> cls=Class.forName(className);
 			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
 				final HshCmd hshCmd=(HshCmd) cls.newInstance();
-				return hshCmd.execute(context, new ArrayList<String>(Arrays.asList(command)));
+				return hshCmd.execute(parentContext, new ArrayList<String>(Arrays.asList(command)));
 			} else {
 				cls.getMethod("main", new Class[]{ command.getClass()}).invoke(null, new Object[] { command });
 				return 0;
@@ -45,7 +45,7 @@ public class InProcessHshExecutor implements HshExecutor {
 	}
 
 	@Override
-	public boolean canExecute(final String[] command) {
+	public boolean canExecute(final String[] command, final HshContext parentContext) {
 		return predefs.get(command[0])!=null;
 	}
 

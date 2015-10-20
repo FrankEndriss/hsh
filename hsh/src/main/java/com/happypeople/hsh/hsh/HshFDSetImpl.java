@@ -13,6 +13,18 @@ import com.happypeople.hsh.HshPipe;
 public class HshFDSetImpl implements HshFDSet {
 	private final Map<Integer, HshPipe> pipes=new HashMap<Integer, HshPipe>();
 
+	public HshFDSetImpl() {
+		// empty
+	}
+
+	/** Private copy constructor
+	 * @param copySource
+	 */
+	private HshFDSetImpl(final Map<Integer, HshPipe> copySource) {
+		for(final Map.Entry<Integer, HshPipe> entry : copySource.entrySet())
+			pipes.put(entry.getKey(), entry.getValue());
+	}
+
 	@Override
 	public void setPipe(final int fd, final HshPipe pipe) throws IOException {
 		final HshPipe oldPipe=pipes.put(fd, pipe);
@@ -40,11 +52,7 @@ public class HshFDSetImpl implements HshFDSet {
 	}
 
 	@Override
-	public HshFDSet createCopy() throws IOException {
-		final HshFDSetImpl copy=new HshFDSetImpl();
-		for(final Map.Entry<Integer, HshPipe> entry : pipes.entrySet())
-			copy.setPipe(entry.getKey(), entry.getValue());
-
-		return copy;
+	public HshFDSet createCopy() {
+		return new HshFDSetImpl(pipes);
 	}
 }

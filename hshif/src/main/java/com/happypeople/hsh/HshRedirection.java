@@ -5,6 +5,7 @@ import java.io.File;
 
 /** Objects of this class encapsulate the (meta) information given in one redirection, ie ">outfile" or "0<&3"
  * Immutable.
+ * TODO refactor this class to be an interface
  */
 public class HshRedirection {
 	/** Redirection may go to a file or to another FD, ie "2>err.txt" or "3>&1" */

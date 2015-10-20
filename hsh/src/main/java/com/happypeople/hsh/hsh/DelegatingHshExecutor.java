@@ -26,10 +26,10 @@ public class DelegatingHshExecutor implements HshExecutor {
 	 * If one returns true, that ones execute-method is called.
 	 * Else an IllegalArgumentException is thrown.
 	 */
-	public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirections) throws Exception {
+	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections) throws Exception {
 		for(final HshExecutor delegate : delegates)
-			if(delegate.canExecute(command))
-				return delegate.execute(command, context, redirections);
+			if(delegate.canExecute(command, parentContext))
+				return delegate.execute(command, parentContext, redirections);
 		throw new IllegalArgumentException("no provided executor can execute command: "+Arrays.asList(command));
 	}
 
@@ -43,9 +43,9 @@ public class DelegatingHshExecutor implements HshExecutor {
 	 * If one returns true, true is returnded, else false.
 	 */
 	@Override
-	public boolean canExecute(final String[] command) {
+	public boolean canExecute(final String[] command, final HshContext parentContext) {
 		for(final HshExecutor delegate : delegates)
-			if(delegate.canExecute(command))
+			if(delegate.canExecute(command, parentContext))
 				return true;
 		return false;
 	}

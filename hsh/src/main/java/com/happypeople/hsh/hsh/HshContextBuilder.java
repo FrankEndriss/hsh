@@ -87,8 +87,12 @@ public class HshContextBuilder {
 		}
 
 		// fdSet must not be null at all
-		if(lFDSet==null)
-			lFDSet=new HshFDSetImpl();
+		if(lFDSet==null) {
+			if(parentHshContext!=null)
+				lFDSet=parentHshContext.getFDSet().createCopy();
+			else
+				lFDSet=new HshFDSetImpl();
+		}
 
 		final HshContext context=new HshChildContext(parentHshContext,
 				lEnvironment, lExecutor, lFDSet, terminal);
@@ -101,7 +105,7 @@ public class HshContextBuilder {
 
 		xecutors.add(new FunctionHshExecutor(env));
 		xecutors.add(new InProcessHshExecutor(init_predefines()));
-		xecutors.add(new PathHshExecutor(env));
+		xecutors.add(new PathHshExecutor());
 
 		return new DelegatingHshExecutor(xecutors);
 	}

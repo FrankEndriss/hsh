@@ -26,22 +26,22 @@ public class FunctionHshExecutor implements HshExecutor {
 	}
 
 	@Override
-	public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirections) throws Exception {
+	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections) throws Exception {
 		final FunctionParameter p=(FunctionParameter)env.getParameter(command[0]);
 		final L1Node executable=((L1Node)p.getBody()).copySubtree();
 
 		// TODO
 		// 1. positional parameters
-		// 2. redirections
+		// 2. setup execution context
 		// 3. execution
 
-		NodeTraversal.executeSubtree(executable, context);
+		NodeTraversal.executeSubtree(executable, parentContext);
 
 		return 0;
 	}
 
 	@Override
-	public boolean canExecute(final String[] command) {
+	public boolean canExecute(final String[] command, final HshContext parentContext) {
 		final Parameter p=env.getParameter(command[0]);
 		return p!=null && p instanceof FunctionParameter;
 	}

@@ -40,5 +40,5 @@ public interface HshFDSet {
 	 * contains copies of all streams of its parent context.
 	 * @throws IOException
 	 **/
-	public HshFDSet createCopy() throws IOException;
+	public HshFDSet createCopy();
 }

@@ -8,53 +8,23 @@ import java.util.Collection;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
 import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.HshRedirection.OperationType;
 import com.happypeople.hsh.HshRedirection.TargetType;
-import com.happypeople.hsh.Parameter;
-import com.happypeople.hsh.VariableParameter;
 
 /** HshExecutor to execute commands from PATH by starting processes using javas ProcessBuilder
  */
 public class PathHshExecutor implements HshExecutor {
 	private final List<File> path=new ArrayList<File>();
-	private final HshEnvironment env;
-
-	/**
-	 * @param env this Executor registers itself as a listener to env, to listen to changes of the PATH variable.
-	 */
-	public PathHshExecutor(final HshEnvironment env) {
-		this.env=env;
-		env.addListener(new HshEnvironment.ChangeListener() {
-			@Override
-			public void created(final Parameter parameter) {
-				varChanged(parameter.getName());
-			}
-
-			@Override
-			public void removed(final Parameter parameter) {
-				varChanged(parameter.getName());
-			}
-
-			@Override
-			public void exported(final Parameter parameter) {
-			}
-
-			@Override
-			public void changed(final VariableParameter parameter, final String oldValue) {
-				varChanged(parameter.getName());
-			}
-		});
-	}
+	private final String lastUsedPath="";
 
 	@Override
-	public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirections) throws Exception {
+	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections) throws Exception {
 		try {
 			final ProcessBuilder builder=new ProcessBuilder();
-			command[0]=resolveCmd(command[0]);
+			command[0]=resolveCmd(command[0], parentContext.getEnv().getVariableValue("PATH"));
 			builder.command(Arrays.asList(command));
 
 			// TODO set env based on context
@@ -88,7 +58,7 @@ public class PathHshExecutor implements HshExecutor {
 	}
 
 	@Override
-	public boolean canExecute(final String[] command) {
+	public boolean canExecute(final String[] command, final HshContext context) {
 		// note that this makes sence because the PathExecutor is the last one
 		// in the list of executors.
 		return true;
@@ -103,13 +73,13 @@ public class PathHshExecutor implements HshExecutor {
 	 * @param string a command name
 	 * @return absolute filename to the executable, or cmd if no executable was found
 	 */
-	private String resolveCmd(final String cmd) {
+	private String resolveCmd(final String cmd, final String lpath) {
 		final File f=new File(cmd);
 		if(f.isAbsolute())
 			return cmd;
 
-		if(path.size()==0)
-			parsePath();
+		if(!lastUsedPath.equals(lpath))
+			parsePath(lpath);
 
 		for(final File p : path) {
 			final File r=new File(p, cmd);
@@ -128,9 +98,8 @@ public class PathHshExecutor implements HshExecutor {
 	/** This method parses the environment var PATH and
 	 * places that list of directories in the class var path.
 	 */
-	private void parsePath() {
-		final String lpath=env.getVariableValue("PATH");
-
+	private void parsePath(final String lpath) {
+		path.clear();
 		if(lpath!=null) {
 			final Collection<String> lpaths=Arrays.asList(lpath.split(File.pathSeparator));
 			for(final String p : lpaths) {
@@ -144,14 +113,7 @@ public class PathHshExecutor implements HshExecutor {
 			System.out.println("no path.");
 	}
 
-	// HshEnvirionment-Listener
-	private void varChanged(final String name) {
-		// throw away cache
-		if("PATH".equals(name))
-			path.clear();
-	}
-
-	/**  TODO: this code should go to the Process-Executor
+	/**
 	 * Setup the processBuilder to execute a process using this redirection.
 	 * This is possible only if this is a FILE redirection and this refers to one of the
 	 * standard streams
