@@ -1,11 +1,18 @@
 package com.happypeople.hsh.hsh;
 
+import org.apache.log4j.Logger;
+
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.L1ParserConstants;
 import com.happypeople.hsh.hsh.l1parser.SimpleL1Node;
 
+/** Parser-Helper class with methods to lookahead several constructs.
+ * The code should usually life in the Parser-class,but since that is a .jj-File
+ * it is annoying to edit.
+ */
 public class HshLookaheadHelper {
-	private final static boolean DEBUG=false;
+	private final static Logger log = Logger.getLogger(Hsh.class);
+
 	private final HshParser parser;
 
 	public HshLookaheadHelper(final HshParser parser) {
@@ -284,22 +291,20 @@ public class HshLookaheadHelper {
 	 * @return true if match, else false
 	 */
 	public boolean lookahead_isIoRedir() {
-		if(DEBUG)
-			System.out.println("lookahead_isIoRedir");
+		log.debug("lookahead_isIoRedir");
+
 		// check if a previous call of this method did
 		// created the outcome.
 		if(getToken(1).kind==HshParserConstants.IO_NUMBER ||
 			(isHshRedirOperator(getToken(1).kind) && getToken(2)!=null && getToken(2).kind==HshParserConstants.WORD))
 				return true;
 
-		if(DEBUG)
-			System.out.println("lookahead_isIoRedir, checking for kind word");
+		log.debug("lookahead_isIoRedir, checking for kind word");
 
 		if(getToken(1).kind!=HshParserConstants.WORD)
 			return false;
 
-		if(DEBUG)
-			System.out.println("lookahead_isIoRedir, first check false");
+		log.debug("lookahead_isIoRedir, first check false");
 
 		// match and count the parts, beginn with two
 		final L1Node p1=getPart(0);
@@ -309,8 +314,7 @@ public class HshLookaheadHelper {
 		if(p2==null)
 			return false;
 
-		if(DEBUG)
-			System.out.println("lookahead_isIoRedir, did get first two parts");
+		log.debug("lookahead_isIoRedir, did get first two parts");
 
 		final L2Token filenameToken;
 		if((isNUMBER(p1) && is_redir_operator(p2)) && isWORD(getTokenOfPart(2)) ||
@@ -339,12 +343,10 @@ public class HshLookaheadHelper {
 				parser.reloadJJNTK();
 			}
 
-			if(DEBUG)
-				System.out.println("lookahead_isIoRedir, return true");
+			log.debug("lookahead_isIoRedir, return true");
 			return true;
 		}
-		if(DEBUG)
-			System.out.println("lookahead_isIoRedir, return false");
+		log.debug("lookahead_isIoRedir, return false");
 		return false;
 	}
 

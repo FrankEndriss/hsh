@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.log4j.Logger;
+
 import com.happypeople.hsh.HshPipe;
 
 /** A HshPipeImpl has two ends, a reading and a writing one.
@@ -17,6 +19,7 @@ import com.happypeople.hsh.HshPipe;
  * If there is another end. If not, no bytes are transferred.
  */
 public class HshPipeImpl implements HshPipe {
+	private final static Logger log = Logger.getLogger(HshPipeImpl.class);
 	private final InputStream inputStream;
 	private final PrintStream outputStream;
 	private boolean closed=false;
@@ -57,7 +60,8 @@ public class HshPipeImpl implements HshPipe {
 		if(refCounter!=null) {
 			final int c=refCounter.decrementAndGet();
 			if(c==0) {
-				o.close();
+				log.info("[do not] closing stream: "+o);
+				//o.close();
 				refCounterMap.remove(ref, new AtomicInteger(0));
 			}
 		}

@@ -25,19 +25,14 @@ import jline.console.ConsoleReader;
  * "exit <number>" exits with status <number>
  */
 public class Hsh {
-	private final static boolean DEBUG=false;
-
 	private ConsoleReader console;
-	//private final HshEnvironment env=new HshEnvironmentImpl(null);
-	//private final HshExecutorImpl executor=new HshExecutorImpl(null, this, new HshRedirectionsImpl());
 	private final HshParser parser;
 	private HshContext context;
 
 	/** exit status of last command */
 	private int status=0;
 
-	/** Flag indicating that this instance has finished working. ie "exit" was called. */
-    private final static Logger logger = Logger.getLogger(Hsh.class);
+    private final static Logger log = Logger.getLogger(Hsh.class);
 
 	public static void main(final String[] args) throws IOException {
 
@@ -58,8 +53,10 @@ public class Hsh {
 		final Reader hshIn=new ParserCallbackReader(pReader, new ParserCallbackReader.Callback() {
 			@Override
 			public void feedMe() throws IOException {
+				log.info("feedMe called from parser");
 				pWriter.write(console.readLine());
 				pWriter.write("\n");
+				log.info("sent a line from feedMe() to parser");
 			}
 		});
 
@@ -90,7 +87,7 @@ public class Hsh {
 		final L2TokenManager l2tm=new L2TokenManager(new L1Parser(in));
 		this.parser=new HshParser(l2tm);
 		// TODO delete the ruleApplier, it is not needed
-		this.parser.setRuleApplier(l2tm);
+		//this.parser.setRuleApplier(l2tm);
 	}
 
 	/** this call runs the rep-loop until one of the executed commands set the finished() flag
@@ -131,7 +128,7 @@ public class Hsh {
 		parser.setListCallback(new HshParser.ListCallback() {
 			@Override
 			public void listParsed(final ListNode listNode) {
-				logger.debug("listParsed, image="+listNode.getImage());
+				log.debug("listParsed, image="+listNode.getImage());
 				try {
 					setStatus(listNode.doExecution(context));
 				} catch (final Exception e) {
@@ -143,10 +140,12 @@ public class Hsh {
 
 		while(!context.isFinish()) {
 			try {
+				log.info("parsing complete command...");
 				parser.complete_command();
-				logger.debug("parsed complete command.");
+				log.info("parsed complete command.");
 			} catch (final ParseException e) {
-				logger.debug("parse exception", e);
+				log.error("parse exception, abord", e);
+				context.finish();
 			}
 		}
 	}
