@@ -69,11 +69,17 @@ public class HshChildContext implements HshContext {
 
 	@Override
 	public HshEnvironment getEnv() {
+		// TODO dont return parents env, instead create a copy of
+		// parents exports while creation
 		return env!=null?env:parent.getEnv();
 	}
 
 	@Override
 	public HshExecutor getExecutor() {
+		//TODO dont return parents executor, instead copy reference
+		// to (hopefully) immutable parents executor.
+		// If executor is not immutable, a copy should be
+		// created on creation of this context.
 		return executor!=null?executor:parent.getExecutor();
 	}
 
@@ -91,7 +97,7 @@ public class HshChildContext implements HshContext {
 	public void close() throws IOException {
 		if(env!=null)
 			env.close();
-		if(executor!=null)
+		if(executor!=null) // because of this call to close() the executor should be a copy of the parents one
 			executor.close();
 		if(fdSet!=null)
 			fdSet.close();

@@ -1,5 +1,7 @@
 package com.happypeople.hsh.hsh.l1parser;
 
+import org.apache.log4j.Logger;
+
 import com.happypeople.hsh.hsh.HshParserConstants;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.Token;
@@ -8,8 +10,8 @@ import com.happypeople.hsh.hsh.TokenManager;
 /** This class is the Adapter between L1- and L2-Parser.
  * It translates a stream of L1-Nodes into a Stream of L2-Token.
  */
-public class L2TokenManager implements TokenManager, RuleApplier {
-	private final static boolean DEBUG=false;
+public class L2TokenManager implements TokenManager {
+	private final Logger log=Logger.getLogger(L2TokenManager.class);
 
 	private final L1Parser l1Parser;
 
@@ -17,24 +19,16 @@ public class L2TokenManager implements TokenManager, RuleApplier {
 		this.l1Parser=l1Parser;
 	}
 
-	private ParserRule rule;
-
 	@Override
 	public Token getNextToken() {
 		try {
 			final L2Token t=l1Parser.nextL1Node();
 			t.kind=translateL1KindToL2Kind(t.kind);
-			if(DEBUG)
-				System.out.println("L2TokenManager.getNextToken(): "+HshParserConstants.tokenImage[t.kind]+":"+t.image);
+			log.debug("L2TokenManager.getNextToken(): "+HshParserConstants.tokenImage[t.kind]+":"+t.image);
 			return t;
 		} catch (final ParseException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	@Override
-	public void setRule(final ParserRule rule) {
-		this.rule=rule;
 	}
 
 	/** Returns the L2-kind according to l1kind

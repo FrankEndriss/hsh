@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshExecutor;
 import com.happypeople.hsh.HshFDSet;
@@ -17,8 +19,9 @@ import com.happypeople.hsh.HshRedirection.TargetType;
 /** HshExecutor to execute commands from PATH by starting processes using javas ProcessBuilder
  */
 public class PathHshExecutor implements HshExecutor {
+	private final static Logger log=Logger.getLogger(PathHshExecutor.class);
 	private final List<File> path=new ArrayList<File>();
-	private final String lastUsedPath="";
+	private String lastUsedPath="";
 
 	@Override
 	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections) throws Exception {
@@ -29,27 +32,23 @@ public class PathHshExecutor implements HshExecutor {
 
 			// TODO set env based on context
 
-			/*
-			final HshRedirection stderrRedir=hshRedirections.getStderrRedirection();
-			builder.redirectError(stderrRedir.getType());
-			final HshRedirection stdoutRedir=hshRedirections.getStdoutRedirection();
-			builder.redirectOutput(stdoutRedir.getType());
-			final HshRedirection stdinRedir=hshRedirections.getStdinRedirection();
-			builder.redirectInput(stdinRedir.getType());
-			*/
+			// TODO set/create redirections on builder
 
+			// Use Redirect.INHERIT for stdin
+			// Note that this completly ignores any redirections activ in parentContext for stdin
+			// but allways uses the process stdin.
+			// Need to check if this is Runtime.
+			builder.redirectInput(ProcessBuilder.Redirect.INHERIT);
 			final Process p=builder.start();
 
-			/*
-			if(stderrRedir.getType()==Redirect.PIPE)
-				stderrRedir.setIn(new HshInput(p.getErrorStream()));
-			if(stdoutRedir.getType()==Redirect.PIPE)
-				stdoutRedir.setOut(new HshOutput(p.getOutputStream()));
-			if(stdinRedir.getType()==Redirect.PIPE)
-				stdinRedir.setIn(new HshInput(p.getInputStream()));
-				*/
+			final HshPipeImpl pStdout=new HshPipeImpl(p.getInputStream(), parentContext.getStdOut());
+			pStdout.startConnectThread();
+
+			final HshPipeImpl pStderr=new HshPipeImpl(p.getErrorStream(), parentContext.getStdErr());
+			pStderr.startConnectThread();
 
 			p.waitFor();
+			// TODO need to restore prompt here in case that p did some output
 			return p.exitValue();
 		}catch(final Exception e) {
 			e.printStackTrace(System.err);
@@ -69,6 +68,13 @@ public class PathHshExecutor implements HshExecutor {
 		// empty
 	}
 
+	private boolean notEquals(final String s1, final String s2) {
+		if(s1==s2)
+			return false;
+		return (s1==null && s2!=null) || s2==null || !s1.equals(s2);
+
+	}
+
 	/** Resolves a String to an executable file, using path
 	 * @param string a command name
 	 * @return absolute filename to the executable, or cmd if no executable was found
@@ -78,8 +84,10 @@ public class PathHshExecutor implements HshExecutor {
 		if(f.isAbsolute())
 			return cmd;
 
-		if(!lastUsedPath.equals(lpath))
+		if(notEquals(lastUsedPath, lpath)) {
 			parsePath(lpath);
+			lastUsedPath=lpath;
+		}
 
 		for(final File p : path) {
 			final File r=new File(p, cmd);

@@ -1,6 +1,6 @@
 package com.happypeople.hshutil.util;
 
-/** Simple immutable impementation of a pair of objects.
+/** Simple immutable implementation of a pair of objects.
  * @param <T1> type of object 1
  * @param <T2> type of object 2
  */

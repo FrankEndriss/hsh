@@ -93,21 +93,35 @@ public class HshPipeImpl implements HshPipe {
 
 		put2Map(in);
 		put2Map(out);
-		/*
-		new Thread() {
+	}
+
+	public Thread startConnectThread() {
+		if(getInputStream()==null || getOutputStream()==null)
+			throw new IllegalStateException("cannot connect null stream");
+		return startConnectThread(getInputStream(), getOutputStream());
+	}
+
+	/** Starts and returns a Thread which connects the two streams.
+	 * @param in input to read from
+	 * @param out output to write all what was read from input
+	 * @return the started thread
+	 */
+	public static Thread startConnectThread(final InputStream in, final PrintStream out) {
+		final Thread t=new Thread() {
 			@Override
 			public void run() {
 				try {
 					final byte[] buf=new byte[1024];
 					int c;
-					while((c=in.read(buf, 0, buf.length))>0)
+					while(!Thread.currentThread().isInterrupted() && !out.checkError() && (c=in.read(buf, 0, buf.length))>0)
 						out.write(buf, 0, c);
 				}catch(final IOException e) {
-
+					// ignore Exception, just finish this Thread by returning
 				}
 			}
-		}.start();
-		*/
+		};
+		t.start();
+		return t;
 	}
 
 	@Override
@@ -160,13 +174,8 @@ public class HshPipeImpl implements HshPipe {
 
 		@Override
 		public boolean equals(final Object otherObjRef) {
-			if(!(otherObjRef instanceof ObjRef))
-				return false;
-
-			if(otherObjRef!=null)
-				return obj==((ObjRef)otherObjRef).obj;
-
-			return false;
+			return	(otherObjRef instanceof ObjRef) &&
+					(obj==((ObjRef)otherObjRef).obj);
 		}
 	}
 }
