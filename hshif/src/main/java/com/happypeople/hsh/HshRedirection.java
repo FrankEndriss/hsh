@@ -1,95 +1,95 @@
 package com.happypeople.hsh;
 
 import java.io.File;
-import java.lang.ProcessBuilder.Redirect;
 
 
 /** Objects of this class encapsulate the (meta) information given in one redirection, ie ">outfile" or "0<&3"
  * Immutable.
+ * TODO refactor this class to be an interface
  */
 public class HshRedirection {
+	/** Redirection may go to a file or to another FD, ie "2>err.txt" or "3>&1" */
 	public enum TargetType {
-		/** redirection from or to a file */
+		/** redirection from or to a targetFile */
 		FILE,
 		/** redirection to another FD */
-		OTHER_IO
+		ANOTHER_FD
 	}
 
+	/** According to the redirection symbols "<", ">" and ">>" there are three types of operations. */
 	public enum OperationType {
 		READ,
 		WRITE,
 		APPEND
 	}
 
-	private final File file;
-	private final Integer otherIO;
-	private final int fd;
+	/** Type of the target of this redirection. */
 	private final TargetType targetType;
+	/** If targetType==FILE, this is the files name. */
+	private final File targetFile;
+	/** If targetType==ANOTHER_FD, this is the number of it. */
+	private final Integer targetFD;
+
+	/** This is the number of the redirected FD. */
+	private final int redirectedFD;
+	/** This is the operation which should be executed on the redirection. */
 	private final OperationType operationType;
 
-	/** Creates a redirection to append to a file */
-	public HshRedirection(final int fd, final File file) {
-		this.fd=fd;
-		this.operationType=OperationType.WRITE;
-		this.targetType=TargetType.FILE;
-		this.file=file;
-		this.otherIO=null;
-
-		if(file==null)
-			throw new RuntimeException("file must not be null with this constructor");
-		if(fd<0)
-			throw new RuntimeException("fd must not be less than 0");
-	}
-
-	/** Creates a redirection to read from a file or write to a file or append to a file. */
-	public HshRedirection(final int fd, final OperationType operationType, final File file) {
-		this.fd=fd;
+	/** Creates a redirection to read from a targetFile or write to a targetFile or append to a targetFile.
+	 * @param redirectedFD the FD which should be redirected
+	 * @param operationType the operation of the FD which should be redirected
+	 * @param targetFile the files name
+	 */
+	public HshRedirection(final int redirectedFD, final OperationType operationType, final File targetFile) {
+		this.redirectedFD=redirectedFD;
 		this.operationType=operationType;
 		this.targetType=TargetType.FILE;
-		this.file=file;
-		this.otherIO=null;
+		this.targetFile=targetFile;
+		this.targetFD=null;
 
-		if(file==null)
-			throw new RuntimeException("file must not be null with this constructor");
-		if(fd<0)
-			throw new RuntimeException("fd must not be less than 0");
+		if(targetFile==null)
+			throw new IllegalArgumentException("targetFile must not be null with this constructor");
+		if(redirectedFD<0)
+			throw new IllegalArgumentException("fd must not be less than 0");
 	}
 
 	/** Creates a redirection to read from or write to another FD */
 	public HshRedirection(final int fd, final OperationType operationType, final Integer otherIO) {
-		this.fd=fd;
+		this.redirectedFD=fd;
 		this.operationType=operationType;
-		this.targetType=TargetType.OTHER_IO;
-		this.file=null;
-		this.otherIO=otherIO;
+		this.targetType=TargetType.ANOTHER_FD;
+		this.targetFile=null;
+		this.targetFD=otherIO;
 
 		if(operationType==OperationType.APPEND)
-			throw new RuntimeException("cannot APPEND to otherIO, use READ or WRITE");
+			throw new IllegalArgumentException("cannot APPEND to FD, use READ or WRITE or a file");
 		if(otherIO==null)
-			throw new RuntimeException("otherIO must not be null with this constructor");
+			throw new IllegalArgumentException("targetFD must not be null with this constructor");
 		if(fd<0)
-			throw new RuntimeException("fd must not be less than 0");
+			throw new IllegalArgumentException("fd must not be less than 0");
 	}
 
 	/** If target type is FILE this method returns the File, else null.
 	 * @return the target File to read from, or write or append to
 	 */
-	public File getFile() {
-		return file;
+	public File getTargetFile() {
+		return targetFile;
 	}
 
-	/** If target type is OTHER_IO this method returns the FD of the target.
+	/** If target type is ANOTHER_FD this method returns the FD of the target.
+	 * If target type is not ANOTHER_FD, this method most likely throws a RuntimeException.
 	 * @return the target FD
+	 * TODO: this feature is still unused, ie not implemented in all executors
 	 */
-	public Integer getOtherIO() {
-		return otherIO;
+	private int getTargetFD() {
+		return targetFD;
 	}
 
 	/** Every HshRedirection redirects exactly one FD.
 	 * @return the FD of this HshRedirection
 	 */
-	public int getFD() {
-		return fd;
+	public int getRedirectedFD() {
+		return redirectedFD;
 	}
 
 	public TargetType getTargetType() {
@@ -100,34 +100,5 @@ public class HshRedirection {
 		return operationType;
 	}
 
-	/** Setup the processBuilder to execute a process using this redirection if this is a FILE redirection and this refers to one of the
-	 * standard streams.
-	 * @param processBuilder
-	 * @return true if a redirection was set, else false
-	 */
-	public boolean setupFileRedirection(final ProcessBuilder processBuilder) {
-		if(getTargetType()==TargetType.FILE) {
-			if(getFD()==HshFDSet.STDIN && getOperationType()==OperationType.READ) {
-				processBuilder.redirectInput(getFile());
-				return true;
-			} else if(getFD()==HshFDSet.STDOUT) {
-				if(getOperationType()==OperationType.WRITE) {
-					processBuilder.redirectOutput(getFile());
-					return true;
-				} else if(getOperationType()==OperationType.APPEND) {
-					processBuilder.redirectOutput(Redirect.appendTo(getFile()));
-					return true;
-				}
-			} else if(getFD()==HshFDSet.STDERR) {
-				if(getOperationType()==OperationType.WRITE) {
-					processBuilder.redirectError(getFile());
-					return true;
-				} else if(getOperationType()==OperationType.APPEND) {
-					processBuilder.redirectError(Redirect.appendTo(getFile()));
-					return true;
-				}
-			}
-		} // else ignore
-		return false;
-	}
+
 }

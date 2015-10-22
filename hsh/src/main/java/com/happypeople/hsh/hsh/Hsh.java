@@ -3,11 +3,10 @@ package com.happypeople.hsh.hsh;
 import java.io.IOException;
 import java.io.PipedReader;
 import java.io.PipedWriter;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.Map;
 
-import jline.console.ConsoleReader;
+import org.apache.log4j.Logger;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
@@ -17,6 +16,8 @@ import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
 import com.happypeople.hsh.hsh.parser.ListNode;
 
+import jline.console.ConsoleReader;
+
 /** Happy Shell main.
  * The program reads lines from stdin and executes them.
  * Until stdin is closed or an exit-command is given.
@@ -24,29 +25,16 @@ import com.happypeople.hsh.hsh.parser.ListNode;
  * "exit <number>" exits with status <number>
  */
 public class Hsh {
-	private final static boolean DEBUG=false;
-
-	private static PrintWriter log;
 	private ConsoleReader console;
-	//private final HshEnvironment env=new HshEnvironmentImpl(null);
-	//private final HshExecutorImpl executor=new HshExecutorImpl(null, this, new HshRedirectionsImpl());
 	private final HshParser parser;
 	private HshContext context;
-
-	/** Reader with input */
-	private final Reader in;
 
 	/** exit status of last command */
 	private int status=0;
 
-	/** Flag indicating that this instance has finished working. ie "exit" was called. */
-	private final boolean finished=false;
-
+    private final static Logger log = Logger.getLogger(Hsh.class);
 
 	public static void main(final String[] args) throws IOException {
-
-		//			log=new PrintWriter(new FileWriter("hsh.log"));
-		log=new PrintWriter(System.err);
 
 		final ConsoleReader console = new ConsoleReader();
 		console.setPrompt(">>> ");
@@ -55,18 +43,33 @@ public class Hsh {
 		final PipedWriter pWriter=new PipedWriter();
 		final PipedReader pReader=new PipedReader();
 		pWriter.connect(pReader);
+
+		/** A ParserCallbackReader is used by an instance of Hsh to read input.
+		 * The ParserCallbackReader created here reads lines from the console and
+		 * hands them over to ths Hsh instance.
+		 * If this process is _not_ connected to console the ParserCallbackReader should
+		 * read from Stdin or the like. (still not implemented)
+		 **/
 		final Reader hshIn=new ParserCallbackReader(pReader, new ParserCallbackReader.Callback() {
 			@Override
 			public void feedMe() throws IOException {
+				log.info("feedMe called from parser");
 				pWriter.write(console.readLine());
 				pWriter.write("\n");
+				log.info("sent a line from feedMe() to parser");
 			}
 		});
 
+		/* now create the Hsh instance which input connected to the above created console. */
 		final Hsh instance=new Hsh(hshIn);
+
+		/* note that this call to setConsole() does _not_ set the input. The set console is used for
+		 * calls like getColumnCount() and the like.
+		 */
 		instance.setConsole(console);
 
 		try {
+			/* run the rep-loop */
 			instance.run();
 			System.exit(instance.getStatus());
 		} catch (final Exception e) {
@@ -81,20 +84,28 @@ public class Hsh {
 	 * @throws IOException
 	 */
 	private Hsh(final Reader in) {
-		this.in=in;
 		final L2TokenManager l2tm=new L2TokenManager(new L1Parser(in));
 		this.parser=new HshParser(l2tm);
-		this.parser.setRuleApplier(l2tm);
+		// TODO delete the ruleApplier, it is not needed
+		//this.parser.setRuleApplier(l2tm);
 	}
 
+	/** this call runs the rep-loop until one of the executed commands set the finished() flag
+	 * on the root context.
+	 */
 	private void run() {
 
 		final HshContextBuilder contextBuilder=new HshContextBuilder();
-		final HshFDSetImpl fdSet=new HshFDSetImpl(null);
+		final HshFDSetImpl fdSet=new HshFDSetImpl();
 		// Setup stdstream
-		fdSet.setInput(HshFDSet.STDIN, new HshPipeImpl(System.in));
-		fdSet.setOutput(HshFDSet.STDOUT, new HshPipeImpl(System.out));
-		fdSet.setOutput(HshFDSet.STDERR, new HshPipeImpl(System.err));
+		try {
+			fdSet.setPipe(HshFDSet.STDIN, new HshPipeImpl(System.in));
+			fdSet.setPipe(HshFDSet.STDOUT, new HshPipeImpl(System.out));
+			fdSet.setPipe(HshFDSet.STDERR, new HshPipeImpl(System.err));
+		}catch(final IOException e) {
+			e.printStackTrace(System.err);
+			throw new RuntimeException(e);
+		}
 
 		context=contextBuilder.terminal(new HshTerminal() {
 			@Override
@@ -117,6 +128,7 @@ public class Hsh {
 		parser.setListCallback(new HshParser.ListCallback() {
 			@Override
 			public void listParsed(final ListNode listNode) {
+				log.debug("listParsed, image="+listNode.getImage());
 				try {
 					setStatus(listNode.doExecution(context));
 				} catch (final Exception e) {
@@ -128,11 +140,12 @@ public class Hsh {
 
 		while(!context.isFinish()) {
 			try {
+				log.info("parsing complete command...");
 				parser.complete_command();
-				if(DEBUG)
-					System.out.println("parsed complete command: ");
+				log.info("parsed complete command.");
 			} catch (final ParseException e) {
-				e.printStackTrace();
+				log.error("parse exception, abord", e);
+				context.finish();
 			}
 		}
 	}

@@ -1,5 +1,10 @@
 package com.happypeople.hsh.hsh;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
@@ -78,16 +83,42 @@ public class HshContextBuilder {
 			if(lEnvironment==null)
 				lEnvironment=new HshEnvironmentImpl(null);
 			if(lExecutor==null)
-				lExecutor=new HshExecutorImpl();
+				lExecutor=createDefaultExecutor(lEnvironment);
 		}
 
 		// fdSet must not be null at all
-		if(lFDSet==null)
-			lFDSet=new HshFDSetImpl(parentHshContext==null?null:parentHshContext.getFDSet());
+		if(lFDSet==null) {
+			if(parentHshContext!=null)
+				lFDSet=parentHshContext.getFDSet().createCopy();
+			else
+				lFDSet=new HshFDSetImpl();
+		}
 
 		final HshContext context=new HshChildContext(parentHshContext,
 				lEnvironment, lExecutor, lFDSet, terminal);
 
 		return context;
 	}
+
+	private HshExecutor createDefaultExecutor(final HshEnvironment env) {
+		final List<HshExecutor> xecutors=new ArrayList<HshExecutor>();
+
+		xecutors.add(new FunctionHshExecutor(env));
+		xecutors.add(new InProcessHshExecutor(init_predefines()));
+		xecutors.add(new PathHshExecutor());
+
+		return new DelegatingHshExecutor(xecutors);
+	}
+
+	private static Map<String, String> init_predefines() {
+		final Map<String, String> predefs=new HashMap<String, String>();
+		predefs.put("exit",	"com.happypeople.hsh.exit.Exit");
+		predefs.put("find",	"com.happypeople.hsh.find.Find");
+		predefs.put("ls", 	"com.happypeople.hsh.ls.Ls");
+		predefs.put("quit",	"com.happypeople.hsh.exit.Exit");
+		predefs.put("tail",	"com.happypeople.hsh.tail.Main");
+		return predefs;
+	}
+
+
 }

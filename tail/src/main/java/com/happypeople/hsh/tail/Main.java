@@ -10,7 +10,7 @@ import java.util.List;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListenerAdapter;
 
-public class jtail {
+public class Main {
 	
 	public static void main(String[] args) {
 		if(args.length<1)
@@ -101,7 +101,7 @@ public class jtail {
 	
 
 	private static void usage() {
-		System.out.println("usage: "+jtail.class.getName()+" [-f] [-n <lines>] <fileName>");
+		System.out.println("usage: "+Main.class.getName()+" [-f] [-n <lines>] <fileName>");
 		System.out.println("tails lines lines of file fileName");
 		System.exit(1);
 	}

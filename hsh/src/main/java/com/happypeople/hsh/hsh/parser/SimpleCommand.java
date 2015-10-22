@@ -115,6 +115,11 @@ public class SimpleCommand extends L2Node implements Executable {
 		}
 
 		// Step 4.
+		// Note that this Code should be moved to a more common class,
+		// since it is needed in several other command.
+		// Most likely, it should go into the executors.
+		// Another good place would be class RedirNode
+		final List<HshRedirection> redirList=new ArrayList<HshRedirection>();
 		for(final Integer idx : redirects) {
 			final L2Token tok=getChild(idx);
 			if(DEBUG)
@@ -152,21 +157,23 @@ public class SimpleCommand extends L2Node implements Executable {
 				case HshParserConstants.DGREAT:
 					if(ioNumber<0)
 						ioNumber=HshFDSet.STDOUT;
-					hshRedir=new HshRedirection(ioNumber, new File(filename));
+					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.APPEND, new File(filename));
 					break;
 				case HshParserConstants.LESSGREAT:
 					throw new RuntimeException("LESSGREAT redirection not implemented");
 			default:
 				throw new RuntimeException("unknown operator type in RedirNode :/ "+redirNode.getOperator());
 			}
+			redirList.add(hshRedir);
 		}
 
 		// Step 5.
 		if(!cmdList.isEmpty()) {
 			if(DEBUG)
 				System.out.println("SimpleCommand, execute: "+cmdList);
-			final int result=context.getExecutor().execute(cmdList.toArray(new String[0]), lContext);
+			final int result=context.getExecutor().execute(cmdList.toArray(new String[0]), lContext, redirList);
 			lContext.close();
+			return result;
 		}
 
 		// TODO what to return for assignment only??? try 0

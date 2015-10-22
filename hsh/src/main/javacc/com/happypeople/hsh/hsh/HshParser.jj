@@ -11,19 +11,18 @@ package com.happypeople.hsh.hsh;
 import com.happypeople.hsh.hsh.parser.*;
 import com.happypeople.hsh.hsh.l1parser.RuleApplier;
 import com.happypeople.hsh.hsh.l1parser.ParserRule;
+import org.apache.log4j.Logger;
 
 public class HshParser {
-private final static boolean DEBUG=false;
-private ListCallback listCallback;
-private RuleApplier ruleApplier;
-private HshLookaheadHelper helper=new HshLookaheadHelper(this);
+    private final static Logger log = Logger.getLogger(HshParser.class);
+
+	private ListCallback listCallback;
+	private HshLookaheadHelper helper=new HshLookaheadHelper(this);
 
 	private void throwNI() {		throw new RuntimeException("not implemented");
 	}
 
-	public void setRuleApplier(RuleApplier ruleApplier) {
-		this.ruleApplier=ruleApplier;	}
-	
+	/** @param listCallback is called whenever the parser did parse a whole Command, useful in rep-loop */
 	public void setListCallback(ListCallback listCallback) {
 		this.listCallback=listCallback;
 	}
@@ -567,10 +566,8 @@ TermNode term():
 	( // This must lookahead for and_or. Since if not, the separator must not be consumed.
 		( LOOKAHEAD(separator() and_or() )
 			separator(and_orN)		 	and_orN=and_or() { ret.addChild(and_orN);
-		 		if(DEBUG) { 
-		 			System.out.println("parsed another and_orN in term()");
-		 			ret.dump(1);
-		 		}
+		 		log.debug("parsed another and_orN in term()");
+		 		//ret.dump(1);
 		 	}
 		 )*
 	)
@@ -637,8 +634,6 @@ pipeline         :      pipe_sequence
 */
 PipeSequence pipeline():
 {
-	// needed before each command
-	//ruleApplier.setRule(HshParserRules.RULE7a);
 	PipeSequence ret;
 }
 {
@@ -734,8 +729,6 @@ And_orNode and_or():
  */
 void separator(Backgroundable parent):
 {
-	// After a separator there can allways be a compound_command start with a reserved word...
-	//ruleApplier.setRule(HshParserRules.RULE7a);
 }
 {
 	(	separator_op(parent) linebreak()

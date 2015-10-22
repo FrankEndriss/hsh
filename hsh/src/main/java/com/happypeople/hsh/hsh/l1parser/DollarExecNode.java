@@ -25,9 +25,9 @@ public class DollarExecNode extends ComplexL1Node {
 	@Override
 	public L1Node transformSubstitution(final ImageHolder imageHolder, final HshContext context) throws Exception {
 		// execute subtree and append grabbed output to imageHolder
-		final HshFDSetImpl fdSet=new HshFDSetImpl(context.getFDSet());
+		final HshFDSetImpl fdSet=new HshFDSetImpl();
 		final HshPipe hshPipe=new HshPipeImpl();
-		fdSet.setOutput(HshFDSet.STDOUT, hshPipe);
+		fdSet.setPipe(HshFDSet.STDOUT, hshPipe);
 
 		final HshContext lContext=new HshContextBuilder().parent(context).fdSet(fdSet).create();
 
