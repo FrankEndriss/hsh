@@ -13,7 +13,9 @@ public class HshRedirection {
 		/** redirection from or to a targetFile */
 		FILE,
 		/** redirection to another FD */
-		ANOTHER_FD
+		ANOTHER_FD,
+		/** redirection to another stream/thread/process */
+		ANOTHER_STREAM
 	}
 
 	/** According to the redirection symbols "<", ">" and ">>" there are three types of operations. */
@@ -34,18 +36,32 @@ public class HshRedirection {
 	private final int redirectedFD;
 	/** This is the operation which should be executed on the redirection. */
 	private final OperationType operationType;
+	/** This is the other stream in case of TargetType==ANOTHER_STREAM. Used to create piped command chains. */
+	private final HshPipe anotherStream;
 
+	public HshRedirection(final int redirectedFD, final OperationType operationType, final HshPipe anotherStream) {
+		this.targetType=TargetType.ANOTHER_STREAM;
+		this.redirectedFD=redirectedFD;
+		this.anotherStream=anotherStream;
+		this.operationType=operationType;
+		this.targetFile=null;
+		this.targetFD=null;
+
+		if(anotherStream==null)
+			throw new IllegalArgumentException("anotherStream must not be null with this constructor");
+	}
 	/** Creates a redirection to read from a targetFile or write to a targetFile or append to a targetFile.
 	 * @param redirectedFD the FD which should be redirected
 	 * @param operationType the operation of the FD which should be redirected
 	 * @param targetFile the files name
 	 */
 	public HshRedirection(final int redirectedFD, final OperationType operationType, final File targetFile) {
+		this.targetType=TargetType.FILE;
 		this.redirectedFD=redirectedFD;
 		this.operationType=operationType;
-		this.targetType=TargetType.FILE;
 		this.targetFile=targetFile;
 		this.targetFD=null;
+		this.anotherStream=null;
 
 		if(targetFile==null)
 			throw new IllegalArgumentException("targetFile must not be null with this constructor");
@@ -54,18 +70,19 @@ public class HshRedirection {
 	}
 
 	/** Creates a redirection to read from or write to another FD */
-	public HshRedirection(final int fd, final OperationType operationType, final Integer otherIO) {
-		this.redirectedFD=fd;
-		this.operationType=operationType;
+	public HshRedirection(final int redirectedFD, final OperationType operationType, final Integer otherIO) {
 		this.targetType=TargetType.ANOTHER_FD;
-		this.targetFile=null;
+		this.redirectedFD=redirectedFD;
+		this.operationType=operationType;
 		this.targetFD=otherIO;
+		this.targetFile=null;
+		this.anotherStream=null;
 
 		if(operationType==OperationType.APPEND)
 			throw new IllegalArgumentException("cannot APPEND to FD, use READ or WRITE or a file");
 		if(otherIO==null)
 			throw new IllegalArgumentException("targetFD must not be null with this constructor");
-		if(fd<0)
+		if(redirectedFD<0)
 			throw new IllegalArgumentException("fd must not be less than 0");
 	}
 
@@ -81,8 +98,12 @@ public class HshRedirection {
 	 * @return the target FD
 	 * TODO: this feature is still unused, ie not implemented in all executors
 	 */
-	private int getTargetFD() {
+	public int getTargetFD() {
 		return targetFD;
+	}
+
+	private HshPipe getAnotherStream() {
+		return anotherStream;
 	}
 
 	/** Every HshRedirection redirects exactly one FD.

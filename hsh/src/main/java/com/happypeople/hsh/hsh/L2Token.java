@@ -29,7 +29,7 @@ import com.happypeople.hsh.hsh.l1parser.SimpleImageHolder;
 public class L2Token extends Token implements L1Node {
 	private final static boolean DEBUG=false;
 	private List<L1Node> parts=new ArrayList<L1Node>();
-	private StringBuilder sb=new StringBuilder();
+	//private final StringBuilder sb=new StringBuilder();
 
 	public L2Token() {
 		super(HshParserConstants.WORD, null);
@@ -104,9 +104,16 @@ public class L2Token extends Token implements L1Node {
 
 	/** Switches from building phase to usage phase.
 	 */
+	/*
 	public void finishImage() {
 		image=sb.toString();
 		sb=null;
+	}
+	*/
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName()+" image="+getImage();
 	}
 
 	/** Call in usage phase.
@@ -114,22 +121,29 @@ public class L2Token extends Token implements L1Node {
 	 */
 	@Override
 	public String getImage() {
-		return sb!=null?sb.toString():image;
+		final StringBuilder sb=new StringBuilder();
+		for(final L1Node part : parts)
+			sb.append(part.getImage());
+		return sb.toString();
+		//return sb!=null?sb.toString():image;
 	}
 
 	@Override
 	public int getLen() {
-		return sb!=null?sb.length():image.length();
+		return getImage().length();
+		//return sb!=null?sb.length():image.length();
 	}
 
 	/** Appends a String to the image and returns this.
 	 * @param str
 	@Override
 	 */
+	/*
 	public L2Token append(final CharSequence str) {
 		sb.append(str);
 		return this;
 	}
+	*/
 
 	/** Appends the buffer content to the image and returns this.
 	 * @param buf
@@ -138,10 +152,12 @@ public class L2Token extends Token implements L1Node {
 	 * See StringBuilder.append(buf, off, len)
 	@Override
 	 */
+	/*
 	public L2Token append(final char[] buf, final int off, final int len) {
 		sb.append(buf, off, len);
 		return this;
 	}
+	*/
 
 	/** Removes all parts starting at idx i
 	 * @param i the starting idx
@@ -385,9 +401,9 @@ public class L2Token extends Token implements L1Node {
 	@Override
 	public L2Token copySubtree() {
 		final L2Token ret=new L2Token();
-		ret.append(getImage());
-		if(sb==null)
-			ret.finishImage();
+		//ret.append(getImage());
+		//if(sb==null)
+		//	ret.finishImage();
 		for(final L1Node child : this)
 			ret.addPart(child.copySubtree());
 		return ret;

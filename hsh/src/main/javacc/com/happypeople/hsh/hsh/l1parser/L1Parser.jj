@@ -618,5 +618,5 @@ void word(L2Token ret):
 						// empty image
 					}	)
 	{
-		ret.finishImage();
+		//ret.finishImage();
 	}}

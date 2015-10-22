@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.HshRedirection;
@@ -14,7 +16,7 @@ import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 
 public class SimpleCommand extends L2Node implements Executable {
-	private final static boolean DEBUG=false;
+	private final static Logger log=Logger.getLogger(SimpleCommand.class);
 
 	private final List<Integer> args=new ArrayList<Integer>();
 	private final List<Integer> assignments=new ArrayList<Integer>();
@@ -37,6 +39,10 @@ public class SimpleCommand extends L2Node implements Executable {
 	}
 
 	public void addRedirect(final RedirNode node) {
+		log.debug("redirection was added: "+node);
+		if(node==null)
+			throw new IllegalArgumentException("node must not be null");
+		log.debug("node properties: "+node.getIoNumber()+node.getOperator()+node.getFilename());
 		redirects.add(addChild(node));
 	}
 
@@ -53,8 +59,7 @@ public class SimpleCommand extends L2Node implements Executable {
 
 	@Override
 	public int doExecution(final HshContext context) throws Exception {
-		if(DEBUG)
-			System.out.println("SimpleCommand.doExecution");
+		log.debug("SimpleCommand.doExecution");
 
 		// 1. Expand cmd (using parent context)
 
@@ -86,8 +91,7 @@ public class SimpleCommand extends L2Node implements Executable {
 		// Step 3.
 		for(final Integer idx : assignments) {
 			final L2Token assi=getChild(idx);
-			if(DEBUG)
-				System.out.println("SimpleCommand.doExecution, have assignment: "+assi);
+			log.debug("SimpleCommand.doExecution, have assignment: "+assi);
 			// Assignment-L2Token (kind=ASSIGNMENT_WORD) are structured:
 			// First child SimpleNode(varName)
 			// Second is SimpleNode("=")
@@ -110,8 +114,7 @@ public class SimpleCommand extends L2Node implements Executable {
 				}
 			}
 			lContext.getEnv().setVariableValue(varName, value==null?null:value.toString());
-			if(DEBUG)
-				System.out.println("SimpleCommand.doExecution, assignment, key/value: "+varName+" "+value);
+			log.debug("SimpleCommand.doExecution, assignment, key/value: "+varName+" "+value);
 		}
 
 		// Step 4.
@@ -122,12 +125,13 @@ public class SimpleCommand extends L2Node implements Executable {
 		final List<HshRedirection> redirList=new ArrayList<HshRedirection>();
 		for(final Integer idx : redirects) {
 			final L2Token tok=getChild(idx);
-			if(DEBUG)
-				System.out.println("SimpleCommand.doExecution, have RedirNode: "+tok);
+			log.debug("SimpleCommand.doExecution, have RedirNode: "+tok);
 			final RedirNode redirNode=(RedirNode)tok;
 
 			final String filename=NodeTraversal.substituteSubtree(redirNode.getFilename(), lContext);
+			log.debug("redirNode.filename="+filename);
 			final String ioNumberString=redirNode.getIoNumber();
+			log.debug("redirNode.ioNumber="+ioNumberString);
 			int ioNumber=ioNumberString==null?-1:Integer.parseInt(ioNumberString);
 
 			final HshRedirection hshRedir;
@@ -160,6 +164,7 @@ public class SimpleCommand extends L2Node implements Executable {
 					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.APPEND, new File(filename));
 					break;
 				case HshParserConstants.LESSGREAT:
+					log.error("LESSGREAT redirection not implemented");
 					throw new RuntimeException("LESSGREAT redirection not implemented");
 			default:
 				throw new RuntimeException("unknown operator type in RedirNode :/ "+redirNode.getOperator());
@@ -169,8 +174,7 @@ public class SimpleCommand extends L2Node implements Executable {
 
 		// Step 5.
 		if(!cmdList.isEmpty()) {
-			if(DEBUG)
-				System.out.println("SimpleCommand, execute: "+cmdList);
+			log.info("SimpleCommand, execute: "+cmdList);
 			final int result=context.getExecutor().execute(cmdList.toArray(new String[0]), lContext, redirList);
 			lContext.close();
 			return result;

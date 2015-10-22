@@ -1,11 +1,14 @@
 package com.happypeople.hsh.hsh;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -30,16 +33,37 @@ public class PathHshExecutor implements HshExecutor {
 			command[0]=resolveCmd(command[0], parentContext.getEnv().getVariableValue("PATH"));
 			builder.command(Arrays.asList(command));
 
+			final Map<Integer, HshRedirection> redirMap=new HashMap<Integer, HshRedirection>();
+			for(final HshRedirection redir : redirections)
+				redirMap.put(redir.getRedirectedFD(), redir);
+
 			// TODO set env based on context
 
 			// TODO set/create redirections on builder
 
-			// Use Redirect.INHERIT for stdin
-			// Note that this completly ignores any redirections activ in parentContext for stdin
-			// but allways uses the process stdin.
-			// Need to check if this is Runtime.
-			builder.redirectInput(ProcessBuilder.Redirect.INHERIT);
+			final HshRedirection stdinRedirection=redirMap.get(HshFDSet.STDIN);
+			boolean redirStdinFromAnotherFD=false;
+			if(stdinRedirection==null) { // stdin is not redirected
+				// Use Redirect.INHERIT for stdin
+				// Note that this completly ignores any redirections activ in parentContext for stdin
+				// but allways uses the process stdin.
+				// Need to check if this is System.in, even after System.setIn(someInputStream). I think its not.
+				builder.redirectInput(ProcessBuilder.Redirect.INHERIT);
+			} else if(stdinRedirection.getTargetType()==TargetType.FILE) { // stdin is redirected to read from a File
+				log.debug("redirecting from file: "+stdinRedirection.getTargetFile());
+				builder.redirectInput(ProcessBuilder.Redirect.from(stdinRedirection.getTargetFile()));
+			} else if(stdinRedirection.getTargetType()==TargetType.ANOTHER_FD) {
+				// need to connect streams after builder.start()
+				redirStdinFromAnotherFD=true;
+			} else
+				throw new IllegalArgumentException("wrong/unknown RedirectionType: "+stdinRedirection.getTargetType());
+
 			final Process p=builder.start();
+
+			if(redirStdinFromAnotherFD) {
+				new HshPipeImpl(parentContext.getFDSet().getPipe(stdinRedirection.getTargetFD()).getInputStream(),
+						new PrintStream(p.getOutputStream())).startConnectThread();
+			}
 
 			final HshPipeImpl pStdout=new HshPipeImpl(p.getInputStream(), parentContext.getStdOut());
 			pStdout.startConnectThread();
