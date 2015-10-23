@@ -25,6 +25,9 @@ import com.happypeople.hsh.hsh.l1parser.SimpleImageHolder;
  * A L2Token has an building phase and a usage phase. While building the image is in an StringBuilder, afterwards
  * in an String();
  *
+ * TODO L2Token should not extend L1Node. Instead, the interface L1Node should be split into the Image-Part and the Node-part,
+ * then the Node-part should be defined as a Interface HshNode.
+ * Then, all Nodes should implement HshNode like they do implement L1Node by now.
  */
 public class L2Token extends Token implements L1Node {
 	private final static boolean DEBUG=false;

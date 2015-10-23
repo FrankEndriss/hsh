@@ -50,7 +50,7 @@ public interface L1Node extends Iterable<L1Node> {
 	 * substitutions.
 	 * This is done in place if possible, so it might return this.
 	 * This is called as one step of the execution of commands.
-	 * @param tok the image holder for the new L1Nodes
+	 * @param imageHolder the image holder for the new L1Nodes
 	 * @param context context for substitution
 	 * @return the new node
 	 * @throws Exception
