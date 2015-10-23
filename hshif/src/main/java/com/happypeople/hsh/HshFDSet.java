@@ -7,7 +7,7 @@ import java.io.IOException;
  * getIntput(STDIN) returns a HshPipe which refers to the standard input stream.
  * getOutput(4) returns a HshPipe to fd 4 if such one was opened.
  */
-public interface HshFDSet {
+public interface HshFDSet extends AutoCloseable {
 	public final static int STDIN=0;
 	public final static int STDOUT=1;
 	public final static int STDERR=2;
@@ -30,10 +30,6 @@ public interface HshFDSet {
 	 * @throws IOException
 	 */
 	public void closePipe(int fd) throws IOException;
-
-	/** Closes all HshPipes in this set. Usually called when a (execution) context finishes.
-	 * @throws IOException */
-	public void close() throws IOException;
 
 	/** Creates a copy of this set. By creating copies of all HshPipes in this set.
 	 * This is usually called when a new Context is created, because the new context

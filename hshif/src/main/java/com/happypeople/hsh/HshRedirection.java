@@ -14,8 +14,6 @@ public class HshRedirection {
 		FILE,
 		/** redirection to another FD */
 		ANOTHER_FD,
-		/** redirection to another stream/thread/process */
-		ANOTHER_STREAM
 	}
 
 	/** According to the redirection symbols "<", ">" and ">>" there are three types of operations. */
@@ -36,20 +34,7 @@ public class HshRedirection {
 	private final int redirectedFD;
 	/** This is the operation which should be executed on the redirection. */
 	private final OperationType operationType;
-	/** This is the other stream in case of TargetType==ANOTHER_STREAM. Used to create piped command chains. */
-	private final HshPipe anotherStream;
 
-	public HshRedirection(final int redirectedFD, final OperationType operationType, final HshPipe anotherStream) {
-		this.targetType=TargetType.ANOTHER_STREAM;
-		this.redirectedFD=redirectedFD;
-		this.anotherStream=anotherStream;
-		this.operationType=operationType;
-		this.targetFile=null;
-		this.targetFD=null;
-
-		if(anotherStream==null)
-			throw new IllegalArgumentException("anotherStream must not be null with this constructor");
-	}
 	/** Creates a redirection to read from a targetFile or write to a targetFile or append to a targetFile.
 	 * @param redirectedFD the FD which should be redirected
 	 * @param operationType the operation of the FD which should be redirected
@@ -61,7 +46,6 @@ public class HshRedirection {
 		this.operationType=operationType;
 		this.targetFile=targetFile;
 		this.targetFD=null;
-		this.anotherStream=null;
 
 		if(targetFile==null)
 			throw new IllegalArgumentException("targetFile must not be null with this constructor");
@@ -76,7 +60,6 @@ public class HshRedirection {
 		this.operationType=operationType;
 		this.targetFD=otherIO;
 		this.targetFile=null;
-		this.anotherStream=null;
 
 		if(operationType==OperationType.APPEND)
 			throw new IllegalArgumentException("cannot APPEND to FD, use READ or WRITE or a file");
@@ -100,10 +83,6 @@ public class HshRedirection {
 	 */
 	public int getTargetFD() {
 		return targetFD;
-	}
-
-	private HshPipe getAnotherStream() {
-		return anotherStream;
 	}
 
 	/** Every HshRedirection redirects exactly one FD.

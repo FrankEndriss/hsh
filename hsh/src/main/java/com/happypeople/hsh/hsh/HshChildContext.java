@@ -1,6 +1,5 @@
 package com.happypeople.hsh.hsh;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 
@@ -94,7 +93,7 @@ public class HshChildContext implements HshContext {
 	}
 
 	@Override
-	public void close() throws IOException {
+	public void close() throws Exception {
 		if(env!=null)
 			env.close();
 		if(executor!=null) // because of this call to close() the executor should be a copy of the parents one

@@ -1,20 +1,21 @@
 package com.happypeople.hsh.hsh;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshExecutor;
 import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshPipe;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.HshRedirection.OperationType;
 import com.happypeople.hsh.HshRedirection.TargetType;
@@ -28,48 +29,70 @@ public class PathHshExecutor implements HshExecutor {
 
 	@Override
 	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections) throws Exception {
-		try {
+
+		try(HshFDSet childFDSet=parentContext.getFDSet().createCopy()) {
+
 			final ProcessBuilder builder=new ProcessBuilder();
 			command[0]=resolveCmd(command[0], parentContext.getEnv().getVariableValue("PATH"));
 			builder.command(Arrays.asList(command));
 
-			final Map<Integer, HshRedirection> redirMap=new HashMap<Integer, HshRedirection>();
-			for(final HshRedirection redir : redirections)
-				redirMap.put(redir.getRedirectedFD(), redir);
-
 			// TODO set env based on context
 
-			// TODO set/create redirections on builder
+			boolean stdInRedirected=false;
+			// process redirections in order
+			// Since redirection can be "chained"
+			// ie "cat >myfile.txt 2>&1 4<myInput.txt <&4"
+			// this loop should live somewhere else since it is needed in other HshExecutors and Executables, too
+			for(final HshRedirection redir : redirections) {
+				HshPipe newPipe=null;
+				switch(redir.getTargetType()) {
+				case ANOTHER_FD:
+					newPipe=childFDSet.getPipe(redir.getTargetFD()).createCopy();
+					break;
+				case FILE:
+					newPipe=redir.getOperationType()==OperationType.READ?
+							new HshPipeImpl(new FileInputStream(redir.getTargetFile())):
+							new HshPipeImpl(new PrintStream(new FileOutputStream(redir.getTargetFile())));
+					break;
+				default:
+					throw new IllegalStateException("redirection of unknown TargetType");
+				}
+				childFDSet.closePipe(redir.getRedirectedFD());
+				childFDSet.setPipe(redir.getRedirectedFD(), newPipe);
 
-			final HshRedirection stdinRedirection=redirMap.get(HshFDSet.STDIN);
-			boolean redirStdinFromAnotherFD=false;
-			if(stdinRedirection==null) { // stdin is not redirected
-				// Use Redirect.INHERIT for stdin
-				// Note that this completly ignores any redirections activ in parentContext for stdin
-				// but allways uses the process stdin.
-				// Need to check if this is System.in, even after System.setIn(someInputStream). I think its not.
-				builder.redirectInput(ProcessBuilder.Redirect.INHERIT);
-			} else if(stdinRedirection.getTargetType()==TargetType.FILE) { // stdin is redirected to read from a File
-				log.debug("redirecting from file: "+stdinRedirection.getTargetFile());
-				builder.redirectInput(ProcessBuilder.Redirect.from(stdinRedirection.getTargetFile()));
-			} else if(stdinRedirection.getTargetType()==TargetType.ANOTHER_FD) {
-				// need to connect streams after builder.start()
-				redirStdinFromAnotherFD=true;
-			} else
-				throw new IllegalArgumentException("wrong/unknown RedirectionType: "+stdinRedirection.getTargetType());
-
-			final Process p=builder.start();
-
-			if(redirStdinFromAnotherFD) {
-				new HshPipeImpl(parentContext.getFDSet().getPipe(stdinRedirection.getTargetFD()).getInputStream(),
-						new PrintStream(p.getOutputStream())).startConnectThread();
+				if(redir.getRedirectedFD()==HshFDSet.STDIN)
+					stdInRedirected=true;
 			}
 
-			final HshPipeImpl pStdout=new HshPipeImpl(p.getInputStream(), parentContext.getStdOut());
-			pStdout.startConnectThread();
+			// if stdin is not explicitly redirected, then inherit parents process stdin
+			// note that this will cause truble when executed as part of a script
+			// or loop or any other context which might have an redirected stdin
+			// Because of this we check against System.in...
+			boolean stdinInherited=false;
+			if(!stdInRedirected && childFDSet.getPipe(HshFDSet.STDIN).getInputStream()==System.in) {
+				builder.redirectInput(ProcessBuilder.Redirect.INHERIT);
+				stdinInherited=true;
+			}
 
-			final HshPipeImpl pStderr=new HshPipeImpl(p.getErrorStream(), parentContext.getStdErr());
-			pStderr.startConnectThread();
+			// now start the process
+			final Process p=builder.start();
+
+			if(!stdinInherited) {
+				new HshPipeImpl(
+						childFDSet.getPipe(HshFDSet.STDIN).getInputStream(),
+						new PrintStream(p.getOutputStream())
+					).startConnectThread();
+			}
+
+			new HshPipeImpl(
+					p.getInputStream(),
+					childFDSet.getPipe(HshFDSet.STDOUT).getOutputStream()
+				).startConnectThread();
+
+			new HshPipeImpl(
+					p.getErrorStream(),
+					childFDSet.getPipe(HshFDSet.STDERR).getOutputStream()
+				).startConnectThread();
 
 			p.waitFor();
 			// TODO need to restore prompt here in case that p did some output
