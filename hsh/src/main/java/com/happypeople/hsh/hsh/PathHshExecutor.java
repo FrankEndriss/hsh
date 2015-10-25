@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,7 +17,6 @@ import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.HshPipe;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.HshRedirection.OperationType;
-import com.happypeople.hsh.HshRedirection.TargetType;
 
 /** HshExecutor to execute commands from PATH by starting processes using javas ProcessBuilder
  */
@@ -174,7 +172,6 @@ public class PathHshExecutor implements HshExecutor {
 	 * standard streams
 	 * @param processBuilder
 	 * @return true if a redirection was set, else false
-	 */
 	private boolean setupFileRedirection(final ProcessBuilder processBuilder, final HshRedirection redir) {
 		if(redir.getTargetType()==TargetType.FILE) {
 			if(redir.getRedirectedFD()==HshFDSet.STDIN && redir.getOperationType()==OperationType.READ) {
@@ -200,4 +197,5 @@ public class PathHshExecutor implements HshExecutor {
 		} // else ignore
 		return false;
 	}
+	 */
 }

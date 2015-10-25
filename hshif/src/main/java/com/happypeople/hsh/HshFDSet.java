@@ -37,4 +37,11 @@ public interface HshFDSet extends AutoCloseable {
 	 * @throws IOException
 	 **/
 	public HshFDSet createCopy();
+
+	/** Adds a redirection to this FDSet. this can be that a FD is created, or one is substituted
+	 * @param redir the redirection
+	 * @throws IOException
+	 * @throws IllegalArgumentException if a non existing FD should be copied.
+	 */
+	public void addRedirection(HshRedirection redir) throws IOException;
 }

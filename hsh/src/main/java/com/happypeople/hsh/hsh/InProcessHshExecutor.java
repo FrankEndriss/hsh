@@ -27,14 +27,19 @@ public class InProcessHshExecutor implements HshExecutor {
 	@Override
 	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections)
 				throws Exception {
-		final String className=predefs.get(command[0]);
 
-		try {
+		try(final HshContext childContext=new HshContextBuilder().parent(parentContext).create()) {
+			final String className=predefs.get(command[0]);
+
+			for(final HshRedirection redir : redirections)
+				childContext.getFDSet().addRedirection(redir);
+
 			final Class<?> cls=Class.forName(className);
 			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
 				final HshCmd hshCmd=(HshCmd) cls.newInstance();
 				return hshCmd.execute(parentContext, new ArrayList<String>(Arrays.asList(command)));
 			} else {
+				// should set System.in/out/err
 				cls.getMethod("main", new Class[]{ command.getClass()}).invoke(null, new Object[] { command });
 				return 0;
 			}

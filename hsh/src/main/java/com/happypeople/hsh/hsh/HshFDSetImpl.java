@@ -1,11 +1,16 @@
 package com.happypeople.hsh.hsh;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.HshPipe;
+import com.happypeople.hsh.HshRedirection;
+import com.happypeople.hsh.HshRedirection.OperationType;
 
 /** Two Sets of HshPipeImpl, indexed by integer.
  * One for input streams, one for output streams.
@@ -54,5 +59,24 @@ public class HshFDSetImpl implements HshFDSet {
 	@Override
 	public HshFDSet createCopy() {
 		return new HshFDSetImpl(pipes);
+	}
+
+	@Override
+	public void addRedirection(final HshRedirection redir) throws IOException {
+		HshPipe newPipe=null;
+		switch(redir.getTargetType()) {
+		case ANOTHER_FD:
+			newPipe=getPipe(redir.getTargetFD()).createCopy();
+			break;
+		case FILE:
+			newPipe=redir.getOperationType()==OperationType.READ?
+					new HshPipeImpl(new FileInputStream(redir.getTargetFile())):
+					new HshPipeImpl(new PrintStream(new FileOutputStream(redir.getTargetFile())));
+			break;
+		default:
+			throw new IllegalStateException("redirection of unknown TargetType");
+		}
+		closePipe(redir.getRedirectedFD());
+		setPipe(redir.getRedirectedFD(), newPipe);
 	}
 }
