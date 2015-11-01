@@ -2,40 +2,46 @@ package com.happypeople.hsh.hsh;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
 import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshMessage;
+import com.happypeople.hsh.HshMessageListener;
 import com.happypeople.hsh.HshTerminal;
 
+/** Simple aggregation of Environment, Executor, FDSet and Terminal.
+ */
 public class HshChildContext implements HshContext {
-	private final HshContext parent;
+	private final Set<HshMessageListener> msgListeners=new HashSet<HshMessageListener>();
 	private final HshEnvironment env;
 	private final HshExecutor executor;
 	private final HshFDSet fdSet;
 	private final HshTerminal terminal;
-	private boolean finished=false;
 
 	/** Initializes a new HshContext.
-	 * @param parent of the new Context
 	 * @param env of the new Context
 	 * @param executor of the new Context
 	 * @param fdSet of the new Context
 	 */
-	HshChildContext(final HshContext parent,
+	HshChildContext(
+		final HshMessageListener msgListener,
 		final HshEnvironment env,
 		final HshExecutor executor,
 		final HshFDSet fdSet,
 		final HshTerminal terminal)
 	{
-		this.parent=parent;
 		this.env=env;
 		this.executor=executor;
 		if(fdSet==null)
 			throw new IllegalArgumentException("HshFDSet must not be null");
 		this.fdSet=fdSet;
 		this.terminal=terminal;
+		if(msgListener!=null)
+			this.msgListeners.add(msgListener);
 	}
 
 	@Override
@@ -55,31 +61,13 @@ public class HshChildContext implements HshContext {
 	}
 
 	@Override
-	public void finish() {
-		finished=true;
-		if(parent!=null)
-			parent.finish();
-	}
-
-	@Override
-	public boolean isFinish() {
-		return finished;
-	}
-
-	@Override
 	public HshEnvironment getEnv() {
-		// TODO dont return parents env, instead create a copy of
-		// parents exports while creation
-		return env!=null?env:parent.getEnv();
+		return env;
 	}
 
 	@Override
 	public HshExecutor getExecutor() {
-		//TODO dont return parents executor, instead copy reference
-		// to (hopefully) immutable parents executor.
-		// If executor is not immutable, a copy should be
-		// created on creation of this context.
-		return executor!=null?executor:parent.getExecutor();
+		return executor;
 	}
 
 	@Override
@@ -89,7 +77,7 @@ public class HshChildContext implements HshContext {
 
 	@Override
 	public HshTerminal getTerminal() {
-		return terminal==null && parent!=null?parent.getTerminal():terminal;
+		return terminal;
 	}
 
 	@Override
@@ -100,6 +88,21 @@ public class HshChildContext implements HshContext {
 			executor.close();
 		if(fdSet!=null)
 			fdSet.close();
+	}
+
+	@Override
+	public void msg(final HshMessage msg) {
+		fireMessage(msg);
+	}
+
+	@Override
+	public void addMsgListener(final HshMessageListener listener) {
+		msgListeners.add(listener);
+	}
+
+	protected void fireMessage(final HshMessage message) {
+		for(final HshMessageListener  listener : msgListeners)
+			listener.msg(message);
 	}
 
 }

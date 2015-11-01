@@ -18,6 +18,13 @@ public class HshParser {
 
 	private ListCallback listCallback;
 	private HshLookaheadHelper helper=new HshLookaheadHelper(this);
+	
+	private boolean finished=false;
+	
+	/** Set a flag to indicate that parsing should/has finished. */
+	public void finish() {
+		finished=true;
+	}
 
 	private void throwNI() {		throw new RuntimeException("not implemented");
 	}
@@ -687,6 +694,12 @@ void newline_list():
 {
 }
 {
+// return here without doing anything if the finished-flag is set.
+// This feature is used by the exit command to finish parsing "out of band".
+	{ if(finished)
+		return;
+	}
+		
 	( LOOKAHEAD(1) < NEWLINE > )+
 }
 /**
@@ -724,8 +737,6 @@ And_orNode and_or():
  * 				| newline_list
  * ;
  * @param parent where setBackground(true) is called if it should be executed in background
- * @param cb callback which is called if parent should not be executed in background, and
- * therefore might be executed right now.
  */
 void separator(Backgroundable parent):
 {

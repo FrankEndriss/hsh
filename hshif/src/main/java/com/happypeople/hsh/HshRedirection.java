@@ -77,11 +77,10 @@ public class HshRedirection {
 	}
 
 	/** If target type is ANOTHER_FD this method returns the FD of the target.
-	 * If target type is not ANOTHER_FD, this method most likely throws a RuntimeException.
+	 * If target type is not ANOTHER_FD, this method returns most likely null
 	 * @return the target FD
-	 * TODO: this feature is still unused, ie not implemented in all executors
 	 */
-	public int getTargetFD() {
+	public Integer getTargetFD() {
 		return targetFD;
 	}
 
@@ -100,5 +99,14 @@ public class HshRedirection {
 		return operationType;
 	}
 
+	@Override
+	public String toString() {
+		return "targetType: "+targetType+
+				" operationType: "+operationType+
+				" redirectedFD: "+redirectedFD+
+				" targetFD: "+targetFD+
+				" file: "+targetFile;
+
+	}
 
 }

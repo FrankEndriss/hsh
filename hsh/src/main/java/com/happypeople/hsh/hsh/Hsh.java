@@ -11,6 +11,8 @@ import org.apache.log4j.Logger;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshMessage;
+import com.happypeople.hsh.HshMessageListener;
 import com.happypeople.hsh.HshTerminal;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
@@ -86,8 +88,6 @@ public class Hsh {
 	private Hsh(final Reader in) {
 		final L2TokenManager l2tm=new L2TokenManager(new L1Parser(in));
 		this.parser=new HshParser(l2tm);
-		// TODO delete the ruleApplier, it is not needed
-		//this.parser.setRuleApplier(l2tm);
 	}
 
 	/** this call runs the rep-loop until one of the executed commands set the finished() flag
@@ -124,6 +124,18 @@ public class Hsh {
 		for(final Map.Entry<Object, Object> ent : System.getProperties().entrySet())
 			env.setVariableValue(""+ent.getKey(), ""+ent.getValue());
 
+		// setup listener for Finished-Messages
+		final boolean[] finished= { false };
+		context.addMsgListener(new HshMessageListener() {
+			@Override
+			public void msg(final HshMessage msg) {
+				if(msg.getType()==HshMessage.Type.Finish) {
+					finished[0]=true;
+					parser.finish();
+				}
+			}
+		});
+
 		// TODO listCallback is only usefull in interactive mode
 		parser.setListCallback(new HshParser.ListCallback() {
 			@Override
@@ -138,14 +150,13 @@ public class Hsh {
 			}
 		});
 
-		while(!context.isFinish()) {
+		while(!finished[0]) {
 			try {
 				log.info("parsing complete command...");
 				parser.complete_command();
 				log.info("parsed complete command.");
 			} catch (final ParseException e) {
-				log.error("parse exception, abord", e);
-				context.finish();
+				log.info("parse exception, abord", e);
 			}
 		}
 	}

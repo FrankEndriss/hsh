@@ -7,6 +7,8 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.HshPipe;
 import com.happypeople.hsh.HshRedirection;
@@ -16,6 +18,7 @@ import com.happypeople.hsh.HshRedirection.OperationType;
  * One for input streams, one for output streams.
  **/
 public class HshFDSetImpl implements HshFDSet {
+	private final static Logger log=Logger.getLogger(HshFDSetImpl.class);
 	private final Map<Integer, HshPipe> pipes=new HashMap<Integer, HshPipe>();
 
 	public HshFDSetImpl() {
@@ -63,14 +66,15 @@ public class HshFDSetImpl implements HshFDSet {
 
 	@Override
 	public void addRedirection(final HshRedirection redir) throws IOException {
+		log.info("addRedirection "+redir);
 		HshPipe newPipe=null;
 		switch(redir.getTargetType()) {
 		case ANOTHER_FD:
 			newPipe=getPipe(redir.getTargetFD()).createCopy();
 			break;
 		case FILE:
-			newPipe=redir.getOperationType()==OperationType.READ?
-					new HshPipeImpl(new FileInputStream(redir.getTargetFile())):
+			newPipe=redir.getOperationType()==OperationType.READ ?
+					new HshPipeImpl(new FileInputStream(redir.getTargetFile())) :
 					new HshPipeImpl(new PrintStream(new FileOutputStream(redir.getTargetFile())));
 			break;
 		default:

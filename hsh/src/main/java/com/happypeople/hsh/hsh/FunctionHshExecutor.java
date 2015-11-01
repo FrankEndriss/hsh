@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.happypeople.hsh.FunctionParameter;
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.Parameter;
@@ -14,20 +13,14 @@ import com.happypeople.hsh.hsh.l1parser.L1Node;
  */
 public class FunctionHshExecutor implements HshExecutor {
 
-	private final HshEnvironment env;
-
-	/** Creates a FunctionHshExecutor which reads the function-definitions from the given HshEnvironment
-	 * @param env Envirionment with function definitions
+	/** Creates a fairly simple stateless FunctionHshExecutor
 	 */
-	public FunctionHshExecutor(final HshEnvironment env) {
-		if(env==null)
-			throw new RuntimeException("env must not be null");
-		this.env=env;
+	public FunctionHshExecutor() {
 	}
 
 	@Override
 	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections) throws Exception {
-		final FunctionParameter p=(FunctionParameter)env.getParameter(command[0]);
+		final FunctionParameter p=(FunctionParameter)parentContext.getEnv().getParameter(command[0]);
 		final L1Node executable=((L1Node)p.getBody()).copySubtree();
 
 		// TODO
@@ -42,7 +35,7 @@ public class FunctionHshExecutor implements HshExecutor {
 
 	@Override
 	public boolean canExecute(final String[] command, final HshContext parentContext) {
-		final Parameter p=env.getParameter(command[0]);
+		final Parameter p=parentContext.getEnv().getParameter(command[0]);
 		return p!=null && p instanceof FunctionParameter;
 	}
 

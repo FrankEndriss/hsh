@@ -5,7 +5,7 @@ import java.io.PrintStream;
 
 /** Context information of a calling instance.
  */
-public interface HshContext extends AutoCloseable {
+public interface HshContext extends AutoCloseable, HshMessageListener {
 
 	/** @return StdIn to use */
 	public InputStream getStdIn();
@@ -16,15 +16,13 @@ public interface HshContext extends AutoCloseable {
 	/** @return StdErr to use */
 	public PrintStream getStdErr();
 
-	/** Denotes that this context should exit after the execution of the current command.
-	 * Used ie by "exit".
+	/** HshMessageListener implementation
+	 * Used for FINISHED-Messages
 	 */
-	public void finish();
+	@Override
+	public void msg(HshMessage msg);
 
-	/** Check if finish was called.
-	 * @return true after finish() has been called at least once
-	 */
-	public boolean isFinish();
+	public void addMsgListener(HshMessageListener listener);
 
 	/**
 	 * @return the environment of this context

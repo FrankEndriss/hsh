@@ -37,7 +37,7 @@ public class InProcessHshExecutor implements HshExecutor {
 			final Class<?> cls=Class.forName(className);
 			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
 				final HshCmd hshCmd=(HshCmd) cls.newInstance();
-				return hshCmd.execute(parentContext, new ArrayList<String>(Arrays.asList(command)));
+				return hshCmd.execute(childContext, new ArrayList<String>(Arrays.asList(command)));
 			} else {
 				// should set System.in/out/err
 				cls.getMethod("main", new Class[]{ command.getClass()}).invoke(null, new Object[] { command });
