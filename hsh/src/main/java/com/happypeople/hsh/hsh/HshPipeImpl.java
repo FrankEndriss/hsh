@@ -14,9 +14,15 @@ import org.apache.log4j.Logger;
 
 import com.happypeople.hsh.HshPipe;
 
-/** A HshPipeImpl has two ends, a reading and a writing one.
- * Bytes written to the writing one can be read by reading the reading one.
- * If there is another end. If not, no bytes are transferred.
+/** A HshPipeImpl is kind of a unix file descriptor.
+ * It can be open to read, open to write or open to read and write.
+ * As file descriptors, HshPipeImpl can be copied (see "man dup" and "man dup2")
+ * Reading and writing is done by delegates, getInputStream() and getOutputStream()
+ * So, n HshPipeImpl objects can share one and the same underlying stream(s).
+ * Closing a HshPipe does not directly close the underlying stream(s).
+ * The underlying stream(s) are closed if no HshPipeImpl-Object references
+ * a single stream object. Frankly speaking, the streams are closed when the
+ * last HshPipeImpl referencing that stream is closed.
  */
 public class HshPipeImpl implements HshPipe {
 	private final static Logger log = Logger.getLogger(HshPipeImpl.class);
@@ -60,8 +66,8 @@ public class HshPipeImpl implements HshPipe {
 		if(refCounter!=null) {
 			final int c=refCounter.decrementAndGet();
 			if(c==0) {
-				log.info("[do not] closing stream: "+o);
-				//o.close();
+				log.info("closing stream: "+o);
+				o.close();
 				refCounterMap.remove(ref, new AtomicInteger(0));
 			}
 		}
@@ -169,7 +175,7 @@ public class HshPipeImpl implements HshPipe {
 
 		@Override
 		public int hashCode() {
-			return obj.hashCode();
+			return System.identityHashCode(obj);
 		}
 
 		@Override
