@@ -27,7 +27,7 @@ import jline.console.ConsoleReader;
  * "exit <number>" exits with status <number>
  */
 public class Hsh {
-	private ConsoleReader console;
+	private HshTerminal terminal;
 	private final HshParser parser;
 	private HshContext context;
 
@@ -48,7 +48,7 @@ public class Hsh {
 
 		/** A ParserCallbackReader is used by an instance of Hsh to read input.
 		 * The ParserCallbackReader created here reads lines from the console and
-		 * hands them over to ths Hsh instance.
+		 * hands them over to the Hsh instance.
 		 * If this process is _not_ connected to console the ParserCallbackReader should
 		 * read from Stdin or the like. (still not implemented)
 		 **/
@@ -65,18 +65,26 @@ public class Hsh {
 		/* now create the Hsh instance which input connected to the above created console. */
 		final Hsh instance=new Hsh(hshIn);
 
-		/* note that this call to setConsole() does _not_ set the input. The set console is used for
-		 * calls like getColumnCount() and the like.
-		 */
-		instance.setConsole(console);
+		/* Create an adapter to console. */
+		instance.setTerminal( new HshTerminal() {
+				@Override
+				public int getCols() {
+					return console.getTerminal().getWidth();
+				}
+
+				@Override
+				public int getRows() {
+					return console.getTerminal().getHeight();
+				}
+			});
 
 		try {
 			/* run the rep-loop */
 			instance.run();
+			log.info("instance.run() returned, status="+instance.getStatus());
 			System.exit(instance.getStatus());
 		} catch (final Exception e) {
-			System.err.println("fatal failure in Hsh.main(), will System.exit(1)");
-			e.printStackTrace(System.err);
+			log.error("fatal failure in Hsh.main(), will System.exit(1)", e);
 			System.exit(1);
 		}
 	}
@@ -96,73 +104,63 @@ public class Hsh {
 	private void run() {
 
 		final HshContextBuilder contextBuilder=new HshContextBuilder();
-		final HshFDSetImpl fdSet=new HshFDSetImpl();
+
 		// Setup stdstream
-		try {
+		try(final HshFDSetImpl fdSet=new HshFDSetImpl()) {
 			fdSet.setPipe(HshFDSet.STDIN, new HshPipeImpl(System.in));
 			fdSet.setPipe(HshFDSet.STDOUT, new HshPipeImpl(System.out));
 			fdSet.setPipe(HshFDSet.STDERR, new HshPipeImpl(System.err));
-		}catch(final IOException e) {
-			e.printStackTrace(System.err);
-			throw new RuntimeException(e);
-		}
 
-		context=contextBuilder.terminal(new HshTerminal() {
-			@Override
-			public int getCols() {
-				return console.getTerminal().getWidth();
-			}
+			context=contextBuilder.terminal(terminal).fdSet(fdSet).create();
 
-			@Override
-			public int getRows() {
-				return console.getTerminal().getHeight();
-			}
-		}).fdSet(fdSet).create();
+			// copy the System properties into the environment
+			final HshEnvironment env=context.getEnv();
+			for(final Map.Entry<Object, Object> ent : System.getProperties().entrySet())
+				env.setVariableValue(""+ent.getKey(), ""+ent.getValue());
 
-		// copy the System properties into the environment
-		final HshEnvironment env=context.getEnv();
-		for(final Map.Entry<Object, Object> ent : System.getProperties().entrySet())
-			env.setVariableValue(""+ent.getKey(), ""+ent.getValue());
-
-		// setup listener for Finished-Messages
-		final boolean[] finished= { false };
-		context.addMsgListener(new HshMessageListener() {
-			@Override
-			public void msg(final HshMessage msg) {
-				if(msg.getType()==HshMessage.Type.Finish) {
-					finished[0]=true;
-					parser.finish();
+			// setup listener for Finished-Messages
+			final boolean[] finished= { false };
+			context.addMsgListener(new HshMessageListener() {
+				@Override
+				public void msg(final HshMessage msg) {
+					if(msg.getType()==HshMessage.Type.Finish) {
+						finished[0]=true;
+						parser.finish();
+					}
 				}
-			}
-		});
+			});
 
-		// TODO listCallback is only usefull in interactive mode
-		parser.setListCallback(new HshParser.ListCallback() {
-			@Override
-			public void listParsed(final ListNode listNode) {
-				log.debug("listParsed, image="+listNode.getImage());
+			// TODO listCallback is only usefull in interactive mode
+			parser.setListCallback(new HshParser.ListCallback() {
+				@Override
+				public void listParsed(final ListNode listNode) {
+					log.debug("listParsed, image="+listNode.getImage());
+					try {
+						setStatus(listNode.doExecution(context));
+					} catch (final Exception e) {
+						e.printStackTrace();
+						// TODO maybe reInit parser???
+					}
+				}
+			});
+
+			while(!finished[0]) {
 				try {
-					setStatus(listNode.doExecution(context));
-				} catch (final Exception e) {
-					e.printStackTrace();
-					// TODO maybe reInit parser???
+					log.info("parsing complete command...");
+					parser.complete_command();
+					log.info("parsed complete command.");
+				} catch (final ParseException e) {
+					log.info("parse exception, abord", e);
 				}
 			}
-		});
-
-		while(!finished[0]) {
-			try {
-				log.info("parsing complete command...");
-				parser.complete_command();
-				log.info("parsed complete command.");
-			} catch (final ParseException e) {
-				log.info("parse exception, abord", e);
-			}
+		}catch(final IOException e) {
+			log.error("finished root context caused by exception", e);
+			throw new RuntimeException(e);
 		}
 	}
 
-	private void setConsole(final ConsoleReader console) {
-		this.console=console;
+	private void setTerminal(final HshTerminal terminal) {
+		this.terminal=terminal;
 	}
 
 	private int getStatus() {

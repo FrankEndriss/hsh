@@ -377,7 +377,10 @@ Token t;
 L2Node subshell;
 int off=l2Token.getLen();
 
-// insert one artificial token after the current DOLLAR_EXEC_START token
+// The parsing of a DOLLAR_EXEC, ie $(somecommand args) uses the fact that it has the same
+// syntax as a subshell, only preceeded by a $.
+// So, insert one artificial token after the current DOLLAR_EXEC_START token, and parse that as
+// a subshell expression.
 Token klammerAufTok=new Token(KLAMMER_AUF, "(");
 klammerAufTok.next=getToken(1).next;
 getToken(1).next=klammerAufTok;

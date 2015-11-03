@@ -5,21 +5,23 @@ import java.util.List;
 import java.util.Map;
 
 import com.happypeople.hsh.HshContext;
+import com.happypeople.hsh.HshMessage;
 import com.happypeople.hsh.hsh.NodeTraversal;
 
 
 /** See http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
  * Chapter "2.6.2 Parameter Expansion"
  *
+ * A DollarSubstNode is a word like "${<parameter><operator><word>}, ie ${myvar#somestring}
  */
 public class DollarSubstNode extends ComplexL1Node {
 	public DollarSubstNode(final ImageHolder imageHolder, final int off, final int len) {
 		super(imageHolder, off, len);
 	}
 
-	int parameterIdx=-1;
-	int operatorIdx=-1;
-	int wordIdx=-1;
+	private int parameterIdx=-1;
+	private int operatorIdx=-1;
+	private int wordIdx=-1;
 
 	public void setParameter(final L1Node parts) {
 		if(parameterIdx>=0)
@@ -154,6 +156,18 @@ public class DollarSubstNode extends ComplexL1Node {
 					if(value!=null)
 						return value;
 				}
+				// note that this message should make the sh exit, but should _not_ make an interactive sh exit
+				context.msg(new HshMessage() {
+					@Override
+					public Type getType() {
+						return HshMessage.Type.FinishIfNotInteractive;
+					}
+
+					@Override
+					public Object getPayload() {
+						return null;
+					}
+				});
 				throw new HshExit();
 			}
 		});
@@ -163,6 +177,17 @@ public class DollarSubstNode extends ComplexL1Node {
 			String doSubst(final String variable, final L1Node word, final HshContext context) throws Exception {
 				if(context.getEnv().issetParameter(variable))
 					return context.getEnv().getVariableValue(variable);
+				context.msg(new HshMessage() {
+					@Override
+					public Type getType() {
+						return HshMessage.Type.FinishIfNotInteractive;
+					}
+
+					@Override
+					public Object getPayload() {
+						return null;
+					}
+				});
 				throw new HshExit();
 			}
 		});

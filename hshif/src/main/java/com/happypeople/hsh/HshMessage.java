@@ -4,7 +4,8 @@ package com.happypeople.hsh;
  */
 public interface HshMessage {
 	public enum Type {
-		Finish
+		Finish,						// used by exit-command
+		FinishIfNotInteractive		// used in ${param:?word} -operator
 	};
 
 	/**

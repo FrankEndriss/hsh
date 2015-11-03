@@ -27,6 +27,7 @@ public class PathHshExecutor implements HshExecutor {
 
 	@Override
 	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections) throws Exception {
+		log.info("execute: "+Arrays.asList(command));
 
 		try(HshFDSet childFDSet=parentContext.getFDSet().createCopy()) {
 
