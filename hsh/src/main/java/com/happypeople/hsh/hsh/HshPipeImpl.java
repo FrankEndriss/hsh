@@ -141,6 +141,16 @@ public class HshPipeImpl implements HshPipe {
 	}
 
 	@Override
+	protected void finalize() {
+		try {
+			if(!closed)
+				close();
+		} catch (final IOException e) {
+			// ignore
+		}
+	}
+
+	@Override
 	public synchronized void close() throws IOException {
 		synchronized(this) {
 			if(closed)

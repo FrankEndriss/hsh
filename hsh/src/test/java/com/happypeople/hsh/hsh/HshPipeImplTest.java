@@ -9,6 +9,8 @@ import java.io.InputStream;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.happypeople.hsh.HshPipe;
+
 public class HshPipeImplTest {
 
 	@Before
@@ -26,9 +28,16 @@ public class HshPipeImplTest {
 			}
 		};
 
-		new HshPipeImpl(is).close();
+		final HshPipe p1=new HshPipeImpl(is);
+		final HshPipe p2=new HshPipeImpl(is);
 
+		p1.close();
+		assertTrue("should not be closed", !closedHolder[0]);
+
+		p2.close();
 		assertTrue("should be closed", closedHolder[0]);
 	}
+
+	// TODO test multi thread features
 
 }
