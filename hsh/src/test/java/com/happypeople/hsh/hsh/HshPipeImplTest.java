@@ -28,11 +28,16 @@ public class HshPipeImplTest {
 			}
 		};
 
+		assertTrue("should not be closed 1", !closedHolder[0]);
+
 		final HshPipe p1=new HshPipeImpl(is);
+		assertTrue("should not be closed 2", !closedHolder[0]);
+
 		final HshPipe p2=new HshPipeImpl(is);
+		assertTrue("should not be closed 3", !closedHolder[0]);
 
 		p1.close();
-		assertTrue("should not be closed", !closedHolder[0]);
+		assertTrue("should not be closed 4", !closedHolder[0]);
 
 		p2.close();
 		assertTrue("should be closed", closedHolder[0]);

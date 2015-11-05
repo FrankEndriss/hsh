@@ -27,7 +27,7 @@ public class HshEnvironmentImpl implements HshEnvironment {
 	private int positionalCount=-1;
 
 	/**
-	 * @param parent read-only delegate of this environment, can be null
+	 * @param parent read-only delegate of this environment, only exported variables are visible in child, may be null
 	 */
 	public HshEnvironmentImpl(final HshEnvironment parent) {
 		this.parent=parent;
