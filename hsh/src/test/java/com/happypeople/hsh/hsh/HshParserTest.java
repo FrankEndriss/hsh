@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,19 +22,22 @@ import com.happypeople.hsh.hsh.l1parser.ImageHolder;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
+import com.happypeople.hsh.hsh.l1parser.SimpleDumpTarget;
 import com.happypeople.hsh.hsh.l1parser.SimpleImageHolder;
 import com.happypeople.hsh.hsh.l1parser.StringifiableNode;
 import com.happypeople.hsh.hsh.parser.CompleteCommand;
 import com.happypeople.hsh.hsh.parser.SimpleCommand;
 
 public class HshParserTest {
-	private final static boolean DEBUG=false;
+	private final static Logger log = Logger.getLogger(HshParserTest.class);
 
 	private HshContext context;
+	private SimpleDumpTarget dumpTarget;
 
 	@Before
 	public void init_setup() {
 		context=new HshContextBuilder().create();
+		dumpTarget=new SimpleDumpTarget();
 	}
 
 	public HshParser setup(final String input) {
@@ -115,7 +119,7 @@ public class HshParserTest {
 
 	*/
 
-	private String getSubstitutedString(final DollarSubstNode node, final HshContext context) throws Exception {
+	private static String getSubstitutedString(final DollarSubstNode node, final HshContext context) throws Exception {
 		final ImageHolder imageHolder=new SimpleImageHolder();
 		final L1Node resultNode=node.transformSubstitution(imageHolder, context);
 		return resultNode.getImage();
@@ -158,7 +162,7 @@ public class HshParserTest {
 		assertEquals("substitution", "2", res.get(1));
 	}
 
-	private <T> T findFirstNodeOfClass(final CompleteCommand cc, final Class<T> class1) throws Exception {
+	private static <T> T findFirstNodeOfClass(final CompleteCommand cc, final Class<T> class1) throws Exception {
 		final List<T> listT=new ArrayList<T>();
 
 		NodeTraversal.traverse(cc, new TraverseListener() {
@@ -175,7 +179,7 @@ public class HshParserTest {
 		return listT.size()>0?listT.get(0):null;
 	}
 
-	private DollarSubstNode findFirstDollarSubstNode(final CompleteCommand cc) throws Exception {
+	private static DollarSubstNode findFirstDollarSubstNode(final CompleteCommand cc) throws Exception {
 		final DollarSubstNode[] dsnode=new DollarSubstNode[1];
 
 		NodeTraversal.traverse(cc, new TraverseListener() {
@@ -345,32 +349,31 @@ public class HshParserTest {
 	private CompleteCommand[] doTestCompleteCommand2(final String input, final int count) throws ParseException {
 		final CompleteCommand[] res=new CompleteCommand[2];
 		final HshParser p=setup(input);
-		if(DEBUG)
-			System.out.println("Test input: "+input);
+		log.debug("Test input: "+input);
 		for(int i=0; i<count; i++)
 			res[i]=p.complete_command();
-		if(DEBUG)
-			for(int i=0; i<count; i++)
-				if(res[i]!=null)
-					res[i].dump(0);
+		for(int i=0; i<count; i++)
+			if(res[i]!=null)
+				res[i].dump(dumpTarget);
+		dumpTarget.debug(log);
 		return res;
 	}
 
 	private CompleteCommand doTestCompleteCommand(final String input) throws ParseException {
 		final HshParser p=setup(input);
-		if(DEBUG)
-			System.out.println("Test input: "+input);
+		log.debug("Test input: "+input);
 		final CompleteCommand cc=p.complete_command();
-		if(DEBUG)
-			cc.dump(0);
+		final SimpleDumpTarget target=new SimpleDumpTarget();
+		cc.dump(target);
+		System.out.print(target.toString());
 		return cc;
 	}
 
-	private SimpleCommand findSimpleCommand(final CompleteCommand cc) throws Exception {
+	private static SimpleCommand findSimpleCommand(final CompleteCommand cc) throws Exception {
 		return findSimpleCommands(cc, 1)[0];
 	}
 
-	private SimpleCommand[] findSimpleCommands(final CompleteCommand cc, final int count) throws Exception {
+	private static SimpleCommand[] findSimpleCommands(final CompleteCommand cc, final int count) throws Exception {
 		final int[] c={ 0 };
 		final SimpleCommand[] sc=new SimpleCommand[count];
 		NodeTraversal.traverse(cc, new NodeTraversal.TraverseListener() {
@@ -395,7 +398,7 @@ public class HshParserTest {
 		return sc;
 	}
 
-	private String node2String(final L1Node node) throws Exception {
+	private static String node2String(final L1Node node) throws Exception {
 		final StringBuilder sb=new StringBuilder();
 		NodeTraversal.traverse(node, new NodeTraversal.TraverseListener() {
 			@Override
@@ -406,5 +409,11 @@ public class HshParserTest {
 			}
 		});
 		return sb.toString();
+	}
+
+	@Test
+	public void test_functionDeclaration() throws ParseException {
+		final CompleteCommand cc=doTestCompleteCommand("myEcho() { echo $1 }");
+		assertNotNull("command must not be null", cc);
 	}
 }

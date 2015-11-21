@@ -41,13 +41,9 @@ public abstract class AbstractL1Node implements L1Node {
 	}
 
 	@Override
-	public void dump(final int level) {
-		for(int i=0; i<level; i++)
-			System.out.print("\t");
-		System.out.println(getClass().getName());
-		for(int i=0; i<level+1; i++)
-			System.out.print("\t");
-		System.out.println("image="+getImage());
+	public void dump(final DumpTarget target) {
+		target.add(getClass().getName());
+		target.add("image="+getImage());
 	}
 
 

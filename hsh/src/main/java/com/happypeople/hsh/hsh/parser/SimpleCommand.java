@@ -13,6 +13,7 @@ import com.happypeople.hsh.hsh.HshContextBuilder;
 import com.happypeople.hsh.hsh.HshParserConstants;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
+import com.happypeople.hsh.hsh.l1parser.DumpTarget;
 import com.happypeople.hsh.hsh.l1parser.Executable;
 
 public class SimpleCommand extends L2Node implements Executable {
@@ -189,24 +190,20 @@ public class SimpleCommand extends L2Node implements Executable {
 	 * @param level the level of the tree this node lives in
 	 */
 	@Override
-	public void dump(final int level) {
-		final StringBuilder sb=new StringBuilder();
-		for(int i=0; i<level; i++)
-			sb.append("\t");
-		final String t=sb.toString();
-		System.out.println(t+getClass().getName());
-
-		System.out.println(t+"redirects");
+	public void dump(final DumpTarget target) {
+		target.add(getClass().getName());
+		target.add("redirects").incLevel();
 		for(final L2Token redir : getRedirects())
-			redir.dump(level+1);
+			redir.dump(target);
 
-		System.out.println(t+"assignments");
+		target.decLevel().add("assignments").incLevel();
 		for(final L2Token ass : getAssignments())
-			ass.dump(level+1);
+			ass.dump(target);
 
-		System.out.println(t+"args");
+		target.decLevel().add("args");
 		for(final L2Token arg : getArgs())
-			arg.dump(level+1);
+			arg.dump(target);
+		target.incLevel();
 	}
 
 

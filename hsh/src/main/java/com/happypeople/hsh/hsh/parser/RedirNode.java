@@ -1,6 +1,7 @@
 package com.happypeople.hsh.hsh.parser;
 
 import com.happypeople.hsh.hsh.L2Token;
+import com.happypeople.hsh.hsh.l1parser.DumpTarget;
 
 public class RedirNode extends L2Node {
 
@@ -33,15 +34,11 @@ public class RedirNode extends L2Node {
 	}
 
 	@Override
-	public void dump(final int level) {
-		final StringBuilder sb=new StringBuilder();
-		for(int i=0; i<level; i++)
-			sb.append("\t");
-		final String t=sb.toString();
-		System.out.println(t+getClass().getName());
-
-		System.out.println(t+"filename: "+filename);
-		System.out.println(t+"ioNumber: "+ioNumber);
-		operator.dump(level+1);
+	public void dump(final DumpTarget target) {
+		target.add(getClass().getName());
+		target.add("filename: "+filename);
+		target.add("ioNumber: "+ioNumber);
+		operator.dump(target.incLevel());
+		target.decLevel();
 	}
 }

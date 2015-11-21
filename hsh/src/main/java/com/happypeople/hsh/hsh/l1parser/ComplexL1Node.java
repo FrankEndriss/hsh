@@ -34,12 +34,11 @@ public abstract class ComplexL1Node extends AbstractL1Node {
 	}
 
 	@Override
-	public void dump(final int level) {
-		for(int i=0; i<level; i++)
-			System.out.print("\t");
-		System.out.println(getClass().getName());
+	public void dump(final DumpTarget target) {
+		target.add(getClass().getName()).incLevel();
 		for(final L1Node child : children)
-			child.dump(level+1);
+			child.dump(target);
+		target.decLevel();
 	}
 
 	/* (non-Javadoc)

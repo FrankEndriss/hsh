@@ -1,6 +1,9 @@
 package com.happypeople.hsh.hsh.parser;
 
+import org.apache.log4j.Logger;
+
 import com.happypeople.hsh.hsh.L2Token;
+import com.happypeople.hsh.hsh.l1parser.DumpTarget;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 
 /** L2Node is a node in the L2 parse tree.
@@ -8,6 +11,8 @@ import com.happypeople.hsh.hsh.l1parser.L1Node;
  * directly the tokens to place them as childs into the tree of nodes.
  */
 public class L2Node extends L2Token {
+	private final static Logger log = Logger.getLogger(L2Node.class);
+
 	public int addChild(final L2Token node) {
 		return addPart(node);
 	}
@@ -24,11 +29,10 @@ public class L2Node extends L2Token {
 	 * @param level the level of the tree this node lives in
 	 */
 	@Override
-	public void dump(final int level) {
-		for(int i=0; i<level; i++)
-			System.out.print("\t");
-		System.out.println(getClass().getName());
+	public void dump(final DumpTarget target) {
+		target.add(getClass().getName()).incLevel();
 		for(final L1Node child : this)
-			child.dump(level+1);
+			child.dump(target);
+		target.decLevel();
 	}
 }

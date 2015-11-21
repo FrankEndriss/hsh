@@ -13,6 +13,7 @@ import java.util.List;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.NodeTraversal.TraverseListenerResult;
 import com.happypeople.hsh.hsh.l1parser.ComplexL1Node;
+import com.happypeople.hsh.hsh.l1parser.DumpTarget;
 import com.happypeople.hsh.hsh.l1parser.GenericComplexL1Node;
 import com.happypeople.hsh.hsh.l1parser.ImageHolder;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
@@ -97,12 +98,12 @@ public class L2Token extends Token implements L1Node {
 	 * @param level the level of the tree this node lives in
 	 */
 	@Override
-	public void dump(final int level) {
-		for(int i=0; i<level; i++)
-			System.out.print("\t");
-		System.out.println(getClass().getName()+" kind="+kind+" image="+getImage());
+	public void dump(final DumpTarget target) {
+		target.add(getClass().getName()+" kind="+kind+" image="+getImage());
+		target.incLevel();
 		for(final L1Node child : parts)
-			child.dump(level+1);
+			child.dump(target);
+		target.decLevel();
 	}
 
 	/** Switches from building phase to usage phase.

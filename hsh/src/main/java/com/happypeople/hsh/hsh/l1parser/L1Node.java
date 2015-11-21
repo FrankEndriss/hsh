@@ -18,7 +18,7 @@ import com.happypeople.hsh.HshContext;
  *
  **/
 public interface L1Node extends Iterable<L1Node> {
-	public void dump(int level);
+	public void dump(DumpTarget target);
 
 	/**
 	 * @return the len of the image of this node

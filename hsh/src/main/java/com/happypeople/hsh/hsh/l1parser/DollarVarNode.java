@@ -98,12 +98,8 @@ public class DollarVarNode extends AbstractL1Node {
 	}
 
 	@Override
-	public void dump(final int level) {
-		final StringBuilder sb=new StringBuilder();
-		for(int i=0; i<level; i++)
-			sb.append('\t');
-		sb.append(getClass().getName()+": $"+getToken().image);
-		System.out.println(""+sb);
+	public void dump(final DumpTarget target) {
+		target.add(getClass().getName()+": $"+getToken().image);
 	}
 
 	@Override
