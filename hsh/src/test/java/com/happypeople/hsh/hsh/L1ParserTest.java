@@ -4,6 +4,7 @@ import static org.junit.Assert.fail;
 
 import java.io.StringReader;
 
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
@@ -11,8 +12,7 @@ import com.happypeople.hsh.hsh.l1parser.L1ParserConstants;
 import com.happypeople.hsh.hsh.l1parser.ParseException;
 
 public class L1ParserTest {
-
-	private final static boolean DEBUG=true;
+	private final static Logger log=Logger.getLogger(L1ParserTest.class);
 
 	@Test
 	public void test_function_def() throws ParseException {
@@ -27,12 +27,10 @@ public class L1ParserTest {
 			try {
 				do_parse(i, ok[i]);
 			}catch(final ParseException e) {
-				if(DEBUG)
-					System.out.println("ParseException at test "+i+" in="+ok[i]);
+				log.debug("ParseException at test "+i+" in="+ok[i], e);
 				throw e;
 			}catch(final TokenMgrError e) {
-				if(DEBUG)
-					System.out.println("TokenMgrError at test "+i+" in="+ok[i]);
+				log.debug("TokenMgrError at test "+i+" in="+ok[i], e);
 				throw e;
 			}
 		}
@@ -72,12 +70,10 @@ public class L1ParserTest {
 			try {
 				do_parse(i, ok[i]);
 			}catch(final ParseException e) {
-				if(DEBUG)
-					System.out.println("ParseException at test "+i+" in="+ok[i]);
+				log.debug("ParseException at test "+i+" in="+ok[i], e);
 				throw e;
 			}catch(final TokenMgrError e) {
-				if(DEBUG)
-					System.out.println("TokenMgrError at test "+i+" in="+ok[i]);
+				log.debug("TokenMgrError at test "+i+" in="+ok[i], e);
 				throw e;
 			}
 		}
@@ -126,13 +122,11 @@ public class L1ParserTest {
 
 
 	private void do_parse(final int tNum, final String test) throws ParseException {
-		if(DEBUG)
-			System.out.println("do_parse "+tNum+": "+test);
+		log.debug("do_parse "+tNum+": "+test);
 		final L1Parser parser=new L1Parser(new StringReader(test));
 		L2Token node=null;
 		while(((node=parser.nextL1Node()).kind!=L1ParserConstants.EOF))
-			if(DEBUG)
-				System.out.println(""+node);
+			log.debug(""+node);
 	}
 
 }

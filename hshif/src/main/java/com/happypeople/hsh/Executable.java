@@ -1,6 +1,4 @@
-package com.happypeople.hsh.hsh.l1parser;
-
-import com.happypeople.hsh.HshContext;
+package com.happypeople.hsh;
 
 /** Interface for executable Nodes (i.e. SimpleCommand) in the parse tree.
  */

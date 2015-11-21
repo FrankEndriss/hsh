@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.happypeople.hsh.Executable;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.Parameter;
 import com.happypeople.hsh.VariableParameter;
@@ -20,6 +21,7 @@ import com.happypeople.hsh.VariableParameter;
 public class HshEnvironmentImpl implements HshEnvironment {
 	private final HshEnvironment parent;
 	private final Map<String, Parameter> vars=new HashMap<String, Parameter>();
+	private final Map<String, Executable> functions=new HashMap<String, Executable>();
 	private final Set<ChangeListener> listeners=new HashSet<ChangeListener>();
 	private final ChangeListener parentListener;
 
@@ -206,6 +208,16 @@ public class HshEnvironmentImpl implements HshEnvironment {
 			parent.removeListener(parentListener);
 		vars.clear();
 		listeners.clear();
+	}
+
+	@Override
+	public void setFunction(final String name, final Executable functionDefinition) {
+		functions.put(name, functionDefinition);
+	}
+
+	@Override
+	public Executable getFunction(final String name) {
+		return functions.get(name);
 	}
 
 }

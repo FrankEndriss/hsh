@@ -277,7 +277,7 @@ function_body    : compound_command                // Apply rule 9
                  | compound_command redirect_list  // Apply rule 9
                  ;
 */
-void function_body(FunctionDefinition funcDef):
+void function_body(FunctionDefinitionNode funcDef):
 {
 L2Node body;
 /* This call is needed to change the type of the first word of the compound_command */
@@ -292,7 +292,7 @@ lookahead_isCompoundCommand();
 functionname            : NAME                            // Apply rule 8
                  ;
 */
-void functionname(FunctionDefinition funcDef):
+void functionname(FunctionDefinitionNode funcDef):
 {
 Token t;
 }
@@ -305,9 +305,9 @@ Token t;
 function_definition : functionname '(' ')' linebreak function_body
                  ;
 */
-FunctionDefinition function_definition():
+FunctionDefinitionNode function_definition():
 {
-FunctionDefinition funcDef=new FunctionDefinition();
+FunctionDefinitionNode funcDef=new FunctionDefinitionNode();
 Token funcName;
 CompoundCommand funcBody;
 }

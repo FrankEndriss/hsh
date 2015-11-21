@@ -35,14 +35,13 @@ public class HshParserTest {
 		dumpTarget=new SimpleDumpTarget();
 	}
 
-	public HshParser setup(final String input) {
-		final L2TokenManager tokMgr=new L2TokenManager(new L1Parser(new StringReader(input)));
-		final HshParser parser=new HshParser(tokMgr);
-		return parser;
+	/** Creates a Parser reading the String input as input
+	 * @param input input to the parser
+	 * @return a newly created HshParser reading the String input as input
+	 */
+	public static HshParser createParser(final String input) {
+		return new HshParser(new L2TokenManager(new L1Parser(new StringReader(input))));
 	}
-
-
-
 
 	public static String getSubstitutedString(final DollarSubstNode node, final HshContext context) throws Exception {
 		final ImageHolder imageHolder=new SimpleImageHolder();
@@ -69,10 +68,6 @@ public class HshParserTest {
 		return listT.size()>0?listT.get(0):null;
 	}
 
-
-
-
-
 	/** This method parses the input to count CompleteCommand and returns these.
 	 * All in all it calls parseTo_CompleteCommand count times
 	 * @param input an complete command script with at least count complete commands
@@ -81,7 +76,7 @@ public class HshParserTest {
 	 */
 	public CompleteCommand[] parseTo_CompleteCommandList(final String input, final int count) throws ParseException {
 		final CompleteCommand[] res=new CompleteCommand[count];
-		final HshParser p=setup(input);
+		final HshParser p=createParser(input);
 		log.debug("Test input: "+input);
 		for(int i=0; i<count; i++)
 			res[i]=p.complete_command();
@@ -98,7 +93,7 @@ public class HshParserTest {
 	 * @throws ParseException
 	 */
 	public CompleteCommand parseTo_CompleteCommand(final String input) throws ParseException {
-		final HshParser p=setup(input);
+		final HshParser p=createParser(input);
 		log.debug("Test input: "+input);
 		final CompleteCommand cc=p.complete_command();
 		final SimpleDumpTarget target=new SimpleDumpTarget();

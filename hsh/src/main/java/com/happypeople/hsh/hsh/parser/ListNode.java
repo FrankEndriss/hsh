@@ -1,8 +1,8 @@
 package com.happypeople.hsh.hsh.parser;
 
+import com.happypeople.hsh.Executable;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.hsh.NodeTraversal;
-import com.happypeople.hsh.hsh.l1parser.Executable;
 import com.happypeople.hsh.hsh.l1parser.L1Node;
 
 /** ListNode is a list of And_orNode.

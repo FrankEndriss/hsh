@@ -103,5 +103,12 @@ public interface HshEnvironment {
 
 	public void close();
 
+	/** This method associates a name with a function definition
+	 * @param name name of the function
+	 * @param functionDefinition the defintion of the function
+	 */
+	public void setFunction(String name, Executable functionDefinition);
+
+	public Executable getFunction(String name);
 
 }

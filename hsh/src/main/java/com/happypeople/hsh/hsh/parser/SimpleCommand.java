@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.happypeople.hsh.Executable;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshFDSet;
 import com.happypeople.hsh.HshRedirection;
@@ -14,7 +15,6 @@ import com.happypeople.hsh.hsh.HshParserConstants;
 import com.happypeople.hsh.hsh.L2Token;
 import com.happypeople.hsh.hsh.NodeTraversal;
 import com.happypeople.hsh.hsh.l1parser.DumpTarget;
-import com.happypeople.hsh.hsh.l1parser.Executable;
 
 public class SimpleCommand extends L2Node implements Executable {
 	private final static Logger log=Logger.getLogger(SimpleCommand.class);
