@@ -190,14 +190,14 @@ io_file          : LESS      filename
 */
 void io_file(RedirNode redirNode):
 {
-L2Token fname;
+L2Token file_name;
 Token t;
 }
 {
 	( t=< LESS > | t=< LESSAND > | t=< GREAT > | t=< GREATAND > | t=< DGREAT > | t=< LESSGREAT > | t=< CLOBBER > ) 
-		fname=filename()
+		file_name=filename()
 	{	redirNode.setOperator((L2Token)t);
-		redirNode.setFilename(fname);
+		redirNode.setFilename(file_name);
 	}
 }
 
@@ -277,36 +277,43 @@ function_body    : compound_command                // Apply rule 9
                  | compound_command redirect_list  // Apply rule 9
                  ;
 */
-void function_body():
+void function_body(FunctionDefinition funcDef):
 {
+L2Node body;
+/* This call is needed to change the type of the first word of the compound_command */
+lookahead_isCompoundCommand();
 }
 {
-	compound_command() ( redirect_list() )?
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
-}
-
-/**
-fname            : NAME                            // Apply rule 8
-                 ;
-*/
-void fname():
-{
-}
-{
-	< FNAME >
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	body=compound_command() ( redirect_list() )?
+	{ funcDef.setBody(body); /* TODO redirections */ }
 }
 
 /**
-function_definition : fname '(' ')' linebreak function_body
+functionname            : NAME                            // Apply rule 8
                  ;
 */
-void function_definition():
+void functionname(FunctionDefinition funcDef):
 {
+Token t;
 }
 {
-	fname() < KLAMMER_AUF > < KLAMMER_ZU > linebreak() function_body()
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	t=< NAME5 >
+	{ funcDef.setName((L2Token)t); }
+}
+
+/**
+function_definition : functionname '(' ')' linebreak function_body
+                 ;
+*/
+FunctionDefinition function_definition():
+{
+FunctionDefinition funcDef=new FunctionDefinition();
+Token funcName;
+CompoundCommand funcBody;
+}
+{
+	functionname(funcDef) < KLAMMER_AUF > < KLAMMER_ZU > linebreak() function_body(funcDef)
+	{ return funcDef; }
 }
 
 /**
@@ -324,12 +331,13 @@ void redirect_list():
 brace_group      : Lbrace compound_list Rbrace
                  ;
 */
-void brace_group():
+L2Node brace_group():
 {
+L2Node body;
 }
 {
-	< LBRACE > compound_list() < RBRACE >
-	{ throw new RuntimeException("not implemented"); /* return ret;*/ }
+	< LBRACE > body=compound_list() < RBRACE >
+	{ return body; }
 }
 
 /**
@@ -596,7 +604,7 @@ L2Node compound_command():
 	L2Node compCommand=null;
 }
 {
-	(	brace_group() { throwNI(); }|	compCommand=subshell()
+	(	compCommand=brace_group()|	compCommand=subshell()
 |	for_clause() { throwNI(); }
 |	case_clause() { throwNI(); }
 |	if_clause() { throwNI(); }
@@ -668,19 +676,18 @@ command          : simple_command
                  | function_definition
                  ;
 */
-Command command():
+L2Node command():
 {
-	Command ret=new Command();
-	L2Node simpleCommand;
+	L2Node ret;
 	L2Node compCommand;
 }
 {
 	(
 	LOOKAHEAD( { lookahead_functionDef() } )
-	function_definition() { throwNI(); }
+	ret=function_definition()
 |	LOOKAHEAD( { lookahead_isCompoundCommand() } )
-	compCommand=compound_command() ( redirect_list() { throwNI(); } )? { ret.addChild(compCommand); }
-|	simpleCommand=simple_command() { ret.addChild(simpleCommand); }
+	ret=compound_command() ( redirect_list() { throwNI(); } )?
+|	ret=simple_command()
 	)
 	{ return ret; }
 }

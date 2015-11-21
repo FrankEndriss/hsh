@@ -555,6 +555,8 @@ void separating_part(ImageHolder imageHolder, L2Token parent):
 |	t=< SEMICOLON >
 |	t=< KLAMMER_AUF >
 |	t=< KLAMMER_ZU >
+|	t=< LBRACE >
+|	t=< RBRACE >
 // these are no operators, but separate words, too
 |	t=< WS > // Note: WS is not sent to HshParser, but separates words.
 |	t=< NEWLINE >

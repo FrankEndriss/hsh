@@ -56,6 +56,8 @@ public class L2TokenManager implements TokenManager {
 		case L1ParserConstants.BANG:		return HshParserConstants.BANG;
 		case L1ParserConstants.KLAMMER_AUF:	return HshParserConstants.KLAMMER_AUF;
 		case L1ParserConstants.KLAMMER_ZU:	return HshParserConstants.KLAMMER_ZU;
+		case L1ParserConstants.LBRACE:		return HshParserConstants.LBRACE;
+		case L1ParserConstants.RBRACE:		return HshParserConstants.RBRACE;
 		case L1ParserConstants.WS:			return -42;
 		default:
 			return HshParserConstants.WORD;

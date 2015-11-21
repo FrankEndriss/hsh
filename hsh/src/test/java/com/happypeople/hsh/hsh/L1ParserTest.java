@@ -12,7 +12,31 @@ import com.happypeople.hsh.hsh.l1parser.ParseException;
 
 public class L1ParserTest {
 
-	private final static boolean DEBUG=false;
+	private final static boolean DEBUG=true;
+
+	@Test
+	public void test_function_def() throws ParseException {
+		final String[] ok={
+				"myEcho() ( echo hallo ; )",
+				"myEcho() ( echo hallo ; cat bla.txt ; )",
+				"myEcho() { echo hallo ; }",
+				"myEcho() { echo hallo ; cat bla.txt ; }"
+		};
+
+		for(int i=0; i<ok.length; i++) {
+			try {
+				do_parse(i, ok[i]);
+			}catch(final ParseException e) {
+				if(DEBUG)
+					System.out.println("ParseException at test "+i+" in="+ok[i]);
+				throw e;
+			}catch(final TokenMgrError e) {
+				if(DEBUG)
+					System.out.println("TokenMgrError at test "+i+" in="+ok[i]);
+				throw e;
+			}
+		}
+	}
 
 	@Test
 	public void test_simple_quoting() throws ParseException {

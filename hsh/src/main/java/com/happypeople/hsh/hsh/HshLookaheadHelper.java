@@ -78,14 +78,19 @@ public class HshLookaheadHelper {
 			HshParserConstants.UNTIL,
 			HshParserConstants.FOR,
 			HshParserConstants.CASE,
-			HshParserConstants.IF
+			HshParserConstants.IF,
+			HshParserConstants.LBRACE,
+			HshParserConstants.KLAMMER_AUF
 	};
+
 	private final static String[] wordStartsImages={
 		"while",
 		"until",
 		"for",
 		"case",
-		"if"
+		"if",
+		"{",
+		"("
 	};
 
 	/** Searches for a compound_command()
@@ -96,13 +101,13 @@ public class HshLookaheadHelper {
 
 		// check if previous call of this method dedected a compound_command()
 		switch(tok.kind) {
-		case HshParserConstants.WHILE:
-		case HshParserConstants.UNTIL:
-		case HshParserConstants.FOR:
-		case HshParserConstants.CASE:
-		case HshParserConstants.IF:
-		case HshParserConstants.LBRACE:
-		case HshParserConstants.KLAMMER_AUF:
+			case HshParserConstants.WHILE:
+			case HshParserConstants.UNTIL:
+			case HshParserConstants.FOR:
+			case HshParserConstants.CASE:
+			case HshParserConstants.IF:
+			case HshParserConstants.LBRACE:
+			case HshParserConstants.KLAMMER_AUF:
 			return true;
 		default:
 			// fall trou
@@ -117,6 +122,8 @@ public class HshLookaheadHelper {
 				}
 			}
 
+		// TODO not shure what this is good for... there must be some kind of missunderstanding:
+		// LBRACE and KLAMMER_AUF do work different on L1Parser-Level
 		final L1Node part=getPart(0);
 		if(part instanceof SimpleL1Node) {
 			final int l1Kind=((SimpleL1Node)part).getL1Kind();
@@ -143,6 +150,7 @@ public class HshLookaheadHelper {
 	 * @return true if the tokens where setup
 	 */
 	public boolean lookahead_functionDef() {
+		log.debug("in lookahead_functionDef");
 		final int[] expectedKinds=new int[] { L1ParserConstants.NAME, L1ParserConstants.KLAMMER_AUF, L1ParserConstants.KLAMMER_ZU };
 		L2Token t;
 
@@ -152,7 +160,26 @@ public class HshLookaheadHelper {
 				(t=getToken(3))!=null && t.kind==HshParserConstants.KLAMMER_ZU)
 			return true;
 
+		// check the function name
+		t=getTokenOfPart(0);
+		if(t==null || t.kind!=HshParserConstants.WORD)
+			return false;
+		final L1Node p=getPart(0);
+		if(!(p instanceof SimpleL1Node))
+			return false;
+
+		// check KLAMMER_AUF
+		t=getTokenOfPart(1);
+		if(t==null || t.kind!=HshParserConstants.KLAMMER_AUF)
+			return false;
+
+		// check KLAMMER_ZU
+		t=getTokenOfPart(2);
+		if(t==null || t.kind!=HshParserConstants.KLAMMER_ZU)
+			return false;
+
 		// readahead at least as possible
+		/*
 		for(int i=0; i<3; i++) {
 			t=getTokenOfPart(i);
 			if(t==null || t.kind!=HshParserConstants.WORD)
@@ -163,6 +190,8 @@ public class HshLookaheadHelper {
 			if(((SimpleL1Node)p).getL1Kind()!=expectedKinds[i])
 				return false;
 		}
+		*/
+
 
 		(t=getToken(1)).splitFirstPart();
 		t.kind=HshParserConstants.NAME5;
