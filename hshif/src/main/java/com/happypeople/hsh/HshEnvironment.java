@@ -1,114 +1,139 @@
 package com.happypeople.hsh;
 
-
-/** Environment settings of a HshContext
+/**
+ * Environment settings of a HshContext
  *
  * TODO implement declare/typeset functionality complete
  */
 public interface HshEnvironment {
 
-	/** Removes a parameter from the environment
-	 * @param name of the parameter. Must not be null.
-	 */
-	public void unsetParameter(final String name);
+    /**
+     * Removes a parameter from the environment
+     *
+     * @param name
+     *            of the parameter. Must not be null.
+     */
+    public void unsetParameter(final String name);
 
-	/** Check if var is set/exists.
-	 */
-	public boolean issetParameter(final String name);
+    /**
+     * Check if var is set/exists.
+     */
+    public boolean issetParameter(final String name);
 
-	/** Finds the value of a property.
-	 * @param name of the parameter. Must not be null.
-	 * @return the parameter or null if unset
-	 */
-	public Parameter getParameter(final String name);
+    /**
+     * Finds the value of a property.
+     *
+     * @param name
+     *            of the parameter. Must not be null.
+     * @return the parameter or null if unset
+     */
+    public Parameter getParameter(final String name);
 
-	/** Set a variables value.
-	 * @param parameter
-	 * @param value
-	 */
-	public void setVariableValue(final String name, final String value);
+    /**
+     * Set a variables value.
+     *
+     * @param parameter
+     * @param value
+     */
+    public void setVariableValue(final String name, final String value);
 
-	/** Returns the value of name, if parameter unset null
-	 * @param name of the Parameter
-	 */
-	public String getVariableValue(final String name);
+    /**
+     * Returns the value of name, if parameter unset null
+     *
+     * @param name
+     *            of the Parameter
+     */
+    public String getVariableValue(final String name);
 
-	/** Add a changeListener to this env
-	 * @param listener
-	 */
-	public void addListener(ChangeListener listener);
+    /**
+     * Add a changeListener to this env
+     *
+     * @param listener
+     */
+    public void addListener(ChangeListener listener);
 
-	/** Removes a changeListener from this env
-	 * @param listener
-	 */
-	public void removeListener(ChangeListener listener);
+    /**
+     * Removes a changeListener from this env
+     *
+     * @param listener
+     */
+    public void removeListener(ChangeListener listener);
 
-	/** Special parameter used for explicit unset variables.
-	 */
-	public final static Parameter UNDEFINED=new Parameter() {
+    /**
+     * Special parameter used for explicit unset variables.
+     */
+    public final static Parameter UNDEFINED = new Parameter() {
 
-		@Override
-		public String getName() {
-			return null;
-		}
+        @Override
+        public String getName() {
+            return null;
+        }
 
-		@Override
-		public Type getType() {
-			return null;
-		}
+        @Override
+        public Type getType() {
+            return null;
+        }
 
-		@Override
-		public boolean isReadOnly() {
-			return false;
-		}
+        @Override
+        public boolean isReadOnly() {
+            return false;
+        }
 
-		@Override
-		public boolean isExport() {
-			return false;
-		}
+        @Override
+        public boolean isExport() {
+            return false;
+        }
 
-		@Override
-		public Parameter createCopy() {
-			return this;
-		}
+        @Override
+        public Parameter createCopy() {
+            return this;
+        }
 
-		@Override
-		public void setExport(final boolean isExport) {
-		}
-	};
+        @Override
+        public void setExport(final boolean isExport) {
+        }
+    };
 
-	public interface ChangeListener {
-		public void created(Parameter parameter);
+    public interface ChangeListener {
+        public void created(Parameter parameter);
 
-		public void removed(Parameter parameter);
+        public void removed(Parameter parameter);
 
-		public void exported(Parameter parameter);
+        public void exported(Parameter parameter);
 
-		public void changed(VariableParameter parameter, String oldValue);
+        public void changed(VariableParameter parameter, String oldValue);
 
-		// TODO change of function definitions. Until implemented use remove/create
-	}
+        // TODO change of function definitions. Until implemented use
+        // remove/create
+    }
 
-	/**
-	 * @return the count of positional parameters set in this context, or if not set the count of
-	 * the parents positional parameters.
-	 */
-	public int getPositionalCount();
+    /**
+     * @return the count of positional parameters set in this context, or if not
+     *         set the count of the parents positional parameters.
+     */
+    public int getPositionalCount();
 
-	/** Sets the positional parameters ($1, $2, ...) all at once and implicit the positionalCount.
-	 * If these where not set on the current environment, the parents positional parameters are used.
-	 * @param values
-	 */
-	public void setPositionalValues(String[] values);
+    /**
+     * Sets the positional parameters ($1, $2, ...) all at once and implicit the
+     * positionalCount. If these where not set on the current environment, the
+     * parents positional parameters are used.
+     *
+     * @param values
+     */
+    public void setPositionalValues(String[] values);
 
-	public void close();
+    public void close();
 
-	/** This method associates a name with a function definition
-	 * @param name name of the function
-	 * @param functionDefinition the defintion of the function
-	 */
-	public void setFunction(String name, Executable functionDefinition);
+    /**
+     * This method associates a name with a function definition
+     *
+     * @param name
+     *            name of the function
+     * @param functionDefinition
+     *            the defintion of the function
+     */
+    public void setFunction(String name, Executable functionDefinition);
 
-	public Executable getFunction(String name);
+    public Executable getFunction(String name);
 
 }
