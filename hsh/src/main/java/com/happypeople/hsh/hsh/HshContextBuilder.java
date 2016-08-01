@@ -82,11 +82,11 @@ public class HshContextBuilder {
 	}
 
 
-	private HshFDSet createDefaultFDSet() {
+	private static HshFDSet createDefaultFDSet() {
 		return new HshFDSetImpl();
 	}
 
-	private HshExecutor createDefaultExecutor() {
+	private static HshExecutor createDefaultExecutor() {
 		final List<HshExecutor> xecutors=new ArrayList<HshExecutor>();
 
 		xecutors.add(new FunctionHshExecutor());
