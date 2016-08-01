@@ -9,7 +9,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshFdSet;
 import com.happypeople.hsh.HshPipe;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.HshRedirection.OperationType;
@@ -17,7 +17,7 @@ import com.happypeople.hsh.HshRedirection.OperationType;
 /** Two Sets of HshPipeImpl, indexed by integer.
  * One for input streams, one for output streams.
  **/
-public class HshFDSetImpl implements HshFDSet {
+public class HshFDSetImpl implements HshFdSet {
 	private final static Logger log=Logger.getLogger(HshFDSetImpl.class);
 	private final Map<Integer, HshPipe> pipes=new HashMap<Integer, HshPipe>();
 
@@ -60,7 +60,7 @@ public class HshFDSetImpl implements HshFDSet {
 	}
 
 	@Override
-	public HshFDSet createCopy() {
+	public HshFdSet createCopy() {
 		return new HshFDSetImpl(pipes);
 	}
 
@@ -70,7 +70,7 @@ public class HshFDSetImpl implements HshFDSet {
 		HshPipe newPipe=null;
 		switch(redir.getTargetType()) {
 		case ANOTHER_FD:
-			newPipe=getPipe(redir.getTargetFD()).createCopy();
+			newPipe=getPipe(redir.getTargetFd()).createCopy();
 			break;
 		case FILE:
 			newPipe=redir.getOperationType()==OperationType.READ ?
@@ -80,7 +80,7 @@ public class HshFDSetImpl implements HshFDSet {
 		default:
 			throw new IllegalStateException("redirection of unknown TargetType");
 		}
-		closePipe(redir.getRedirectedFD());
-		setPipe(redir.getRedirectedFD(), newPipe);
+		closePipe(redir.getRedirectedFd());
+		setPipe(redir.getRedirectedFd(), newPipe);
 	}
 }

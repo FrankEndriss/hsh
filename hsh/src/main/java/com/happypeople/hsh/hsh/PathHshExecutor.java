@@ -13,7 +13,7 @@ import org.apache.log4j.Logger;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshExecutor;
-import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshFdSet;
 import com.happypeople.hsh.HshPipe;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.HshRedirection.OperationType;
@@ -22,14 +22,14 @@ import com.happypeople.hsh.HshRedirection.OperationType;
  */
 public class PathHshExecutor implements HshExecutor {
 	private final static Logger log=Logger.getLogger(PathHshExecutor.class);
-	private final List<File> path=new ArrayList<File>();
+	private final List<File> path=new ArrayList<>();
 	private String lastUsedPath="";
 
 	@Override
 	public int execute(final String[] command, final HshContext parentContext, final List<HshRedirection> redirections) throws Exception {
 		log.info("execute: "+Arrays.asList(command));
 
-		try(HshFDSet childFDSet=parentContext.getFDSet().createCopy()) {
+		try(HshFdSet childFDSet=parentContext.getFdSet().createCopy()) {
 
 			final ProcessBuilder builder=new ProcessBuilder();
 			command[0]=resolveCmd(command[0], parentContext.getEnv().getVariableValue("PATH"));
@@ -46,7 +46,7 @@ public class PathHshExecutor implements HshExecutor {
 				HshPipe newPipe=null;
 				switch(redir.getTargetType()) {
 				case ANOTHER_FD:
-					newPipe=childFDSet.getPipe(redir.getTargetFD()).createCopy();
+					newPipe=childFDSet.getPipe(redir.getTargetFd()).createCopy();
 					break;
 				case FILE:
 					newPipe=redir.getOperationType()==OperationType.READ?
@@ -56,10 +56,10 @@ public class PathHshExecutor implements HshExecutor {
 				default:
 					throw new IllegalStateException("redirection of unknown TargetType");
 				}
-				childFDSet.closePipe(redir.getRedirectedFD());
-				childFDSet.setPipe(redir.getRedirectedFD(), newPipe);
+				childFDSet.closePipe(redir.getRedirectedFd());
+				childFDSet.setPipe(redir.getRedirectedFd(), newPipe);
 
-				if(redir.getRedirectedFD()==HshFDSet.STDIN)
+				if(redir.getRedirectedFd()==HshFdSet.STDIN)
 					stdInRedirected=true;
 			}
 
@@ -68,7 +68,7 @@ public class PathHshExecutor implements HshExecutor {
 			// or loop or any other context which might have an redirected stdin
 			// Because of this we check against System.in...
 			boolean stdinInherited=false;
-			if(!stdInRedirected && childFDSet.getPipe(HshFDSet.STDIN).getInputStream()==System.in) {
+			if(!stdInRedirected && childFDSet.getPipe(HshFdSet.STDIN).getInputStream()==System.in) {
 				builder.redirectInput(ProcessBuilder.Redirect.INHERIT);
 				stdinInherited=true;
 			}
@@ -78,19 +78,19 @@ public class PathHshExecutor implements HshExecutor {
 
 			if(!stdinInherited) {
 				new HshPipeImpl(
-						childFDSet.getPipe(HshFDSet.STDIN).getInputStream(),
+						childFDSet.getPipe(HshFdSet.STDIN).getInputStream(),
 						new PrintStream(p.getOutputStream())
 					).startConnectThread();
 			}
 
 			new HshPipeImpl(
 					p.getInputStream(),
-					childFDSet.getPipe(HshFDSet.STDOUT).getOutputStream()
+					childFDSet.getPipe(HshFdSet.STDOUT).getOutputStream()
 				).startConnectThread();
 
 			new HshPipeImpl(
 					p.getErrorStream(),
-					childFDSet.getPipe(HshFDSet.STDERR).getOutputStream()
+					childFDSet.getPipe(HshFdSet.STDERR).getOutputStream()
 				).startConnectThread();
 
 			p.waitFor();
@@ -175,10 +175,10 @@ public class PathHshExecutor implements HshExecutor {
 	 * @return true if a redirection was set, else false
 	private boolean setupFileRedirection(final ProcessBuilder processBuilder, final HshRedirection redir) {
 		if(redir.getTargetType()==TargetType.FILE) {
-			if(redir.getRedirectedFD()==HshFDSet.STDIN && redir.getOperationType()==OperationType.READ) {
+			if(redir.getRedirectedFD()==HshFdSet.STDIN && redir.getOperationType()==OperationType.READ) {
 				processBuilder.redirectInput(redir.getTargetFile());
 				return true;
-			} else if(redir.getRedirectedFD()==HshFDSet.STDOUT) {
+			} else if(redir.getRedirectedFD()==HshFdSet.STDOUT) {
 				if(redir.getOperationType()==OperationType.WRITE) {
 					processBuilder.redirectOutput(redir.getTargetFile());
 					return true;
@@ -186,7 +186,7 @@ public class PathHshExecutor implements HshExecutor {
 					processBuilder.redirectOutput(Redirect.appendTo(redir.getTargetFile()));
 					return true;
 				}
-			} else if(redir.getRedirectedFD()==HshFDSet.STDERR) {
+			} else if(redir.getRedirectedFD()==HshFdSet.STDERR) {
 				if(redir.getOperationType()==OperationType.WRITE) {
 					processBuilder.redirectError(redir.getTargetFile());
 					return true;

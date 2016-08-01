@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 
 import com.happypeople.hsh.Executable;
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshFdSet;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.hsh.HshContextBuilder;
 import com.happypeople.hsh.hsh.HshParserConstants;
@@ -141,27 +141,27 @@ public class SimpleCommand extends L2Node implements Executable {
 				case HshParserConstants.CLOBBER:
 				case HshParserConstants.LESS:
 					if(ioNumber<0)
-						ioNumber=HshFDSet.STDIN;
+						ioNumber=HshFdSet.STDIN;
 					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.READ, new File(filename));
 					break;
 				case HshParserConstants.LESSAND:
 					if(ioNumber<0)
-						ioNumber=HshFDSet.STDIN;
+						ioNumber=HshFdSet.STDIN;
 					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.READ, Integer.parseInt(filename));
 					break;
 				case HshParserConstants.GREAT:
 					if(ioNumber<0)
-						ioNumber=HshFDSet.STDOUT;
+						ioNumber=HshFdSet.STDOUT;
 					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.WRITE, new File(filename));
 					break;
 				case HshParserConstants.GREATAND:
 					if(ioNumber<0)
-						ioNumber=HshFDSet.STDOUT;
+						ioNumber=HshFdSet.STDOUT;
 					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.WRITE, Integer.parseInt(filename));
 					break;
 				case HshParserConstants.DGREAT:
 					if(ioNumber<0)
-						ioNumber=HshFDSet.STDOUT;
+						ioNumber=HshFdSet.STDOUT;
 					hshRedir=new HshRedirection(ioNumber, HshRedirection.OperationType.APPEND, new File(filename));
 					break;
 				case HshParserConstants.LESSGREAT:

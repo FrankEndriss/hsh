@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
-import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshFdSet;
 import com.happypeople.hsh.HshTerminal;
 
 /** Builder class to ease creation of HshContext
@@ -22,14 +22,14 @@ public class HshContextBuilder {
 	private HshExecutor executor;
 	private HshTerminal terminal;
 	private HshEnvironment environment;
-	private HshFDSet fdSet;
+	private HshFdSet fdSet;
 
 	public HshContextBuilder terminal(final HshTerminal terminal) {
 		this.terminal=terminal;
 		return this;
 	}
 
-	public HshContextBuilder fdSet(final HshFDSet fdSet) {
+	public HshContextBuilder fdSet(final HshFdSet fdSet) {
 		this.fdSet=fdSet;
 		return this;
 	}
@@ -73,8 +73,8 @@ public class HshContextBuilder {
 						parentHshContext!=null ? parentHshContext.getExecutor() :
 						createDefaultExecutor();
 
-		final HshFDSet lFDSet= fdSet!=null ? fdSet :
-						parentHshContext!=null ? parentHshContext.getFDSet().createCopy() :
+		final HshFdSet lFDSet= fdSet!=null ? fdSet :
+						parentHshContext!=null ? parentHshContext.getFdSet().createCopy() :
 						createDefaultFDSet();
 
 
@@ -82,12 +82,12 @@ public class HshContextBuilder {
 	}
 
 
-	private static HshFDSet createDefaultFDSet() {
+	private static HshFdSet createDefaultFDSet() {
 		return new HshFDSetImpl();
 	}
 
 	private static HshExecutor createDefaultExecutor() {
-		final List<HshExecutor> xecutors=new ArrayList<HshExecutor>();
+		final List<HshExecutor> xecutors=new ArrayList<>();
 
 		xecutors.add(new FunctionHshExecutor());
 		xecutors.add(new InProcessHshExecutor(init_predefines()));
@@ -97,7 +97,7 @@ public class HshContextBuilder {
 	}
 
 	private static Map<String, String> init_predefines() {
-		final Map<String, String> predefs=new HashMap<String, String>();
+		final Map<String, String> predefs=new HashMap<>();
 		predefs.put("exit",	"com.happypeople.hsh.exit.Exit");
 		predefs.put("find",	"com.happypeople.hsh.find.Find");
 		predefs.put("ls", 	"com.happypeople.hsh.ls.Ls");

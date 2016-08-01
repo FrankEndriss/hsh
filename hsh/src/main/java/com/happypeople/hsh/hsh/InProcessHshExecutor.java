@@ -32,12 +32,12 @@ public class InProcessHshExecutor implements HshExecutor {
 			final String className=predefs.get(command[0]);
 
 			for(final HshRedirection redir : redirections)
-				childContext.getFDSet().addRedirection(redir);
+				childContext.getFdSet().addRedirection(redir);
 
 			final Class<?> cls=Class.forName(className);
 			if(HshCmd.class.isAssignableFrom(cls)) { // cls implements HshCmd
 				final HshCmd hshCmd=(HshCmd) cls.newInstance();
-				return hshCmd.execute(childContext, new ArrayList<String>(Arrays.asList(command)));
+				return hshCmd.execute(childContext, new ArrayList<>(Arrays.asList(command)));
 			} else {
 				// should set System.in/out/err
 				cls.getMethod("main", new Class[]{ command.getClass()}).invoke(null, new Object[] { command });

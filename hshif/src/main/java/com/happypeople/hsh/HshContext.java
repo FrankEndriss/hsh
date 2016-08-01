@@ -1,3 +1,5 @@
+/**
+ */
 package com.happypeople.hsh;
 
 import java.io.InputStream;
@@ -5,45 +7,61 @@ import java.io.PrintStream;
 
 /**
  * Context information of a calling instance.
+ * @author Frank Endriss (fj.endriss@gmail.com)
+ * @version $Id$
+ * @since 0.1
  */
 public interface HshContext extends AutoCloseable, HshMessageListener {
-
-    /** @return StdIn to use */
-    public InputStream getStdIn();
-
-    /** @return the StdOut to use */
-    public PrintStream getStdOut();
-
-    /** @return StdErr to use */
-    public PrintStream getStdErr();
+    /**
+     * Query STDIN of this context.
+     * @return StdIn to use.
+     */
+    InputStream getStdIn();
 
     /**
-     * HshMessageListener implementation Used for FINISHED-Messages
+     * Query STDOUT of this context.
+     * @return The StdOut to use
      */
+    PrintStream getStdOut();
+
+    /**
+     * Query STDERR of this context.
+     * @return StdErr to use
+     */
+    PrintStream getStdErr();
+
+    // HshMessageListener implementation Used for FINISHED-Messages
     @Override
-    public void msg(HshMessage msg);
-
-    public void addMsgListener(HshMessageListener listener);
+    void msg(HshMessage msg);
 
     /**
-     * @return the environment of this context
+     * Register an observer.
+     * @param listener Observer to register
      */
-    public HshEnvironment getEnv();
+    void addMsgListener(HshMessageListener listener);
 
     /**
-     * @return the executor of this context, usefull to execute commands. And
-     *         has nothing to do with javas ExecutorService.
+     * Query the environment.
+     * @return The environment of this context
      */
-    public HshExecutor getExecutor();
+    HshEnvironment getEnv();
 
     /**
-     * @return the open FDs of this context
+     * Query the executor.
+     * @return The executor of this context, usefull to execute commands. And
+     *  has nothing to do with javas ExecutorService.
      */
-    public HshFDSet getFDSet();
+    HshExecutor getExecutor();
 
     /**
-     * @return the terminal of this context, or null if there is none
+     * Query the fd set.
+     * @return The open FDs of this context
      */
-    public HshTerminal getTerminal();
+    HshFdSet getFdSet();
 
+    /**
+     * Query the terminal, might be null.
+     * @return The terminal of this context, or null if there is none
+     */
+    HshTerminal getTerminal();
 }

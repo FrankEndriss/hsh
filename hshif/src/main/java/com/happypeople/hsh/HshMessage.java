@@ -1,24 +1,38 @@
+/**
+ */
 package com.happypeople.hsh;
 
 /**
- * Simple generic messages
+ * Simple generic messages.
+ * @author Frank Endriss (fj.endriss@gmail.com)
+ * @version $Id$
+ * @since 0.1
  */
 public interface HshMessage {
-    public enum Type {
-        Finish, // used by exit-command
-        FinishIfNotInteractive // used in ${param:?word} -operator
+    /**
+     * Query the type tag of the message.
+     * @return The type of the message (metadata)
+     */
+    Type getType();
+
+    /**
+     * Query the payload of the message.
+     * @return The payload of the message
+     */
+    Object getPayload();
+
+    /**
+     * Type of a message.
+     */
+    enum Type {
+        /**
+         * Used by exit-command.
+         */
+        Finish,
+        /**
+         * Used in ${param:?word} -operator.
+         */
+        FinishIfNotInteractive
     };
-
-    /**
-     * @return the type of the message (metadata)
-     */
-    public Type getType();
-
-    /**
-     * The payload to the message.
-     *
-     * @return the payload
-     */
-    public Object getPayload();
 
 }

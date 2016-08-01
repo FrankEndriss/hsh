@@ -15,7 +15,7 @@ import org.junit.Test;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshExecutor;
-import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshFdSet;
 import com.happypeople.hsh.HshRedirection;
 import com.happypeople.hsh.hsh.l1parser.L1Parser;
 import com.happypeople.hsh.hsh.l1parser.L2TokenManager;
@@ -38,7 +38,7 @@ public class ExpansionTest {
 		parser=new HshParser(tokMgr);
 		executedList=new ArrayList<String[]>();
 		final HshFDSetImpl fdSet=new HshFDSetImpl();
-		fdSet.setPipe(HshFDSet.STDOUT, new HshPipeImpl());
+		fdSet.setPipe(HshFdSet.STDOUT, new HshPipeImpl());
 		context=new HshContextBuilder().executor(new HshExecutor() {
 			@Override
 			public int execute(final String[] command, final HshContext context, final List<HshRedirection> redirs) throws Exception {

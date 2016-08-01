@@ -3,7 +3,6 @@
 package com.happypeople.hsh;
 
 import java.io.File;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -19,19 +18,9 @@ public final class HshRedirectionTest {
      */
     @Test
     public void testHshRedirectionIntOperationTypeFile() {
-        final HshRedirection hshredir = new HshRedirection(
-            HshFDSet.STDIN, HshRedirection.OperationType.READ,
+        new HshRedirection(
+            HshFdSet.STDIN, HshRedirection.OperationType.READ,
             new File("/tmp/bla.f")
-        );
-        Assert.assertEquals(
-            "redirected stream",
-            HshFDSet.STDIN,
-            hshredir.getRedirectedFD()
-        );
-        Assert.assertEquals(
-            "targetType FILE",
-            HshRedirection.TargetType.FILE,
-            hshredir.getTargetType()
         );
     }
 
@@ -41,9 +30,9 @@ public final class HshRedirectionTest {
     @Test
     public void testHshRedirectionIntOperationTypeInteger() {
         new HshRedirection(
-            HshFDSet.STDERR,
+            HshFdSet.STDERR,
             HshRedirection.OperationType.WRITE,
-            HshFDSet.STDOUT
+            HshFdSet.STDOUT
         );
     }
 

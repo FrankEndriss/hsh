@@ -1,3 +1,5 @@
+/**
+ */
 package com.happypeople.hsh.hsh;
 
 import java.io.InputStream;
@@ -8,56 +10,62 @@ import java.util.Set;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
 import com.happypeople.hsh.HshExecutor;
-import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshFdSet;
 import com.happypeople.hsh.HshMessage;
 import com.happypeople.hsh.HshMessageListener;
 import com.happypeople.hsh.HshTerminal;
 
 /** Simple aggregation of Environment, Executor, FDSet and Terminal.
+ * @author Frank Endriss (fj.endriss@gmail.com)
+ * @version $Id$
+ * @since 0.1
  */
 public class HshChildContext implements HshContext {
-	private final Set<HshMessageListener> msgListeners=new HashSet<HshMessageListener>();
+	private final Set<HshMessageListener> msgListeners=new HashSet<>();
 	private final HshEnvironment env;
 	private final HshExecutor executor;
-	private final HshFDSet fdSet;
+	private final HshFdSet fdSet;
 	private final HshTerminal terminal;
 
 	/** Initializes a new HshContext.
-	 * @param env of the new Context
-	 * @param executor of the new Context
-	 * @param fdSet of the new Context
+	 * @param msglistener An initial observer
+	 * @param env Of the new Context
+	 * @param executor Of the new Context
+	 * @param fdSet Of the new Context
+	 * @param terminal Of the new Context
 	 */
 	HshChildContext(
-		final HshMessageListener msgListener,
+		final HshMessageListener msglistener,
 		final HshEnvironment env,
 		final HshExecutor executor,
-		final HshFDSet fdSet,
+		final HshFdSet fdSet,
 		final HshTerminal terminal)
 	{
 		this.env=env;
 		this.executor=executor;
-		if(fdSet==null)
-			throw new IllegalArgumentException("HshFDSet must not be null");
+		if(fdSet==null) {
+			throw new IllegalArgumentException("HshFdSet must not be null");
+		}
 		this.fdSet=fdSet;
 		this.terminal=terminal;
-		if(msgListener!=null)
-			this.msgListeners.add(msgListener);
+		if(msglistener!=null) {
+			this.msgListeners.add(msglistener);
+		}
 	}
 
 	@Override
 	public InputStream getStdIn() {
-		return getFDSet().getPipe(HshFDSet.STDIN).getInputStream();
+		return getFdSet().getPipe(HshFdSet.STDIN).getInputStream();
 	}
 
 	@Override
 	public PrintStream getStdOut() {
-		return getFDSet().getPipe(HshFDSet.STDOUT).getOutputStream();
-
+		return getFdSet().getPipe(HshFdSet.STDOUT).getOutputStream();
 	}
 
 	@Override
 	public PrintStream getStdErr() {
-		return getFDSet().getPipe(HshFDSet.STDERR).getOutputStream();
+		return getFdSet().getPipe(HshFdSet.STDERR).getOutputStream();
 	}
 
 	@Override
@@ -71,7 +79,7 @@ public class HshChildContext implements HshContext {
 	}
 
 	@Override
-	public HshFDSet getFDSet() {
+	public HshFdSet getFdSet() {
 		return fdSet;
 	}
 

@@ -5,7 +5,7 @@ import java.io.Reader;
 import java.util.List;
 
 import com.happypeople.hsh.HshContext;
-import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshFdSet;
 import com.happypeople.hsh.HshPipe;
 import com.happypeople.hsh.hsh.HshContextBuilder;
 import com.happypeople.hsh.hsh.HshFDSetImpl;
@@ -27,7 +27,7 @@ public class DollarExecNode extends ComplexL1Node {
 		// execute subtree and append grabbed output to imageHolder
 		final HshFDSetImpl fdSet=new HshFDSetImpl();
 		final HshPipe hshPipe=new HshPipeImpl();
-		fdSet.setPipe(HshFDSet.STDOUT, hshPipe);
+		fdSet.setPipe(HshFdSet.STDOUT, hshPipe);
 
 		final HshContext lContext=new HshContextBuilder().parent(context).fdSet(fdSet).create();
 

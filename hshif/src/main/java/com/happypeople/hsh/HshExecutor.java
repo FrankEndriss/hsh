@@ -1,41 +1,39 @@
+/**
+ */
 package com.happypeople.hsh;
 
 import java.util.List;
 
 /**
- * Interface to execute commands in a given HshContext
+ * Interface to execute commands in a given HshContext.
+ * @author Frank Endriss (fj.endriss@gmail.com)
+ * @version $Id$
+ * @since 0.1
  */
 public interface HshExecutor {
     /**
-     * Execute command using context
-     *
-     * @param command
-     *            and args executed
-     * @param context
-     *            given to execution
-     * @param redirections
-     *            redirections activ for this execution
-     * @return exit status of execution
-     * @throws Exception
+     * Execute command using context.
+     * @param command And args executed
+     * @param parentcontext Given to execution
+     * @param redirections Activ for this execution
+     * @return Exit status of execution
+     * @throws Exception if one happens while execution
      */
-    public int execute(final String[] command, HshContext parentContext, List<HshRedirection> redirections)
-            throws Exception;
+    int execute(String[] command, HshContext parentcontext,
+        List<HshRedirection> redirections)
+        throws Exception;
 
     /**
      * Checks if this executor can execute a specific command within a given
-     * parentContext
-     *
-     * @param command
-     *            contains the command to execute
-     * @param parentContext
-     *            contains the context, ie the PATH variable
-     * @return true if this executor thinks it is able to execute command
+     * parentContext.
+     * @param command Contains the command to execute
+     * @param parentcontext Contains the context, ie the PATH variable
+     * @return True if this executor thinks it is able to execute command
      */
-    public boolean canExecute(final String[] command, HshContext parentContext);
+    boolean canExecute(String[] command, HshContext parentcontext);
 
     /**
      * Closes this executor and releases all resources held.
      */
-    public void close();
-
+    void close();
 }

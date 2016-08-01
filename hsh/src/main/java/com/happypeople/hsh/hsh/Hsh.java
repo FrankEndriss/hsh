@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshEnvironment;
-import com.happypeople.hsh.HshFDSet;
+import com.happypeople.hsh.HshFdSet;
 import com.happypeople.hsh.HshMessage;
 import com.happypeople.hsh.HshMessageListener;
 import com.happypeople.hsh.HshTerminal;
@@ -107,9 +107,9 @@ public class Hsh {
 
 		// Setup stdstream
 		try(final HshFDSetImpl fdSet=new HshFDSetImpl()) {
-			fdSet.setPipe(HshFDSet.STDIN, new HshPipeImpl(System.in));
-			fdSet.setPipe(HshFDSet.STDOUT, new HshPipeImpl(System.out));
-			fdSet.setPipe(HshFDSet.STDERR, new HshPipeImpl(System.err));
+			fdSet.setPipe(HshFdSet.STDIN, new HshPipeImpl(System.in));
+			fdSet.setPipe(HshFdSet.STDOUT, new HshPipeImpl(System.out));
+			fdSet.setPipe(HshFdSet.STDERR, new HshPipeImpl(System.err));
 
 			context=contextBuilder.terminal(terminal).fdSet(fdSet).create();
 
