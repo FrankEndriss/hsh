@@ -4,9 +4,8 @@ package com.happypeople.hshutil.util;
 
 import java.util.Iterator;
 
-/**
- * Converts the type of an Iterator by converting all objects returned by an
- * Iterator.
+/** Converts the type of an Iterator by converting all objects
+ * returned by an Iterator.
  * @author Frank Endriss (fj.endriss@gmail.com)
  * @version $Id$
  * @param <I> The input type
@@ -14,12 +13,10 @@ import java.util.Iterator;
  * @since 0.1
  */
 public class ConvertedIterator<I, O> implements Iterator<O> {
-    /**
-     * The delegate Iterator.
+    /** The delegate Iterator.
      */
     private final Iterator<I> delegate;
-    /**
-     * The converter object converting all objects returned by delegate.
+    /** The converter object converting all objects returned by delegate.
      */
     private final OneToOneConverter<I, O> converter;
 

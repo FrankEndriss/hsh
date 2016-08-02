@@ -1,38 +1,49 @@
+/**
+ */
 package com.happypeople.hsh.exit;
-
-import java.util.ArrayList;
-
-import org.apache.log4j.Logger;
 
 import com.happypeople.hsh.HshCmd;
 import com.happypeople.hsh.HshContext;
 import com.happypeople.hsh.HshMessage;
+import java.util.List;
+import org.apache.log4j.Logger;
 
+/**
+ * Implements the exit command, which causes a sh instance to finish
+ * immediately.
+ * @author Frank Endriss (fj.endriss@gmail.com)
+ * @version $Id$
+ * @since 0.1
+ */
 public class Exit implements HshCmd {
-	private static Logger log=Logger.getLogger(Exit.class);
+    /**
+     * A standard Logger.
+     */
+    private static final Logger LOG = Logger.getLogger(Exit.class);
 
-	// no main since exit needs the HshContext
-	@Override
-	public int execute(final HshContext context, final ArrayList<String> args) throws Exception {
-		int exitCode=0;
-		try {
-			exitCode=Integer.parseInt(args.get(1));
-		} catch(final Exception e) {
-			// ignore
-		}
-		context.msg(new HshMessage() {
-			@Override
-			public Type getType() {
-				return HshMessage.Type.Finish;
-			}
+    @Override
+    public final int execute(final HshContext context, final List<String> args)
+        throws Exception {
+        final int exitcode = Integer.parseInt(args.get(1));
+        context.msg(new FinishMessage());
+        LOG.info(
+            new StringBuilder("exit, exitCode=").append(exitcode).toString()
+        );
+        return exitcode;
+    }
 
-			@Override
-			public Object getPayload() {
-				return null;
-			}
-		});
+    /**
+     * Message to denote finishing the current sh instance.
+     */
+    private static class FinishMessage implements HshMessage {
+        @Override
+        public Type getType() {
+            return HshMessage.Type.Finish;
+        }
 
-		log.info("exit, exitCode="+exitCode);
-		return exitCode;
-	}
+        @Override
+        public Object getPayload() {
+            return null;
+        }
+    }
 }

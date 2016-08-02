@@ -2,8 +2,7 @@
  */
 package com.happypeople.hshutil.util;
 
-/**
- * Simple immutable implementation of a pair of objects.
+/** Simple immutable implementation of a pair of objects.
  * @author Frank Endriss (fj.endriss@gmail.com)
  * @version $Id$
  * @param <F> type of first
@@ -11,12 +10,10 @@ package com.happypeople.hshutil.util;
  * @since 0.1
  */
 public class Pair<F, S> {
-    /**
-     * The first object.
+    /** The first object.
      */
     private final F first;
-    /**
-     * The second object.
+    /** The second object.
      */
     private final S second;
 

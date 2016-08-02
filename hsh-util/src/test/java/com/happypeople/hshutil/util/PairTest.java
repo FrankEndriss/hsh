@@ -16,7 +16,7 @@ public class PairTest {
     /**
      * Magic Integer.
      */
-    private static final int NUM = 42;
+    private static final Integer NUM = Integer.valueOf(42);
     /**
      * Magic String.
      */
