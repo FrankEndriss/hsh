@@ -46,11 +46,11 @@ public class HshRedirection {
     private HshRedirection(
         final Target target,
         final int redirectedfd) {
-        this.targettype = target.targettype;
+        this.targettype = target.getTargettype();
         this.redirectedfd = this.checkRedirectfd(redirectedfd);
-        this.opertype = target.opertype;
-        this.targetfile = target.targetfile;
-        this.targetfd = target.targetfd;
+        this.opertype = target.getOpertype();
+        this.targetfile = target.getTargetfile();
+        this.targetfd = target.getTargetfd();
     }
 
     /**
@@ -136,9 +136,9 @@ public class HshRedirection {
     private static Target createTarget(final OperationType opertype,
         final File targetfile) {
         final Target target = new Target();
-        target.opertype = opertype;
-        target.targetfile = targetfile;
-        target.targettype = TargetType.FILE;
+        target.setOpertype(opertype);
+        target.setTargetfile(targetfile);
+        target.setTargettype(TargetType.FILE);
         if (targetfile == null) {
             throw new IllegalArgumentException(
                 "targetfile must not be null with this constructor"
@@ -156,9 +156,9 @@ public class HshRedirection {
     private static Target createTarget(final OperationType opertype,
         final Integer otherio) {
         final Target target = new Target();
-        target.opertype = opertype;
-        target.targetfd = otherio;
-        target.targettype = TargetType.ANOTHER_FD;
+        target.setOpertype(opertype);
+        target.setTargetfd(otherio);
+        target.setTargettype(TargetType.ANOTHER_FD);
         if (opertype == OperationType.APPEND) {
             throw new IllegalArgumentException(
                 "cannot APPEND to FD, use READ or WRITE or a file"

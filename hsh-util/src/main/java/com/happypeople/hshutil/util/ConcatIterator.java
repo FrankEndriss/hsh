@@ -1,41 +1,83 @@
+/**
+ */
 package com.happypeople.hshutil.util;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-/** Conncats two Iterators<E> to act as one Iterator<E>
- * @param <E>
+/**
+ * Conncatenates two Iterators to act as one Iterator.
+ * @author Frank Endriss (fj.endriss@gmail.com)
+ * @version $Id$
+ * @param <E> The type of the Iterators
+ * @since 0.1
  */
 public class ConcatIterator<E> implements Iterator<E> {
-	private Iterator<E> itCurrent;
-	private Iterator<E> it2;
-	public ConcatIterator(Iterator<E> it1, Iterator<E> it2) {
-		this.itCurrent=it1;
-		this.it2=it2;
-	}
+    /**
+     * The first Iterator.
+     */
+    private Iterator<? extends E> itfirst;
+    /**
+     * The second Iterator.
+     */
+    private final Iterator<? extends E> itsecond;
 
-	public boolean hasNext() {
-		boolean ret=itCurrent.hasNext();
-		if(!ret && itCurrent!=it2) {
-			itCurrent=it2;
-			return itCurrent.hasNext();
-		}
-		return ret;
-	}
+    /**
+     * Only one constructor, concatenates the two argument Iterators.
+     * @param itfirst The first Iterator, must not be null
+     * @param itsecond The second Iterator, must not be null
+     */
+    public ConcatIterator(final Iterator<? extends E> itfirst,
+        final Iterator<? extends E> itsecond) {
+        this.itfirst = checkNotNull("itfirst", itfirst);
+        this.itsecond = checkNotNull("itsecond", itsecond);
+    }
 
-	public E next() {
-		if(itCurrent!=it2)
-			try {
-				return itCurrent.next();
-			}catch(NoSuchElementException e) {
-				itCurrent=it2;
-				return itCurrent.next();
-			}
-		else
-			return itCurrent.next();
-	}
+    @Override
+    public final boolean hasNext() {
+        boolean ret = this.itfirst.hasNext();
+        if (!ret && this.itfirst != this.itsecond) {
+            this.itfirst = this.itsecond;
+            ret = this.itfirst.hasNext();
+        }
+        return ret;
+    }
 
-	public void remove() {
-		itCurrent.remove();
-	}
+    @Override
+    public final E next() {
+        E ret;
+        if (this.itfirst == this.itsecond) {
+            ret = this.itfirst.next();
+        } else {
+            try {
+                ret = this.itfirst.next();
+            } catch (final NoSuchElementException exep) {
+                this.itfirst = this.itsecond;
+                ret = this.itfirst.next();
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public final void remove() {
+        this.itfirst.remove();
+    }
+
+    /**
+     * Checks constructor arguments for non null.
+     * @param msg Message for exception
+     * @param iterator Argument to check for not null
+     * @param <E> Type of the Iterator
+     * @return The iterator reference
+     */
+    private static <E> Iterator<? extends E> checkNotNull(final String msg,
+        final Iterator<? extends E> iterator) {
+        if (iterator == null) {
+            throw new IllegalArgumentException(
+                new StringBuilder(msg).append(" must not be null").toString()
+            );
+        }
+        return iterator;
+    }
 }

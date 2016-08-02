@@ -1,95 +1,143 @@
+/**
+ */
 package com.happypeople.hshutil.util;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
-/** This class implements the concept of a closeable queue. For simplyfication all methods are declared synchronized.
+/**
+ * This class implements the concept of a closeable queue. For simplyfication
+ * all methods are declared synchronized.
+ * @author Frank Endriss (fj.endriss@gmail.com)
+ * @version $Id$
  * @param <E> the element type
+ * @since 0.1
  */
 public class AsyncIterator<E> implements Iterator<E> {
-	private boolean closed=false;
-	private final Queue<E> elements=new LinkedList<E>();
+    /**
+     * Flag for the colosed state.
+     */
+    private boolean closed;
+    /**
+     * Queue with the elements available in this Iterator.
+     */
+    private final Queue<E> elements;
 
-	/** Creates an initially empty Iterator<E>
-	 */
-	public AsyncIterator() {
-	}
+    /**
+     * Lock object for synchronization.
+     */
+    private final Object lock;
 
-	/** Creates an Iterator initially filled whith the elements of the argument
-	 * @param elements element data
-	 */
-	public AsyncIterator(final Iterable<E> elements) {
-		this(elements.iterator());
-	}
+    /**
+     * Creates an initially empty Iterator.
+     */
+    public AsyncIterator() {
+        this(new ArrayList<E>(0).iterator());
+    }
 
-	/** Creates an Iterator initially filled whith the elements of the argument
-	 * @param elements element data
-	 */
-	public AsyncIterator(final Iterator<E> elements) {
-		while(elements.hasNext())
-			this.elements.offer(elements.next());
-	}
+    /**
+     * Creates an Iterator initially filled whith the elements of the argument.
+     * @param elements Element data
+     */
+    public AsyncIterator(final Iterable<E> elements) {
+        this(elements.iterator());
+    }
 
-	/**
-	 * @see java.util.Iterator#hasNext()
-	 * Probably blocks until an element is available or this Iterator is closed
-	 */
-	@Override
-	public synchronized boolean hasNext() {
-		while(true)
-			if(elements.size()>0)
-				return true;
-			else
-				if(closed)
-					return false;
-				else
-					doWait();
-	}
+    /**
+     * Creates an Iterator initially filled whith the elements of the argument.
+     * @param elements Element data
+     */
+    public AsyncIterator(final Iterator<E> elements) {
+        this.elements = initElements(elements);
+        this.lock = new Object();
+    }
 
-	/**
-	 * @see java.util.Iterator#next()
-	 * Probably blocks until an element is available or this Iterator is closed
-	 */
-	@Override
-	public synchronized E next() {
-		while(true)
-			if(elements.size()>0)
-				return elements.poll();
-			else
-				if(closed)
-					throw new NoSuchElementException("empty and closed");
-				else
-					doWait();
-	}
+    @Override
+    public final boolean hasNext() {
+        boolean ret;
+        synchronized (this.lock) {
+            while (true) {
+                if (this.elements.size() > 0) {
+                    ret = true;
+                    break;
+                } else if (this.closed) {
+                    ret = false;
+                    break;
+                } else {
+                    try {
+                        this.lock.wait();
+                    } catch (final InterruptedException excep) {
+                    }
+                }
+            }
+        }
+        return ret;
+    }
 
-	@Override
-	public void remove() {
-		// remove does not makes sence on an Iterator like this.
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public final E next() {
+        synchronized (this.lock) {
+            while (true) {
+                if (this.elements.size() > 0) {
+                    return this.elements.poll();
+                } else if (this.closed) {
+                    throw new NoSuchElementException("empty and closed");
+                } else {
+                    try {
+                        this.lock.wait();
+                    } catch (final InterruptedException excep) {
+                    }
+                }
+            }
+        }
+    }
 
-	/** Puts an element into the iterator
-	 * @param element
-	 */
-	public synchronized void offer(final E element) {
-		elements.offer(element);
-		notifyAll();
-	}
+    @Override
+    public final void remove() {
+        throw new UnsupportedOperationException();
+    }
 
-	/** Closes this Iterator
-	 */
-	public synchronized void close() {
-		closed=true;
-		notifyAll();
-	}
+    /**
+     * Puts an element into the iterator.
+     * @param element New element in the Iterator/Queue
+     * @throws ClassCastException If the underlying Queue throws it
+     * @throws NullPointerException If the underlying Queue throws it
+     * @throws IllegalArgumentException If the underlying Queue throws it
+     */
+    public final void offer(final E element) {
+        synchronized (this.lock) {
+            try {
+                this.elements.offer(element);
+            } finally {
+                this.lock.notifyAll();
+            }
+        }
+    }
 
-	private synchronized void doWait() {
-		try {
-			wait();
-		} catch (final InterruptedException e) {
-			// ignore
-		}
-	}
+    /**
+     * Closes this Iterator.
+     */
+    public final void close() {
+        synchronized (this.lock) {
+            this.closed = true;
+            this.lock.notifyAll();
+        }
+    }
+
+    /**
+     * Initializes the Queue with the elements from iterator.
+     * @param iterator Initial elements of this queue
+     * @param <E> The type of the Iterator
+     * @return The queue
+     */
+    private static <E> Queue<E> initElements(final Iterator<E> iterator) {
+        final LinkedList<E> list = new LinkedList<>();
+        while (iterator.hasNext()) {
+            list.offer(iterator.next());
+        }
+        return list;
+    }
 }

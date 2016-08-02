@@ -1,21 +1,42 @@
+/**
+ */
 package com.happypeople.hshutil.util;
 
 import java.util.Iterator;
 
-/** Concatenates the iterators of two Iterable<T>
+/**
+ * Concatenates the iterators of two Iterable.
+ * @author Frank Endriss (fj.endriss@gmail.com)
+ * @version $Id$
  * @param <T> the type of the Iterables/Iterators.
+ * @since 0.1
  */
 public class ConcatIterable<T> implements Iterable<T> {
-	private final Iterable<T> it1;
-	private final Iterable<T> it2;
+    /**
+     * The first Iterator to concatenate.
+     */
+    private final Iterable<? extends T> itfirst;
+    /**
+     * The second Iterator to concatenate.
+     */
+    private final Iterable<? extends T> itsecond;
 
-	public ConcatIterable(final Iterable<T> it1, final Iterable<T> it2) {
-		this.it1=it1;
-		this.it2=it2;
-	}
+    /**
+     * Only one constructor.
+     * @param itfirst The first Iterator
+     * @param itsecond The second Iterator
+     */
+    public ConcatIterable(final Iterable<? extends T> itfirst,
+        final Iterable<? extends T> itsecond) {
+        this.itfirst = itfirst;
+        this.itsecond = itsecond;
+    }
 
-	public Iterator<T> iterator() {
-		return new ConcatIterator<T>(it1.iterator(), it2.iterator());
-	}
+    @Override
+    public final Iterator<T> iterator() {
+        return new ConcatIterator<>(
+            this.itfirst.iterator(), this.itsecond.iterator()
+        );
+    }
 
 }

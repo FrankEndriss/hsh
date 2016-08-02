@@ -163,6 +163,6 @@ public interface HshEnvironment {
         public void setExport(final boolean isexport) {
             // intentionally blank
         }
-    };
+    }
 
 }

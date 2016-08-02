@@ -1,24 +1,48 @@
+/**
+ */
 package com.happypeople.hshutil.util;
 
-/** Simple immutable implementation of a pair of objects.
- * @param <T1> type of object 1
- * @param <T2> type of object 2
+/**
+ * Simple immutable implementation of a pair of objects.
+ * @author Frank Endriss (fj.endriss@gmail.com)
+ * @version $Id$
+ * @param <F> type of first
+ * @param <S> type of second
+ * @since 0.1
  */
-public class Pair<T1, T2> {
-	private final T1 o1;
-	private final T2 o2;
+public class Pair<F, S> {
+    /**
+     * The first object.
+     */
+    private final F first;
+    /**
+     * The second object.
+     */
+    private final S second;
 
-	public Pair(final T1 o1, final T2 o2) {
-		this.o1=o1;
-		this.o2=o2;
-	}
+    /**
+     * Constructs a Pair of two typed object references.
+     * @param first The first object
+     * @param second The second object
+     */
+    public Pair(final F first, final S second) {
+        this.first = first;
+        this.second = second;
+    }
 
-	public T1 getO1() {
-		return o1;
-	}
+    /**
+     * Query the first object.
+     * @return The first object.
+     */
+    public final F getFirst() {
+        return this.first;
+    }
 
-	public T2 getO2() {
-		return o2;
-	}
-
+    /**
+     * Query the second object.
+     * @return The second object.
+     */
+    public final S getSecond() {
+        return this.second;
+    }
 }
