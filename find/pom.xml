@@ -4,10 +4,18 @@
   <name>hsh find implementation</name>
 
 
-  <parent>
-	  <groupId>com.happypeople.hsh</groupId>
-	  <artifactId>hsh-parent</artifactId>
-	  <version>0.0.1-SNAPSHOT</version>
-  </parent>
+	<parent>
+		<groupId>com.happypeople.hsh</groupId>
+		<artifactId>hsh-parent</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<dependencies>
+                <dependency>
+                        <groupId>com.happypeople.hsh</groupId>
+                        <artifactId>hshif</artifactId>
+                        <version>0.0.1-SNAPSHOT</version>
+                </dependency>
+	</dependencies>
 
 </project>

@@ -2,6 +2,8 @@
  */
 package com.happypeople.hsh.find;
 
+import com.happypeople.hsh.HshCmd;
+import com.happypeople.hsh.HshContext;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
@@ -22,60 +24,67 @@ import java.util.regex.Pattern;
  * @version $Id$
  * @since 0.1
  */
-public final class Find {
-    /**
-     * Utility classes should not have constructor.
-     */
-    private Find() {
-    }
-
-    /**
-     * Standard main TODO substitude to execute() and implement HshCmd.
-     * @param args Standard argument vector
-     */
-    public static void main(final String[] args) {
-
-        final List<String> pathlist = new ArrayList<>();
-        final List<Expr> exprlist = new ArrayList<>();
-
-        for (int idx = 1; idx < args.length; idx += 1) {
-            if ("-name".equals(args[idx])) {
-                exprlist.add(new NameExpr(args[idx + 1]));
+public final class Find implements HshCmd {
+    @Override
+    public int execute(final HshContext hsh, final List<String> args)
+        throws Exception {
+        final List<String> pathlist = new ArrayList<>(16);
+        final List<Expr> exprlist = new ArrayList<>(8);
+        for (int idx = 1; idx < args.size(); idx += 1) {
+            if ("-name".equals(args.get(idx))) {
+                exprlist.add(createNameExpr(args.get(idx + 1)));
                 break;
             } else {
-                pathlist.add(args[idx]);
+                pathlist.add(args.get(idx));
             }
         }
         if (pathlist.isEmpty()) {
             pathlist.add(".");
         }
-
         for (final String path : pathlist) {
             try {
-                runRecursive(new File(path), exprlist);
+                runRecursive(createFile(path), exprlist, hsh);
             } catch (final IOException excep) {
-                excep.printStackTrace();
+                excep.printStackTrace(hsh.getStdErr());
             }
         }
+        return 0;
+    }
+
+    /**
+     * Creates a File from a String.
+     * @param path The usual path
+     * @return A File created from path
+     */
+    private static File createFile(final String path) {
+        return new File(path);
+    }
+
+    /**
+     * Factory method for NameExpr().
+     * @param arg Pattern to search for
+     * @return A new NameExpr object
+     */
+    private static NameExpr createNameExpr(final String arg) {
+        return new NameExpr(arg);
     }
 
     /**
      * Find greatly works recursive.
      * @param file The current path level
      * @param exprlist List of searched expression
+     * @param hsh Context of the command execution
      * @throws IOException If one of the file operations throws it
      */
-    private static void runRecursive(final File file, final List<Expr> exprlist)
-        throws IOException {
+    private static void runRecursive(final File file, final List<Expr> exprlist,
+        final HshContext hsh) throws IOException {
         if (!file.exists()) {
             return;
         }
-
         final Path fpath = file.toPath();
-
         Files.walkFileTree(
             fpath, EnumSet.noneOf(FileVisitOption.class), Integer.MAX_VALUE,
-            new MyFileVisitor(exprlist)
+            new MyFileVisitor(exprlist, hsh)
         );
     }
 
@@ -98,38 +107,36 @@ public final class Find {
     }
 
     /**
-     * Standard usage() implementation.
-     */
-    public static void usage() {
-        System.err.println(
-            "usage: " + Find.class.getName() + " <pathlist> [expression]"
-        );
-        System.err.println("implemented expressions: -name <pattern>");
-    }
-
-    /**
      * FileVisitor implementation to use Files.walkTree.
      */
     private static class MyFileVisitor implements FileVisitor<Path> {
 
         /**
+         * Context of this cmd execution.
+         */
+        private final HshContext context;
+
+        /**
          * List of Expr to search for.
          */
-        private List<Expr> exprlist;
+        private final List<Expr> exprlist;
 
         /**
          * Only one constructor.
          * @param exprlist List of Expr to search for.
+         * @param hsh Context of command execution.
          */
-        MyFileVisitor(final List<Expr> exprlist) {
+        MyFileVisitor(final List<Expr> exprlist, final HshContext hsh) {
             this.exprlist = exprlist;
+            this.context = hsh;
         }
 
         @Override
         public FileVisitResult preVisitDirectory(final Path path,
             final BasicFileAttributes attrs) throws IOException {
-            if (checkExpressions(path.toFile(), exprlist)) {
-                System.out.println("" + path);
+            if (checkExpressions(path.toFile(), this.exprlist)) {
+                this.context.getStdOut()
+                    .println(new StringBuilder().append(path));
             }
             return FileVisitResult.CONTINUE;
         }
@@ -137,8 +144,9 @@ public final class Find {
         @Override
         public FileVisitResult visitFile(final Path path,
             final BasicFileAttributes attrs) throws IOException {
-            if (checkExpressions(path.toFile(), exprlist)) {
-                System.out.println("" + path);
+            if (checkExpressions(path.toFile(), this.exprlist)) {
+                this.context.getStdOut()
+                    .println(new StringBuilder().append(path));
             }
             return FileVisitResult.CONTINUE;
         }
@@ -190,4 +198,5 @@ public final class Find {
             return this.pattern.matcher(file.getName()).matches();
         }
     }
+
 }
