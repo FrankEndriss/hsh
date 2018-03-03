@@ -1,0 +1,9 @@
+Make hsh runable!
+* Commit pom.xml changes to make it compilable
+* Fix Bug/Endlessloop in cmd-line interpreter
+* create README.md
+* create running mode which interprets scripts
+* create test scripts
+* create maven plugin which executes those scripts
+* make usability of maven plugin good
+* push maven plugin to mavencentral.com

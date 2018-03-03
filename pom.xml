@@ -17,7 +17,9 @@
 		<module>ls</module>
 		<module>tail</module>
 		<module>hsh</module>
+<!--
 		<module>fx-gui</module>
+-->
 	</modules>
 	
 	<dependencies>
@@ -52,6 +54,7 @@
 					<threadCount>10</threadCount>
 				</configuration>
 			</plugin>
+<!--
 			<plugin>
 				<groupId>com.qulice</groupId>
 				<artifactId>qulice-maven-plugin</artifactId>
@@ -63,6 +66,7 @@
 					<goal>check</goal>
 				</goals></execution></executions>
 			</plugin>
+-->
 		</plugins>
 	</build>
 </project>
